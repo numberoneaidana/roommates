@@ -35,7 +35,14 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-
+// Add this before httpServer.listen
+app.get("/", (req, res) => {
+  res.json({
+    message: "RoomMatch API is running",
+    docs: "https://github.com/numberoneaidana/roommates.git", // optional
+    version: "1.0.0"
+  });
+});
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20,  standardHeaders: true, legacyHeaders: false });

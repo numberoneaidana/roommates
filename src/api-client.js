@@ -5,7 +5,6 @@
  * Token is stored in localStorage under "roommate_kz_token".
  */
 
-console.log("Checking Environment Variable:", process.env.REACT_APP_API_URL);
 const BASE = "https://roommates-production.up.railway.app";
 
 export default class ApiClient {
@@ -118,8 +117,8 @@ export default class ApiClient {
    * @param {string|number} profileId  – the other user's ID
    * @param {string|number|null} sinceId – only fetch messages after this ID (incremental poll)
    */
-  async getMessages(profileId, sinceId = null) {
-    const qs = sinceId ? `?since_id=${sinceId}` : "";
+  async getMessages(profileId, sinceAt = null) {
+    const qs = sinceAt ? `?since_at=${encodeURIComponent(sinceAt)}` : "";
     return this._fetch(`/api/messages/${profileId}${qs}`);
   }
 

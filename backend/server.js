@@ -64,18 +64,10 @@ app.use("/api/upload",   authMiddleware, uploadRouter);
 app.get("/api/health", (_, res) => res.json({ status: "ok", ts: new Date().toISOString() }));
 
 // ── WebSocket server ──────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ noServer: true });
-
-// Explicitly handle WebSocket upgrades (required for Railway)
-httpServer.on("upgrade", (request, socket, head) => {
-  const pathname = new URL(request.url, "http://localhost").pathname;
-  if (pathname === "/ws") {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
-    });
-  } else {
-    socket.destroy();
-  }
+const wss = new WebSocketServer({
+  server: httpServer,
+  path: "/ws",
+  perMessageDeflate: false,   // required for Railway proxy compatibility
 });
 
 // Map: userId (string) → Set<WebSocket>

@@ -27,11 +27,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ── Express app ──────────────────────────────────────────────────────────────
 const app = express();
 const httpServer = createServer(app);
-httpServer.on("upgrade", (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit("connection", ws, request);
-  });
-});
 app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -69,7 +64,19 @@ app.use("/api/upload",   authMiddleware, uploadRouter);
 app.get("/api/health", (_, res) => res.json({ status: "ok", ts: new Date().toISOString() }));
 
 // ── WebSocket server ──────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+const wss = new WebSocketServer({ noServer: true });
+
+// Explicitly handle WebSocket upgrades (required for Railway)
+httpServer.on("upgrade", (request, socket, head) => {
+  const pathname = new URL(request.url, "http://localhost").pathname;
+  if (pathname === "/ws") {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
 // Map: userId (string) → Set<WebSocket>
 const clients = new Map();

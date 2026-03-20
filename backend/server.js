@@ -26,6 +26,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Express app ──────────────────────────────────────────────────────────────
 const app = express();
+httpServer.on("upgrade", (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit("connection", ws, request);
+  });
+});
 const httpServer = createServer(app);
 app.set('trust proxy', 1);
 

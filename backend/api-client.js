@@ -5,7 +5,7 @@
  * Token is stored in localStorage under "roommate_kz_token".
  */
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+const BASE = "https://roommates-production.up.railway.app";
 
 export default class ApiClient {
   constructor() {

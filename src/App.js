@@ -55,7 +55,7 @@ const Ic = ({ n, size=18, c="currentColor" }) => {
   };
   return d[n]||null;
 };
-
+const BASE = "https://roommates-production.up.railway.app";
 // ── INJECT STYLES ─────────────────────────────────────────────────────────────
 function injectStyles(){
   if(document.getElementById("kz-styles"))return;
@@ -1187,7 +1187,7 @@ const getInitials = (name = "") =>
 
 // ── PHOTO UPLOAD ──────────────────────────────────────────────────────────────
 async function uploadPhoto(file) {
-  const BASE  = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+  const BASE = "https://roommates-production.up.railway.app";
   const token = localStorage.getItem("roommate_kz_token");
   const form  = new FormData();
   form.append("photo", file);
@@ -3595,7 +3595,7 @@ export function usePollingChat(authUserId, matchedProfiles, setConversations) {
     const poll = async () => {
       try {
         const token = localStorage.getItem("roommate_kz_token");
-        const res = await fetch(`/api/messages/${profileId}`, {
+        const res = await fetch(`${BASE}/api/messages/${profileId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) return;

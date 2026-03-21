@@ -1,843 +1,50 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 //import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import './design/components.css';
+import { KZ_REGIONS, BASE_URL } from './logic/constants';
+import { Ic } from './components/Icons';
+// usePollingChat is exported from ./logic/hooks for external/backend use;
+// internally useRealtimeChat handles all polling via its own fallback.
 import 'leaflet/dist/leaflet.css';
 import ApiClient from './api-client';
 const api = new ApiClient();
 
 
-// ── KAZAKHSTAN REGIONS ────────────────────────────────────────────────────────
-const KZ_REGIONS = [
-  { id: "almaty_city", name: "Алматы (город)", lat: 43.238, lng: 76.945 },
-  { id: "astana", name: "Астана", lat: 51.18, lng: 71.446 },
-  { id: "shymkent", name: "Шымкент", lat: 42.3, lng: 69.6 },
-  { id: "almaty_region", name: "Алматинская область", lat: 45.0, lng: 78.0 },
-  { id: "akmola", name: "Акмолинская область", lat: 51.5, lng: 70.0 },
-  { id: "aktobe", name: "Актюбинская область", lat: 50.28, lng: 57.21 },
-  { id: "atyrau", name: "Атырауская область", lat: 47.1, lng: 51.9 },
-  { id: "east_kaz", name: "Восточно-Казахстанская область", lat: 49.97, lng: 82.6 },
-  { id: "zhambyl", name: "Жамбылская область", lat: 42.9, lng: 71.4 },
-  { id: "west_kaz", name: "Западно-Казахстанская область", lat: 51.2, lng: 51.4 },
-  { id: "karaganda", name: "Карагандинская область", lat: 49.8, lng: 73.1 },
-  { id: "kostanay", name: "Костанайская область", lat: 53.2, lng: 63.6 },
-  { id: "kyzylorda", name: "Кызылординская область", lat: 44.85, lng: 65.5 },
-  { id: "mangystau", name: "Мангистауская область", lat: 43.6, lng: 51.2 },
-  { id: "north_kaz", name: "Северо-Казахстанская область", lat: 54.0, lng: 69.0 },
-  { id: "pavlodar", name: "Павлодарская область", lat: 52.3, lng: 76.95 },
-  { id: "turkestan", name: "Туркестанская область", lat: 41.3, lng: 68.3 },
-  { id: "abai", name: "Область Абай", lat: 50.41, lng: 80.25 },
-  { id: "zhetisu", name: "Область Жетісу", lat: 45.02, lng: 78.37 },
-  { id: "ulytau", name: "Область Ұлытау", lat: 48.3, lng: 67.5 }
-];
-
-// ── ICONS ─────────────────────────────────────────────────────────────────────
-const Ic = ({ n, size=18, c="currentColor" }) => {
-  const d = {
-    home:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-    search:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-    map:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
-    heart:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-    heartFill:<svg width={size} height={size} fill={c} stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-    msg:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-    user:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-    pin:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-    check:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-    x:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-    sliders:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>,
-    grid:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
-    list:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
-    send:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-    logout:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-    star:<svg width={size} height={size} fill={c} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
-    chevron:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>,
-    female:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><line x1="12" y1="13" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
-    male:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><circle cx="10" cy="14" r="5"/><line x1="19" y1="5" x2="14.14" y2="9.86"/><polyline points="15 5 19 5 19 9"/></svg>,
-    settings:<svg width={size} height={size} fill="none" stroke={c} strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
-  };
-  return d[n]||null;
-};
-const BASE = "https://roommates-production.up.railway.app";
-// ── INJECT STYLES ─────────────────────────────────────────────────────────────
-function injectStyles(){
-  if(document.getElementById("kz-styles"))return;
-  const s=document.createElement("style");
-  s.id="kz-styles";
-  s.textContent=`
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Nunito:wght@300;400;500;600;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#f0ebe3;
-  --bg2:#e8e0d5;
-  --card:#faf7f3;
-  --accent:#3d7a5c;
-  --accent2:#2e6048;
-  --accent-light:#d4ead9;
-  --warm:#c97d4a;
-  --warm-light:#f0d5b8;
-  --dark:#1e2a22;
-  --mid:#4a5e52;
-  --muted:#7d9080;
-  --female:#d4587a;
-  --female-light:#fce8ef;
-  --male:#4a7abf;
-  --male-light:#e8f0fc;
-  --red:#c94a3a;
-  --sh:0 4px 20px rgba(30,42,34,0.08);
-  --sh2:0 12px 40px rgba(30,42,34,0.14);
-  --match:#f59e0b;
-  --r:18px;--rs:10px;
-}
-body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);}
-.app{min-height:100vh;display:flex;flex-direction:column;}
-
-/* NAV */
-.nav{background:var(--dark);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;}
-.nav-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;letter-spacing:1px;}
-.nav-logo span{color:var(--warm);}
-.nav-links{display:flex;gap:2px;}
-.nl{display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:var(--rs);border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.6);}
-.nl:hover{background:rgba(255,255,255,.08);color:#fff;}
-.nl.active{background:var(--accent);color:#fff;}
-.nav-av{width:34px;height:34px;border-radius:50%;background:var(--warm);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;border:none;}
-.nav-right{display:flex;align-items:center;gap:10px;}
-
-/* PAGE */
-.page{flex:1;padding:28px 24px;max-width:1280px;margin:0 auto;width:100%;}
-.ph{margin-bottom:28px;}
-.pt{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:700;color:var(--dark);}
-.ps{color:var(--muted);font-size:14px;margin-top:4px;}
-
-/* CARDS */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px;}
-.card{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);transition:all .3s;cursor:pointer;border:1.5px solid transparent;}
-.card:hover{transform:translateY(-5px);box-shadow:var(--sh2);border-color:var(--accent);}
-.card-hero{height:170px;display:flex;align-items:center;justify-content:center;position:relative;}
-.card-av{width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--dark);box-shadow:0 4px 16px rgba(0,0,0,.15);}
-.online-dot{position:absolute;top:14px;right:14px;width:9px;height:9px;border-radius:50%;background:#4caf50;border:2px solid #fff;}
-.verified-badge{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:3px;}
-.gender-badge{position:absolute;bottom:12px;left:12px;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px;}
-.gender-f{background:var(--female-light);color:var(--female);}
-.gender-m{background:var(--male-light);color:var(--male);}
-.dist-badge{position:absolute;bottom:12px;right:12px;background:rgba(255,255,255,.9);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;color:var(--dark);}
-.cb{padding:18px;}
-.cn{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
-.cname{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;}
-.cprice{font-size:14px;font-weight:700;color:var(--accent);}
-.cloc{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:3px;margin-bottom:10px;}
-.cbio{font-size:13px;color:var(--mid);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
-.tag{font-size:11px;background:var(--bg2);border-radius:20px;padding:3px 9px;color:var(--mid);}
-.cact{display:flex;gap:7px;}
-.btn-like{flex:0 0 42px;height:42px;border-radius:var(--rs);border:1.5px solid var(--bg2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
-.btn-like:hover,.btn-like.liked{border-color:var(--female);background:var(--female-light);}
-.btn-msg{flex:1;height:42px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.btn-msg:hover{background:var(--accent2);}
-.btn-msg:disabled{background:var(--bg2);color:var(--muted);cursor:default;}
-/* PHOTO UPLOAD */
-.photo-upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px;}
-.photo-slot{aspect-ratio:3/4;border-radius:14px;border:2px dashed var(--bg2);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;}
-.photo-slot:hover{border-color:var(--accent);background:var(--accent-light);transform:translateY(-2px);box-shadow:0 6px 18px rgba(61,122,92,.14);}
-.photo-slot.filled{border:2px solid transparent;background:transparent;}
-.photo-slot.filled:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.14);}
-.photo-slot img{width:100%;height:100%;object-fit:cover;border-radius:12px;}
-.photo-slot-overlay{position:absolute;inset:0;background:rgba(30,42,34,.0);transition:background .2s;border-radius:12px;display:flex;align-items:center;justify-content:center;}
-.photo-slot.filled:hover .photo-slot-overlay{background:rgba(30,42,34,.45);}
-.photo-slot-del{opacity:0;background:rgba(201,74,58,.92);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .2s,transform .2s;color:#fff;font-size:14px;}
-.photo-slot.filled:hover .photo-slot-del{opacity:1;transform:scale(1.1);}
-.photo-slot-label{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent2);background:rgba(255,255,255,.88);padding:3px 0;border-radius:0 0 10px 10px;}
-.photo-slot-empty-ic{color:var(--muted);margin-bottom:6px;opacity:.6;}
-.photo-slot-empty-txt{font-size:11px;font-weight:700;color:var(--muted);}
-.photo-upload-tip{font-size:11px;color:var(--muted);text-align:center;margin-top:4px;}
-.chat-send{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);flex-shrink:0;box-shadow:0 4px 14px rgba(61,122,92,.25);}
-.chat-send:hover:not(:disabled){transform:translateY(-2px) scale(1.08);box-shadow:0 8px 22px rgba(61,122,92,.38);}
-.chat-send:active:not(:disabled){transform:scale(0.92);}
-.chat-send:disabled{background:linear-gradient(135deg,#e5e7eb,#d1d5db);cursor:default;box-shadow:none;}
-.sent-preview{background:linear-gradient(135deg,#f5f5f4,#e7e5e4);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--mid);margin-top:8px;border-left:4px solid var(--accent);font-style:italic;word-break:break-word;line-height:1.5;}
-
-/* BUTTONS */
-.btn-primary{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 6px 18px rgba(61,122,92,.3);}
-.btn-primary:active{transform:scale(0.98);}
-.btn-primary.sending{animation:btnShake .7s ease;background:var(--accent2);}
-@keyframes btnShake{
-  0%,100%{transform:translateX(0) scale(1);}
-  10%{transform:translateX(-4px) scale(0.98);}
-  20%{transform:translateX(4px) scale(1.02);}
-  30%{transform:translateX(-3px) scale(0.99);}
-  40%{transform:translateX(3px) scale(1.01);}
-  50%{transform:translateX(-2px) scale(1);}
-  60%{transform:translateX(2px) scale(1);}
-  70%{transform:translateX(0) scale(1);}
-}
-.btn-primary.sending::after{
-  content:'✓';
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%) scale(0);
-  font-size:32px;
-  color:#fff;
-  font-weight:700;
-  animation:checkGrow .4s ease .35s forwards;
-}
-@keyframes checkGrow{
-  0%{transform:translate(-50%,-50%) scale(0) rotate(-30deg);opacity:0;}
-  50%{transform:translate(-50%,-50%) scale(1.4) rotate(10deg);opacity:1;}
-  100%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1;}
-}
-.btn-ghost{background:transparent;border:1.5px solid var(--bg2);color:var(--dark);padding:9px 18px;border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
-.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
-
-/* FILTERS */
-.fbar{background:var(--card);border-radius:var(--r);padding:18px 22px;margin-bottom:24px;box-shadow:var(--sh);}
-.ftop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.fsearch{flex:1;min-width:200px;position:relative;}
-.fsearch input{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--bg2);border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:13px;background:var(--bg);outline:none;transition:all .2s;color:var(--dark);}
-.fsearch input:focus{background:#fff;border-color:var(--accent);}
-.fsearch-ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);}
-.fsel{padding:11px 14px;border:1.5px solid var(--bg2);border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:13px;background:var(--bg);color:var(--dark);outline:none;cursor:pointer;transition:border-color .2s;}
-.fsel:focus{border-color:var(--accent);background:#fff;}
-.fexp{margin-top:16px;padding-top:16px;border-top:1px solid var(--bg2);display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
-.fg{display:flex;flex-direction:column;gap:6px;}
-.fg label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
-.frange{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:var(--bg2);outline:none;cursor:pointer;}
-.frange::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(61,122,92,.4);}
-.rv{font-size:13px;font-weight:700;color:var(--accent);}
-.chip-row{display:flex;gap:6px;flex-wrap:wrap;}
-.chip{padding:6px 12px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
-.chip-off{border-color:var(--bg2);background:transparent;color:var(--mid);}
-.chip-on{border-color:var(--accent);background:var(--accent);color:#fff;}
-.chip-f-on{border-color:var(--female);background:var(--female);color:#fff;}
-.vt{display:flex;border:1.5px solid var(--bg2);border-radius:var(--rs);overflow:hidden;}
-.vb{padding:9px 12px;border:none;background:transparent;cursor:pointer;color:var(--muted);transition:all .2s;display:flex;align-items:center;}
-.vb.active{background:var(--accent);color:#fff;}
-
-/* TRAIT BAR */
-.trait{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.tlabel{font-size:12px;color:var(--muted);width:110px;flex-shrink:0;}
-.ttrack{flex:1;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;}
-.tfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s;}
-
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(30,42,34,.65);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .2s;}
-@keyframes fi{from{opacity:0}to{opacity:1}}
-@keyframes swipeRight{to{transform:translateX(120%) rotate(20deg);opacity:0}}
-@keyframes swipeLeft{to{transform:translateX(-120%) rotate(-20deg);opacity:0}}
-@keyframes cardEnter{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes pageUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
-.modern-swipe-card{animation:cardEnter .35s cubic-bezier(.34,1.2,.64,1);}
-.swipe-right{animation:swipeRight .32s ease forwards!important;}
-.swipe-left{animation:swipeLeft .32s ease forwards!important;}
-.page{animation:pageUp .35s cubic-bezier(.34,1.2,.64,1);}
-.auth-card{animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
-.modal{background:var(--card);border-radius:var(--r);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;box-shadow:var(--sh2);animation:sc .2s;}
-@keyframes sc{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.mhero{height:210px;display:flex;align-items:center;justify-content:center;position:relative;}
-.mav{width:96px;height:96px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:700;color:var(--dark);box-shadow:0 8px 24px rgba(0,0,0,.15);}
-.mbody{padding:26px 30px 30px;}
-.mname{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;margin-bottom:4px;}
-.mmeta{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:13px;margin-bottom:18px;}
-.mmi{display:flex;align-items:center;gap:5px;}
-.msec{margin-bottom:22px;}
-.mst{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;}
-.mclose{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.88);border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-
-/* MSG BOX */
-.msgbox{background:var(--bg);border-radius:var(--rs);padding:16px;margin-bottom:14px;}
-.msghead{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
-.msgnote{font-size:11px;color:var(--muted);margin-bottom:8px;}
-.msgtxt{width:100%;border:1.5px solid var(--bg2);border-radius:var(--rs);padding:11px;font-family:'Nunito',sans-serif;font-size:13px;resize:none;outline:none;min-height:80px;transition:border-color .2s;background:#fff;}
-.msgtxt:focus{border-color:var(--accent);}
-.msgchar{font-size:11px;color:var(--muted);text-align:right;margin-top:3px;}
-.msgsent{background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:var(--rs);padding:12px 16px;display:flex;align-items:center;gap:8px;color:var(--accent);font-size:13px;font-weight:600;}
-
-/* MAP */
-.map-wrap{border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);border:1px solid var(--bg2);}
-#kz-map{width:100%;height:500px;}
-.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,.15)!important;}
-.leaflet-popup-content{margin:0!important;padding:0!important;}
-.map-popup{padding:14px 16px;min-width:200px;}
-.map-popup-name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;margin-bottom:2px;}
-.map-popup-info{font-size:12px;color:var(--muted);margin-bottom:8px;}
-.map-popup-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;width:100%;}
-
-/* AUTH */
-.auth-wrap{min-height:100vh;display:flex;align-items:stretch;background:var(--dark);}
-.auth-left{flex:1;display:none;background:linear-gradient(160deg,var(--accent2),#1e3a2a);align-items:center;justify-content:center;padding:60px;flex-direction:column;gap:32px;}
-@media(min-width:900px){.auth-left{display:flex;}.auth-right{max-width:480px;}}
-.auth-right{flex:1;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:40px 32px;overflow-y:auto;}
-.auth-card{width:100%;max-width:440px;}
-.auth-logo{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--dark);margin-bottom:4px;}
-.auth-logo span{color:var(--warm);}
-.auth-sub{color:var(--muted);font-size:13px;margin-bottom:28px;}
-.atabs{display:flex;gap:3px;background:var(--bg2);border-radius:var(--rs);padding:3px;margin-bottom:28px;}
-.atab{flex:1;padding:9px;text-align:center;border:none;background:transparent;border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--muted);}
-.atab.active{background:#fff;color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,.08);}
-.fg-form{margin-bottom:16px;}
-.fl{display:block;font-size:12px;font-weight:700;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px;}
-.fi{width:100%;padding:12px 14px;border:1.5px solid var(--bg2);border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:14px;background:#fff;color:var(--dark);transition:border-color .2s;outline:none;}
-.fi:focus{border-color:var(--accent);}
-.reg-steps{display:flex;gap:6px;margin-bottom:24px;}
-.reg-step{flex:1;height:3px;border-radius:2px;background:var(--bg2);transition:background .3s;}
-.reg-step.done{background:var(--accent);}
-.reg-step.active{background:var(--warm);}
-.step-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:4px;}
-.step-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.step-nav{display:flex;gap:10px;margin-top:20px;}
-.btn-back{flex:0 0 auto;padding:13px 20px;background:var(--bg2);color:var(--mid);border:none;border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
-.btn-next{flex:1;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;}
-.btn-next:hover{background:var(--accent2);}
-.chip-sel{padding:7px 14px;border-radius:20px;border:1.5px solid var(--bg2);background:var(--bg);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Nunito',sans-serif;}
-.chip-sel.on{border-color:var(--accent);background:var(--accent-light);color:var(--accent2);}
-
-/* LIKED */
-.match-item{background:var(--card);border-radius:var(--rs);padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh);cursor:pointer;transition:all .2s;border:1.5px solid transparent;margin-bottom:10px;}
-.match-item:hover{border-color:var(--accent);transform:translateX(4px);}
-.mat-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--dark);flex-shrink:0;}
-
-/* PROFILE */
-.prof-card{background:var(--card);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh);margin-bottom:20px;}
-.prof-av{width:88px;height:88px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:#fff;margin:0 auto 20px;}
-.sec-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:18px;}
-.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;}
-.badge-g{background:var(--accent-light);color:var(--accent2);}
-.badge-r{background:#fce8e6;color:var(--red);}
-.badge-b{background:var(--male-light);color:var(--male);}
-.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
-.stat-c{flex:1;min-width:88px;background:var(--card);border-radius:var(--rs);padding:14px;text-align:center;box-shadow:var(--sh);}
-.stat-n{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--accent);}
-.stat-l{font-size:11px;color:var(--muted);margin-top:3px;}
-.empty{text-align:center;padding:56px 20px;color:var(--muted);}
-.empty-ic{font-size:46px;margin-bottom:14px;}
-.empty-t{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--dark);margin-bottom:6px;}
-
-/* LIST VIEW */
-.list-item{background:var(--card);border-radius:var(--rs);padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh);cursor:pointer;transition:all .2s;border:1.5px solid transparent;margin-bottom:10px;}
-.list-item:hover{border-color:var(--accent);}
-
-/* responsive */
-/* SWIPE CARD */
-.swipe-card{
-  background:var(--card);
-  border-radius:var(--r);
-  overflow:hidden;
-  box-shadow:0 20px 60px rgba(30,42,34,.15);
-  border:1.5px solid rgba(61,122,92,.1);
-  transition:all .3s;
-}
-.swipe-card:hover{
-  box-shadow:0 24px 70px rgba(30,42,34,.2);
-  transform:translateY(-2px);
-}
-.swipe-hero{
-  height:460px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  background-size:cover;
-  background-position:center;
-}
-.swipe-actions{
-  display:flex;
-  gap:18px;
-  justify-content:center;
-  align-items:center;
-  margin-top:28px;
-}
-.swipe-btn{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:50%;
-  cursor:pointer;
-  transition:all .2s;
-  box-shadow:0 6px 20px rgba(0,0,0,.1);
-  border:none;
-  position:relative;
-}
-.swipe-btn:hover{
-  transform:scale(1.08);
-  box-shadow:0 8px 28px rgba(0,0,0,.15);
-}
-.swipe-btn:active{
-  transform:scale(0.98);
-}
-.swipe-btn-pass{
-  width:72px;
-  height:72px;
-  background:linear-gradient(135deg,#fff,#fafafa);
-  border:3px solid var(--red);
-  color:var(--red);
-  font-size:36px;
-  font-weight:700;
-}
-.swipe-btn-pass:hover{
-  background:var(--red);
-  color:#fff;
-}
-.swipe-btn-info{
-  width:60px;
-  height:60px;
-  background:linear-gradient(135deg,var(--accent-light),#c8e4d4);
-  border:2px solid var(--accent);
-}
-.swipe-btn-info:hover{
-  background:var(--accent);
-}
-.swipe-btn-like{
-  width:72px;
-  height:72px;
-  background:linear-gradient(135deg,var(--female-light),#fbe0e8);
-  border:3px solid var(--female);
-}
-.swipe-btn-like:hover{
-  background:var(--female);
-}
-.swipe-detail-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-bottom:28px;
-}
-.swipe-detail-item{
-  background:linear-gradient(135deg,var(--bg),#f5f1ea);
-  border-radius:var(--rs);
-  padding:14px 16px;
-  border:1px solid rgba(61,122,92,.08);
-  transition:all .2s;
-}
-.swipe-detail-item:hover{
-  border-color:var(--accent);
-  transform:translateY(-1px);
-}
-.swipe-detail-label{
-  font-size:10px;
-  color:var(--muted);
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.8px;
-  margin-bottom:5px;
-}
-.swipe-detail-value{
-  font-size:14px;
-  font-weight:700;
-  color:var(--dark);
-}
-
-/* MODERN CHAT INTERFACE */
-.chat-panel{
-  width:420px;
-  flex-shrink:0;
-  background:#fff;
-  border-radius:20px;
-  box-shadow:0 8px 40px rgba(30,42,34,.12);
-  display:flex;
-  flex-direction:column;
-  height:680px;
-  overflow:hidden;
-  border:1px solid rgba(61,122,92,.08);
-}
-.chat-head{
-  padding:20px 24px;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:flex;
-  align-items:center;
-  gap:16px;
-  position:relative;
-}
-.chat-head::after{
-  content:'';
-  position:absolute;
-  bottom:-10px;
-  left:0;
-  right:0;
-  height:10px;
-  background:linear-gradient(180deg,rgba(61,122,92,.05),transparent);
-}
-.chat-head-av{
-  width:48px;
-  height:48px;
-  border-radius:14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:'Cormorant Garamond',serif;
-  font-size:18px;
-  font-weight:700;
-  flex-shrink:0;
-  box-shadow:0 4px 12px rgba(0,0,0,.15);
-  border:3px solid rgba(255,255,255,.3);
-  position:relative;
-}
-.chat-head-av::after{
-  content:'';
-  position:absolute;
-  bottom:-2px;
-  right:-2px;
-  width:14px;
-  height:14px;
-  background:#4caf50;
-  border-radius:50%;
-  border:2px solid var(--accent);
-}
-.chat-head-info{flex:1;}
-.chat-head-name{
-  font-weight:700;
-  font-size:17px;
-  color:#fff;
-  margin-bottom:2px;
-  text-shadow:0 1px 2px rgba(0,0,0,.1);
-}
-.chat-head-status{
-  font-size:12px;
-  color:rgba(255,255,255,.85);
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-.chat-head-close{
-  background:rgba(255,255,255,.15);
-  border:none;
-  border-radius:10px;
-  width:36px;
-  height:36px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:all .2s;
-  backdrop-filter:blur(10px);
-}
-.chat-head-close:hover{
-  background:rgba(255,255,255,.25);
-  transform:scale(1.05);
-}
-.match-banner{
-  background:linear-gradient(135deg,#fef3c7,#fde68a);
-  border:none;
-  padding:14px 20px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:13px;
-  font-weight:700;
-  color:#92400e;
-  margin:16px 16px 0;
-  border-radius:14px;
-  box-shadow:0 2px 8px rgba(245,158,11,.15);
-}
-.match-banner-icon{
-  width:32px;
-  height:32px;
-  background:linear-gradient(135deg,#fbbf24,#f59e0b);
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:16px;
-  flex-shrink:0;
-}
-.chat-msgs{
-  flex:1;
-  overflow-y:auto;
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  background:linear-gradient(180deg,#fafaf9,#f5f5f4);
-}
-.chat-msgs::-webkit-scrollbar{width:6px;}
-.chat-msgs::-webkit-scrollbar-track{background:transparent;}
-.chat-msgs::-webkit-scrollbar-thumb{
-  background:linear-gradient(180deg,#d1d5db,#9ca3af);
-  border-radius:10px;
-}
-.chat-msgs::-webkit-scrollbar-thumb:hover{background:#6b7280;}
-.bw{
-  display:flex;
-  gap:10px;
-  align-items:flex-end;
-  animation:slideIn .3s ease;
-}
-@keyframes slideIn{
-  from{opacity:0;transform:translateY(10px);}
-  to{opacity:1;transform:translateY(0);}
-}
-.bw.me{flex-direction:row-reverse;}
-.bav{
-  width:32px;
-  height:32px;
-  border-radius:12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:'Cormorant Garamond',serif;
-  font-size:13px;
-  font-weight:700;
-  flex-shrink:0;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
-}
-.bubble{
-  max-width:75%;
-  padding:12px 16px;
-  border-radius:18px;
-  font-size:14px;
-  line-height:1.6;
-  word-break:break-word;
-  position:relative;
-}
-.bubble.them{
-  background:#fff;
-  color:var(--dark);
-  border-bottom-left-radius:6px;
-  box-shadow:0 2px 12px rgba(0,0,0,.06);
-  border:1px solid rgba(0,0,0,.04);
-}
-.bubble.me{
-  background:linear-gradient(135deg,var(--accent),#2d6a4f);
-  color:#fff;
-  border-bottom-right-radius:6px;
-  box-shadow:0 4px 16px rgba(61,122,92,.25);
-}
-.btime{
-  font-size:10px;
-  margin-top:4px;
-  color:var(--muted);
-  display:flex;
-  align-items:center;
-  gap:3px;
-}
-.bw.me .btime{
-  justify-content:flex-end;
-  color:rgba(255,255,255,.7);
-}
-.typing{
-  display:flex;
-  gap:5px;
-  align-items:center;
-  padding:12px 16px;
-  background:#fff;
-  border-radius:18px;
-  border-bottom-left-radius:6px;
-  box-shadow:0 2px 12px rgba(0,0,0,.06);
-  width:fit-content;
-  border:1px solid rgba(0,0,0,.04);
-}
-.td{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  animation:bop 1.4s infinite ease-in-out;
-}
-.td:nth-child(2){animation-delay:.2s;}
-.td:nth-child(3){animation-delay:.4s;}
-@keyframes bop{
-  0%,60%,100%{transform:translateY(0) scale(1);}
-  30%{transform:translateY(-8px) scale(1.1);}
-}
-.typing-text{
-  font-size:11px;
-  color:var(--muted);
-  margin-left:4px;
-  font-style:italic;
-}
-.no-chat{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  color:var(--muted);
-  gap:14px;
-  padding:40px 30px;
-  text-align:center;
-}
-.no-chat-icon{
-  width:72px;
-  height:72px;
-  background:linear-gradient(135deg,var(--accent-light),#d1e7dd);
-  border-radius:20px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:36px;
-  margin-bottom:8px;
-  box-shadow:0 4px 16px rgba(61,122,92,.15);
-}
-.no-chat-title{
-  font-family:'Cormorant Garamond',serif;
-  font-size:20px;
-  font-weight:700;
-  color:var(--dark);
-}
-.no-chat-subtitle{
-  font-size:13px;
-  color:var(--muted);
-  line-height:1.6;
-}
-.chat-inp-row{
-  padding:16px 20px;
-  border-top:1px solid rgba(0,0,0,.06);
-  display:flex;
-  gap:10px;
-  align-items:flex-end;
-  background:#fff;
-}
-.chat-inp{
-  flex:1;
-  border:2px solid var(--bg2);
-  border-radius:16px;
-  padding:12px 18px;
-  font-family:'Nunito',sans-serif;
-  font-size:14px;
-  resize:none;
-  outline:none;
-  max-height:120px;
-  overflow-y:auto;
-  transition:all .2s;
-  background:#fafafa;
-  line-height:1.5;
-}
-.chat-inp:focus{
-  border-color:var(--accent);
-  background:#fff;
-  box-shadow:0 0 0 4px rgba(61,122,92,.08);
-}
-.chat-inp::placeholder{color:#9ca3af;}
-.chat-send{
-  width:46px;
-  height:46px;
-  border-radius:14px;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border:none;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:all .2s;
-  flex-shrink:0;
-  position:relative;
-  box-shadow:0 4px 16px rgba(61,122,92,.25);
-}
-.chat-send:hover:not(:disabled){
-  transform:translateY(-2px) scale(1.05);
-  box-shadow:0 6px 24px rgba(61,122,92,.35);
-}
-.chat-send:disabled{
-  background:linear-gradient(135deg,#e5e7eb,#d1d5db);
-  cursor:default;
-  transform:scale(1);
-  box-shadow:none;
-}
-.chat-send:active:not(:disabled){animation:sendPulse .4s ease;}
-@keyframes sendPulse{
-  0%{transform:scale(1);}
-  50%{transform:scale(0.88) rotate(-5deg);}
-  100%{transform:scale(1) rotate(0deg);}
-}
-.chat-send.sending{animation:sending .6s ease;}
-@keyframes sending{
-  0%,100%{transform:scale(1) rotate(0deg);}
-  25%{transform:scale(0.92) rotate(-12deg);}
-  50%{transform:scale(1.08) rotate(12deg);}
-  75%{transform:scale(0.96) rotate(-6deg);}
-}
-
-/* MATCH ITEMS IN FAVORITES */
-.mi{
-  background:#fff;
-  border-radius:16px;
-  padding:16px 18px;
-  display:flex;
-  align-items:flex-start;
-  gap:14px;
-  box-shadow:0 2px 12px rgba(0,0,0,.06);
-  cursor:pointer;
-  transition:all .25s cubic-bezier(0.4,0,0.2,1);
-  border:2px solid transparent;
-  margin-bottom:12px;
-  position:relative;
-  overflow:hidden;
-}
-.mi::before{
-  content:'';
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:3px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  transform:scaleX(0);
-  transition:transform .3s;
-}
-.mi:hover{
-  border-color:var(--accent);
-  transform:translateX(4px) translateY(-2px);
-  box-shadow:0 8px 24px rgba(0,0,0,.12);
-}
-.mi:hover::before{transform:scaleX(1);}
-.mi.sel{
-  border-color:var(--accent);
-  background:linear-gradient(135deg,#f0fdf4,var(--accent-light));
-  box-shadow:0 8px 24px rgba(61,122,92,.15);
-}
-.mi.sel::before{transform:scaleX(1);}
-.mat-av{
-  width:56px;
-  height:56px;
-  border-radius:14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:'Cormorant Garamond',serif;
-  font-size:20px;
-  font-weight:700;
-  color:var(--dark);
-  flex-shrink:0;
-  position:relative;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-.sent-preview{
-  background:linear-gradient(135deg,#f5f5f4,#e7e5e4);
-  border-radius:12px;
-  padding:10px 14px;
-  font-size:13px;
-  color:var(--mid);
-  margin-top:8px;
-  border-left:4px solid var(--accent);
-  font-style:italic;
-  word-break:break-word;
-  line-height:1.5;
-}
-.liked-layout{
-  display:flex;
-  gap:24px;
-  align-items:flex-start;
-}
-.liked-list{
-  flex:1;
-  min-width:0;
-}
-
-@media(max-width:768px){
-  .page{padding:16px 14px;}
-  .ftop{flex-direction:column;}
-  .fsearch{width:100%;}
-  .grid{grid-template-columns:1fr;}
-  .nav{padding:0 14px;}
-  .nl span{display:none;}
-  .auth-right{padding:28px 20px;}
-  .grid2{grid-template-columns:1fr;}
-  .mbody{padding:18px 20px 22px;}
-}
-  `;
-  document.head.appendChild(s);
-}
 const fmt = (d = new Date()) =>
   `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+const UNIVERSITY_OPTIONS = [
+  "NU",
+  "KBTU",
+  "SDU",
+  "Satbayev",
+  "KazNU",
+  "AITU",
+  "Narxoz",
+];
+
+const metaFromTags = (tags, key, fallback = "") => {
+  const arr = Array.isArray(tags) ? tags : [];
+  const row = arr.find((t) => typeof t === "string" && t.startsWith(`${key}:`));
+  return row ? row.slice(key.length + 1) : fallback;
+};
+
+const withMetaTag = (tags, key, value) => {
+  const arr = (Array.isArray(tags) ? tags : []).filter((t) => !(typeof t === "string" && t.startsWith(`${key}:`)));
+  if (value !== undefined && value !== null && String(value).trim() !== "") {
+    arr.push(`${key}:${String(value).trim()}`);
+  }
+  return arr;
+};
+
+const distKm = (la1, lo1, la2, lo2) => {
+  if (!la1 || !lo1 || !la2 || !lo2) return Infinity;
+  const R = 6371;
+  const dL = ((la2 - la1) * Math.PI) / 180;
+  const dN = ((lo2 - lo1) * Math.PI) / 180;
+  const a = Math.sin(dL / 2) ** 2 + Math.cos((la1 * Math.PI) / 180) * Math.cos((la2 * Math.PI) / 180) * Math.sin(dN / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 
 export function useRealtimeChat(authUserId, apiClient, { onMatch } = {}) {  
   const [conversations, setConversations] = useState({});
@@ -1106,62 +313,6 @@ const ModalIc = ({ n, size = 18, c = "currentColor" }) => {
   return icons[n] || null;
 };
 
-function injectSendStyles() {
-  if (document.getElementById("send-btn-styles")) return;
-  const s = document.createElement("style");
-  s.id = "send-btn-styles";
-  s.textContent = `
-@keyframes btnShake {
-  0%,100% { transform: translateX(0) scale(1); }
-  10%     { transform: translateX(-4px) scale(0.98); }
-  20%     { transform: translateX( 4px) scale(1.02); }
-  30%     { transform: translateX(-3px) scale(0.99); }
-  40%     { transform: translateX( 3px) scale(1.01); }
-  50%     { transform: translateX(-2px) scale(1); }
-  60%     { transform: translateX( 2px) scale(1); }
-  70%     { transform: translateX(0)    scale(1); }
-}
-@keyframes checkGrow {
-  0%   { transform: translate(-50%,-50%) scale(0)   rotate(-30deg); opacity:0; }
-  50%  { transform: translate(-50%,-50%) scale(1.4) rotate(10deg);  opacity:1; }
-  100% { transform: translate(-50%,-50%) scale(1)   rotate(0deg);   opacity:1; }
-}
-.btn-primary {
-  position: relative;
-  overflow: hidden;
-}
-.btn-primary.sending {
-  animation: btnShake 0.7s ease;
-  background: var(--accent2, #2e6048) !important;
-  pointer-events: none;
-}
-.btn-primary.sending .send-label { opacity: 0; }
-.btn-primary.sending::after {
-  content: '✓';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%) scale(0);
-  font-size: 26px;
-  color: #fff;
-  font-weight: 700;
-  animation: checkGrow 0.4s ease 0.35s forwards;
-}
-.send-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  transition: opacity 0.2s;
-}
-.msg-status { font-size: 10px; margin-left: 4px; }
-.msg-status.sending { color: #aaa; }
-.msg-status.sent    { color: var(--accent, #3d7a5c); }
-.msg-status.failed  { color: #ef4444; }
-  `;
-  document.head.appendChild(s);
-}
-
-
 // Normalise a DB profile so the UI always gets consistent fields
 const normaliseProfile = (p) => ({
   ...p,
@@ -1179,6 +330,13 @@ const normaliseProfile = (p) => ({
   verified: Boolean(p.verified),
   matched: Boolean(p.matched),
   liked: Boolean(p.liked),
+  university: p.university ?? metaFromTags(p.tags, "uni", ""),
+  commuteMax: Number(p.commuteMax ?? metaFromTags(p.tags, "commute", "0")) || 0,
+  nearMetro: String(p.nearMetro ?? metaFromTags(p.tags, "metro", "")) === "yes",
+  nearBus: String(p.nearBus ?? metaFromTags(p.tags, "bus", "")) === "yes",
+  idealRoommate: p.idealRoommate ?? metaFromTags(p.tags, "ideal", ""),
+  quietHours: p.quietHours ?? metaFromTags(p.tags, "quiet", ""),
+  boostedUntil: p.boostedUntil ?? metaFromTags(p.tags, "boost", ""),
 });
 
 const getInitials = (name = "") =>
@@ -1187,11 +345,10 @@ const getInitials = (name = "") =>
 
 // ── PHOTO UPLOAD ──────────────────────────────────────────────────────────────
 async function uploadPhoto(file) {
-  const BASE = "https://roommates-production.up.railway.app";
   const token = localStorage.getItem("roommate_kz_token");
   const form  = new FormData();
   form.append("photo", file);
-  const res = await fetch(`${BASE}/api/upload/photo`, {
+  const res = await fetch(`${BASE_URL}/api/upload/photo`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${token}` },
     body: form,
@@ -1285,30 +442,32 @@ function PhotoUpload({ photos, onChange, onSaved, label = "Фото профил
   );
 }
 // ── SWIPE TAB (TINDER STYLE) ─────────────────────────────────────────────────
-function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
+function SwipeTab({ profiles, onLike, onPass, onViewProfile, onSuperLike }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging]     = useState(false);
   const [dragX, setDragX]               = useState(0);
   const [dragY, setDragY]               = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(null); // 'left' | 'right' | null
+  const [mode, setMode] = useState("people");
   const cardRef   = useRef(null);
   const startPos  = useRef({ x: 0, y: 0 });
   const animFrame = useRef(null);
 
   // ── helpers ────────────────────────────────────────────────────────────────
   const THRESHOLD = 100; // px needed to trigger like/pass
+  const swipeProfiles = (profiles || []).filter((p) => (mode === "places" ? p.renterType === "has_place" : true));
 
   const dismissCard = useCallback((direction) => {
     setIsAnimatingOut(direction);
     setTimeout(() => {
-      if (direction === 'right') onLike(profiles[currentIndex]);
-      else                       onPass(profiles[currentIndex]);
+      if (direction === 'right') onLike(swipeProfiles[currentIndex]);
+      else                       onPass(swipeProfiles[currentIndex]);
       setCurrentIndex(i => i + 1);
       setDragX(0);
       setDragY(0);
       setIsAnimatingOut(null);
     }, 380);
-  }, [currentIndex, profiles, onLike, onPass]);
+  }, [currentIndex, swipeProfiles, onLike, onPass]);
 
   // ── pointer events (works for both mouse and touch) ────────────────────────
   const onPointerDown = useCallback((e) => {
@@ -1352,7 +511,7 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
   const passOpacity  = Math.min(Math.max(-dragX / THRESHOLD, 0), 1);
 
   // ── empty states (all hooks already called above) ─────────────────────────
-  if (!profiles || profiles.length === 0 || currentIndex >= profiles.length) {
+  if (!swipeProfiles || swipeProfiles.length === 0 || currentIndex >= swipeProfiles.length) {
     return (
       <div className="page" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"calc(100vh - 64px)" }}>
         <div className="empty" style={{ paddingTop:"80px", textAlign:"center" }}>
@@ -1369,8 +528,8 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
     );
   }
 
-  const currentProfile = profiles[currentIndex];
-  const nextProfile    = profiles[currentIndex + 1];
+  const currentProfile = swipeProfiles[currentIndex];
+  const nextProfile    = swipeProfiles[currentIndex + 1];
   const reg = KZ_REGIONS.find(r => r.id === currentProfile.region);
 
   // ── card transform ─────────────────────────────────────────────────────────
@@ -1404,20 +563,29 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
       }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"8px" }}>
           <span style={{ fontSize:"13px", fontWeight:"700", color:"var(--dark)" }}>
-            Анкета {currentIndex + 1} из {profiles.length}
+            Анкета {currentIndex + 1} из {swipeProfiles.length}
           </span>
           <span style={{ fontSize:"12px", color:"var(--muted)" }}>
-            {Math.round(((currentIndex + 1) / profiles.length) * 100)}%
+            {Math.round(((currentIndex + 1) / swipeProfiles.length) * 100)}%
           </span>
         </div>
         <div style={{ width:"100%", height:"5px", background:"var(--bg2)", borderRadius:"10px", overflow:"hidden" }}>
           <div style={{
-            width:`${((currentIndex + 1) / profiles.length) * 100}%`,
+            width:`${((currentIndex + 1) / swipeProfiles.length) * 100}%`,
             height:"100%",
             background:"linear-gradient(90deg, var(--accent), var(--accent2))",
             borderRadius:"10px", transition:"width .3s ease"
           }}/>
         </div>
+      </div>
+
+      <div style={{ display:"flex", gap:"8px", marginBottom:"14px" }}>
+        <button className={`chip ${mode==="people"?"chip-on":"chip-off"}`} onClick={() => { setMode("people"); setCurrentIndex(0); }}>
+          People
+        </button>
+        <button className={`chip ${mode==="places"?"chip-on":"chip-off"}`} onClick={() => { setMode("places"); setCurrentIndex(0); }}>
+          Places
+        </button>
       </div>
 
       {/* Card stack */}
@@ -1550,6 +718,12 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
                   {currentProfile.bio}
                 </div>
               )}
+              {(currentProfile.idealRoommate || currentProfile.quietHours) && (
+                <div style={{ marginTop:"8px", background:"rgba(0,0,0,.28)", borderRadius:"10px", padding:"8px 10px", fontSize:"12px", lineHeight:"1.5" }}>
+                  {currentProfile.idealRoommate && <div><b>Ideal roommate:</b> {currentProfile.idealRoommate}</div>}
+                  {currentProfile.quietHours && <div><b>Quiet hours:</b> {currentProfile.quietHours}</div>}
+                </div>
+              )}
               {currentProfile.tags?.length > 0 && (
                 <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginTop:"10px", pointerEvents:"none" }}>
                   {currentProfile.tags.slice(0,4).map(t => (
@@ -1563,7 +737,7 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
       </div>
 
       {/* Action buttons */}
-      <div style={{ display:"flex", justifyContent:"center", gap:"24px", alignItems:"center", marginTop:"28px" }}>
+      <div style={{ display:"flex", justifyContent:"center", gap:"16px", alignItems:"center", marginTop:"28px", flexWrap:"wrap" }}>
         {/* Pass */}
         <button
           onClick={handlePassBtn}
@@ -1587,13 +761,18 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile }) {
           onMouseEnter={e => e.currentTarget.style.transform="scale(1.1)"}
           onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}
         ><Ic n="heart" size={30} c="#fff"/></button>
+        <button
+          onClick={() => onSuperLike?.(currentProfile)}
+          style={{ width:"58px", height:"58px", background:"linear-gradient(135deg,#fde047,#f59e0b)", border:"none", borderRadius:"50%", cursor:"pointer", boxShadow:"0 6px 24px rgba(245,158,11,.28)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:"24px", fontWeight:"800" }}
+          title="Super like / priority boost"
+        >★</button>
       </div>
 
       {/* Hint */}
       <div style={{ marginTop:"16px", fontSize:"12px", color:"var(--muted)", display:"flex", gap:"18px", justifyContent:"center" }}>
         <span>← Пропустить</span>
         <span>↑ Профиль</span>
-        <span>→ Лайк</span>
+        <span>→ Лайк</span><span>★ Super Like</span>
       </div>
     </div>
   );
@@ -1946,6 +1125,10 @@ function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilte
     if (cityFilter !== "all" && pRegion !== cityFilter)      return false;
     if (filters.gender && p.gender !== filters.gender)       return false;
     if ((filters.renterType ?? "") && p.renterType !== filters.renterType) return false;
+    if (filters.university && p.university !== filters.university) return false;
+    if (filters.commuteMax && (Number(p.commuteMax) || 999) > Number(filters.commuteMax)) return false;
+    if (filters.transit === "metro" && !p.nearMetro) return false;
+    if (filters.transit === "bus" && !p.nearBus) return false;
     if (radiusFilter) {
       const r  = KZ_REGIONS.find(r => r.id === pRegion || r.id === p.region);
       const pL = (p.renterType === "has_place" && p.lat) ? p.lat : r?.lat;
@@ -2040,6 +1223,36 @@ function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilte
               })}
             </div>
           </div>
+          <div>
+            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🎓 Университет</div>
+            <select className="fsel" value={filters.university || ""} onChange={e=>setFilters(f=>({...f,university:e.target.value}))}>
+              <option value="">Любой</option>
+              {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🕒 Коммьют</div>
+            <select className="fsel" value={filters.commuteMax || ""} onChange={e=>setFilters(f=>({...f,commuteMax:e.target.value}))}>
+              <option value="">Не важно</option>
+              <option value="30">≤ 30 мин</option>
+              <option value="45">≤ 45 мин</option>
+              <option value="60">≤ 60 мин</option>
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🚇🚌 Транспорт</div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {[["Любой",""],["Метро","metro"],["Автобус","bus"]].map(([label,val]) => {
+                const on = (filters.transit || "") === val;
+                return (
+                  <button key={val} onClick={() => setFilters(f => ({ ...f, transit: val }))}
+                    style={{ ...pillBase, ...(on ? pillActive : pillInactive) }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div style={{ flex:1, minWidth:"220px", alignSelf:"flex-end", background:"linear-gradient(135deg,var(--accent-light),#e8f5ea)", borderRadius:"var(--rs)", padding:"10px 14px", border:"2px solid var(--accent)", display:"flex", alignItems:"center", gap:"8px" }}>
             <span style={{ fontSize:"20px" }}>🖍️</span>
             <div>
@@ -2071,61 +1284,64 @@ function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilte
         ))}
       </div>
 
-      <LeafletMap profiles={displayedProfiles} onView={onViewProfile} onRadiusFilterChange={setRadiusFilter} authUser={authUser} focusRegion={cityFilter} />
+      {/* Map + people sidebar */}
+      <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:"16px",alignItems:"start"}}>
 
-      <div style={{ marginTop:"28px" }}>
-        <h2 style={{ fontFamily:"Cormorant Garamond", fontSize:"22px", fontWeight:"700", marginBottom:"16px" }}>
-          {cityFilter === "all" ? "Все пользователи" : visibleCities.find(c => c.id === cityFilter)?.short}
-          <span style={{ fontSize:"16px", fontWeight:"400", color:"var(--muted)", marginLeft:"8px" }}>({displayedProfiles.length})</span>
-        </h2>
-        {displayedProfiles.length === 0 ? (
-          <div className="empty">
-            <div className="empty-ic">🗺️</div>
-            <div className="empty-t">Никого не найдено</div>
-            <p>Попробуйте другой город или сбросьте фильтры</p>
-            <div style={{ display:"flex", gap:"10px", justifyContent:"center", marginTop:"16px", flexWrap:"wrap" }}>
-              {cityFilter !== "all" && <button className="btn-primary" style={{ width:"auto", padding:"10px 22px" }} onClick={() => setCityFilter("all")}>Все города</button>}
-              {radiusFilter && <button className="btn-ghost" onClick={() => setRadiusFilter(null)}>Сбросить радиус</button>}
-            </div>
+        {/* LEFT SIDEBAR — scrollable person list */}
+        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"var(--r)",overflow:"hidden",boxShadow:"var(--sh)"}}>
+          <div style={{padding:"13px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontFamily:"var(--font-display)",fontSize:"15px",color:"var(--txt)"}}>
+              {cityFilter==="all"?"Все":visibleCities.find(c=>c.id===cityFilter)?.short??cityFilter}
+            </span>
+            <span style={{fontSize:"11px",fontWeight:"600",background:"var(--accent-light)",color:"var(--accent)",borderRadius:"20px",padding:"2px 9px"}}>{displayedProfiles.length}</span>
           </div>
-        ) : (
-          KZ_REGIONS
-            .filter(r => {
-              if (cityFilter !== "all" && r.id !== cityFilter) return false;
-              return displayedProfiles.some(p => norm(p.region) === r.id || p.region === r.id);
-            })
-            .map(r => {
-              const ps = displayedProfiles.filter(p => norm(p.region) === r.id || p.region === r.id);
-              if (ps.length === 0) return null;
-              return (
-                <div key={r.id} style={{ marginBottom:"22px" }}>
-                  <div style={{ fontSize:"12px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".5px", marginBottom:"8px", display:"flex", alignItems:"center", gap:"6px" }}>
-                    <span style={{ color:"var(--accent)" }}>📍</span>{r.name}
-                    <span style={{ background:"var(--accent-light)", color:"var(--accent2)", borderRadius:"10px", padding:"1px 8px", fontSize:"11px" }}>{ps.length}</span>
-                  </div>
-                  {ps.map(p => (
-                    <div key={p.id} style={{ background:"var(--card)", borderRadius:"var(--rs)", padding:"12px 16px", display:"flex", alignItems:"center", gap:"12px", boxShadow:"var(--sh)", cursor:"pointer", marginBottom:"8px", border:"1.5px solid transparent", transition:"all .2s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.transform="translateX(3px)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor="transparent";   e.currentTarget.style.transform="none"; }}
-                      onClick={() => onViewProfile(p)}
-                    >
-                      <div style={{ width:"44px", height:"44px", borderRadius:"50%", background:"var(--bg2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", flexShrink:0 }}>{p.avatar}</div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:"7px", marginBottom:"2px", flexWrap:"wrap" }}>
-                          <span style={{ fontWeight:"700", fontSize:"14px" }}>{p.name}, {p.age}</span>
-                          {p.verified && <span style={{ color:"var(--accent)", fontSize:"11px" }}>✓</span>}
-                          <span style={{ fontSize:"10px", borderRadius:"10px", padding:"1px 7px", fontWeight:"600", background: p.gender==="female" ? "var(--female-light)" : "var(--male-light)", color: p.gender==="female" ? "var(--female)" : "var(--male)" }}>{p.gender==="female"?"♀":"♂"}</span>
-                          <span style={{ fontSize:"10px", borderRadius:"10px", padding:"1px 7px", fontWeight:"600", background: p.renterType==="has_place"?"#fef3c7":"#e0f2fe", color: p.renterType==="has_place"?"#92400e":"#075985" }}>{p.renterType==="has_place"?"🏠":"🔍"}</span>
-                        </div>
-                        <div style={{ fontSize:"12px", color:"var(--muted)" }}>{(p.budget || 0).toLocaleString()} ₸/мес · {p.occupation}</div>
-                      </div>
-                      {p.online && <div style={{ width:"9px", height:"9px", borderRadius:"50%", background:"#4caf50", flexShrink:0, boxShadow:"0 0 0 2px rgba(76,175,80,.25)" }} />}
-                    </div>
-                  ))}
+          <div style={{maxHeight:"500px",overflowY:"auto",padding:"6px"}}>
+            {displayedProfiles.length===0 ? (
+              <div style={{textAlign:"center",padding:"32px 12px",color:"var(--txt3)"}}>
+                <div style={{fontSize:"28px",marginBottom:"8px"}}>🗺️</div>
+                <div style={{fontSize:"12.5px"}}>Никого не найдено</div>
+              </div>
+            ) : displayedProfiles.map(p=>(
+              <div key={p.id} onClick={()=>onViewProfile(p)}
+                style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"var(--rs)",cursor:"pointer",transition:"all .18s",marginBottom:"1px"}}
+                onMouseEnter={e=>{e.currentTarget.style.background="var(--bg2)";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}
+              >
+                {/* avatar */}
+                <div style={{
+                  width:"42px",height:"42px",borderRadius:"50%",flexShrink:0,
+                  border:"1.5px solid var(--border2)",overflow:"hidden",
+                  backgroundImage:p.photos?.[0]?.startsWith("http")?`url(${p.photos[0]})`:"url(/hero-astana.jpg)",
+                  backgroundSize:"cover",backgroundPosition:"center",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontFamily:"var(--font-display)",fontSize:"14px",color:"var(--txt2)",
+                  background:p.photos?.[0]?.startsWith("http")?"transparent":"var(--bg2)",
+                }}>
+                  {p.photos?.[0]?.startsWith("http")?"":p.avatar}
                 </div>
-              );
-            })
-        )}
+                {/* info */}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"4px",marginBottom:"1px"}}>
+                    <span style={{fontFamily:"var(--font-display)",fontSize:"13.5px",color:"var(--txt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}{p.age?`, ${p.age}`:""}</span>
+                    {p.online&&<span style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--green)",flexShrink:0,display:"inline-block"}}/>}
+                  </div>
+                  <div style={{fontSize:"10.5px",color:"var(--txt3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {(p.budget||0).toLocaleString()} ₸{p.occupation?` · ${p.occupation}`:""}
+                  </div>
+                </div>
+                {/* gender */}
+                <span style={{fontSize:"9.5px",padding:"2px 6px",borderRadius:"20px",flexShrink:0,fontWeight:"600",
+                  background:p.gender==="female"?"var(--female-light)":"var(--male-light)",
+                  color:p.gender==="female"?"var(--female)":"var(--male)"}}>
+                  {p.gender==="female"?"♀":"♂"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT — map */}
+        <LeafletMap profiles={displayedProfiles} onView={onViewProfile} onRadiusFilterChange={setRadiusFilter} authUser={authUser} focusRegion={cityFilter} />
       </div>
     </div>
   );
@@ -2133,7 +1349,7 @@ function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilte
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  useEffect(() => { injectStyles(); }, []);
+
 
   const [auth, setAuth] = useState(() => {
     const token = localStorage.getItem("roommate_kz_token");
@@ -2156,9 +1372,11 @@ export default function App() {
   const [showF, setShowF] = useState(false);
   const [msgText, setMsgText] = useState("");
   const [passed, setPassed] = useState(new Set());
+  const [superLiked, setSuperLiked] = useState(new Set());
   const [filters, setFilters] = useState({
     search: "", region: "", budget: 200000, gender: "",
     schedule: "", pets: "", remote: "", smoking: "", religion: "", alcohol: "",
+    university: "", commuteMax: "", transit: "",
   });
 
   useEffect(() => {
@@ -2291,8 +1509,34 @@ const sendChat = async (profileId, text) => {
     if (filters.smoking === "no" && p.smoking === "yes") return false;
     if (filters.alcohol === "no" && p.alcohol === "yes") return false;
     if (filters.religion && p.religion !== filters.religion) return false;
+    if (filters.university && p.university !== filters.university) return false;
+    if (filters.commuteMax && (Number(p.commuteMax) || 999) > Number(filters.commuteMax)) return false;
+    if (filters.transit === "metro" && !p.nearMetro) return false;
+    if (filters.transit === "bus" && !p.nearBus) return false;
     return true;
   });
+  const recommendationScore = (p) => {
+    let score = 0;
+    const budgetA = Number(auth?.budget || 0);
+    const budgetB = Number(p.budget || 0);
+    if (budgetA && budgetB) score += Math.max(0, 25 - Math.min(Math.abs(budgetA - budgetB) / 12000, 25));
+    if (auth?.schedule && p.schedule && auth.schedule === p.schedule) score += 15;
+    if (auth?.cleanliness && p.cleanliness) score += Math.max(0, 14 - Math.abs(auth.cleanliness - p.cleanliness) * 4);
+    if (auth?.social && p.social) score += Math.max(0, 10 - Math.abs(auth.social - p.social) * 3);
+    const myRegion = KZ_REGIONS.find((r) => r.id === auth?.region);
+    const pRegion = KZ_REGIONS.find((r) => r.id === p.region);
+    if (myRegion && pRegion) {
+      const km = distKm(myRegion.lat, myRegion.lng, pRegion.lat, pRegion.lng);
+      score += Math.max(0, 18 - Math.min(km / 60, 18));
+    }
+    if (superLiked.has(p.id)) score += 40;
+    if (p.renterType === "has_place" && auth?.renterType === "looking") score += 10;
+    if (p.university && auth?.university && p.university === auth.university) score += 12;
+    return Math.round(score);
+  };
+  const rankedFiltered = filtered
+    .map((p) => ({ ...p, recScore: recommendationScore(p) }))
+    .sort((a, b) => b.recScore - a.recScore);
 
   // Merge: start with direct API matches (always correct for both sides),
   // then add any liked/matched profiles from the discovery feed that aren't already included.
@@ -2336,7 +1580,7 @@ const sendChat = async (profileId, text) => {
 
       {tab==="swipe"&&(
         <SwipeTab
-          profiles={filtered.filter(p => !liked.has(p.id) && !passed.has(p.id))}
+          profiles={rankedFiltered.filter(p => !liked.has(p.id) && !passed.has(p.id))}
           onLike={async (p)=>{
             setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
             try {
@@ -2345,6 +1589,14 @@ const sendChat = async (profileId, text) => {
                 handleMatch(p.id);
               }
             } catch(e) { console.warn("likeProfile error:", e.message); }
+          }}
+          onSuperLike={async (p) => {
+            setSuperLiked((s) => { const n = new Set(s); n.add(p.id); return n; });
+            setLiked((s)=>{const n=new Set(s);n.add(p.id);return n;});
+            try {
+              const result = await api.likeProfile(p.id);
+              if (result?.matched) handleMatch(p.id);
+            } catch (e) { console.warn("superLike error:", e.message); }
           }}
           onPass={async (p)=>{
             setPassed(s=>{const n=new Set(s);n.add(p.id);return n;});
@@ -2359,7 +1611,7 @@ const sendChat = async (profileId, text) => {
           <div className="ph" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:"14px"}}>
             <div>
               <h1 className="pt">Найди соседа 🏠</h1>
-              <p className="ps">{filtered.length} человек по вашим критериям в Казахстане</p>
+              <p className="ps">{rankedFiltered.length} человек по вашим критериям в Казахстане</p>
             </div>
             <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
               <button onClick={()=>setShowF(!showF)} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:"6px"}}><Ic n="sliders" size={14}/>Фильтры {showF?"▲":"▼"}</button>
@@ -2438,15 +1690,39 @@ const sendChat = async (profileId, text) => {
                     <option value="Нет">Нерелигиозный</option>
                   </select>
                 </div>
+                <div className="fg">
+                  <label>Университет рядом</label>
+                  <select className="fsel" style={{width:"100%"}} value={filters.university} onChange={e=>setFilters(f=>({...f,university:e.target.value}))}>
+                    <option value="">Любой</option>
+                    {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+                <div className="fg">
+                  <label>Коммьют до кампуса</label>
+                  <select className="fsel" style={{width:"100%"}} value={filters.commuteMax} onChange={e=>setFilters(f=>({...f,commuteMax:e.target.value}))}>
+                    <option value="">Не важно</option>
+                    <option value="30">≤ 30 мин</option>
+                    <option value="45">≤ 45 мин</option>
+                    <option value="60">≤ 60 мин</option>
+                  </select>
+                </div>
+                <div className="fg">
+                  <label>Транспорт рядом</label>
+                  <div className="chip-row">
+                    {[["Любой",""],["Метро","metro"],["Автобус","bus"]].map(([l,v])=>(
+                      <button key={l} className={`chip ${filters.transit===v?"chip-on":"chip-off"}`} onClick={()=>setFilters(f=>({...f,transit:v}))}>{l}</button>
+                    ))}
+                  </div>
+                </div>
                 <div className="fg" style={{gridColumn:"1/-1",alignItems:"flex-start"}}>
-                  <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:""})} className="btn-ghost" style={{width:"auto"}}>Сбросить все фильтры</button>
+                  <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} className="btn-ghost" style={{width:"auto"}}>Сбросить все фильтры</button>
                 </div>
               </div>
             )}
           </div>
           {view==="grid"?(
             <div className="grid">
-              {filtered.map(p=>(
+              {rankedFiltered.map(p=>(
                 <ProfileCard key={p.id} p={p} liked={liked.has(p.id)} sent={sent.has(p.id)}
                   onLike={async()=>{setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
                     try{const r=await api.likeProfile(p.id);if(r?.matched)await handleMatch(p.id);}catch(e){console.warn(e);}
@@ -2456,7 +1732,7 @@ const sendChat = async (profileId, text) => {
             </div>
           ):(
             <div>
-              {filtered.map(p=>{
+              {rankedFiltered.map(p=>{
                 const reg=KZ_REGIONS.find(r=>r.id===p.region);
                 return(
                   <div key={p.id} className="list-item" onClick={()=>{setSelected(p);setMsgText("");}}>
@@ -2478,12 +1754,12 @@ const sendChat = async (profileId, text) => {
               })}
             </div>
           )}
-          {filtered.length===0&&(
+          {rankedFiltered.length===0&&(
             <div className="empty">
               <div className="empty-ic">🔍</div>
               <div className="empty-t">Ничего не найдено</div>
               <p>Попробуйте изменить фильтры</p>
-              <button className="btn-primary" style={{marginTop:"18px",width:"auto",padding:"11px 28px"}} onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:""})}>Сбросить фильтры</button>
+              <button className="btn-primary" style={{marginTop:"18px",width:"auto",padding:"11px 28px"}} onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})}>Сбросить фильтры</button>
             </div>
           )}
         </div>
@@ -2598,7 +1874,7 @@ export function ChatPanel({ profile, messages, typing, userInitials, onSend, onT
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
-  useEffect(() => { injectChatStyles(); }, []);
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -2719,78 +1995,6 @@ export function ChatPanel({ profile, messages, typing, userInitials, onSend, onT
     </div>
   );
 }
-function injectChatStyles() {
-  if (document.getElementById("chat-v3-styles")) return;
-  const s = document.createElement("style");
-  s.id = "chat-v3-styles";
-  s.textContent = `
-.cv3{width:400px;flex-shrink:0;display:flex;flex-direction:column;height:680px;border-radius:24px;overflow:hidden;background:#faf7f3;border:1.5px solid #e8e0d5;box-shadow:0 8px 40px rgba(30,42,34,.12),0 2px 8px rgba(30,42,34,.06);font-family:'Nunito',sans-serif;animation:cv3In .3s cubic-bezier(.34,1.2,.64,1) both;}
-@keyframes cv3In{from{opacity:0;transform:translateY(14px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
-.cv3-head{display:flex;align-items:center;gap:12px;padding:18px 20px 16px;background:#fff;border-bottom:1px solid #ede7df;flex-shrink:0;}
-.cv3-av-wrap{position:relative;flex-shrink:0;}
-.cv3-av{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:#1e2a22;box-shadow:0 2px 8px rgba(30,42,34,.12);}
-.cv3-online{position:absolute;bottom:-2px;right:-2px;width:11px;height:11px;border-radius:50%;background:#4caf50;border:2.5px solid #fff;box-shadow:0 0 6px rgba(76,175,80,.45);animation:cv3Pulse 2.4s ease-in-out infinite;}
-@keyframes cv3Pulse{0%,100%{box-shadow:0 0 6px rgba(76,175,80,.45);}50%{box-shadow:0 0 12px rgba(76,175,80,.7);}}
-.cv3-head-info{flex:1;}
-.cv3-head-name{font-size:15px;font-weight:700;color:#1e2a22;}
-.cv3-head-sub{font-size:11px;color:#7d9080;margin-top:2px;display:flex;align-items:center;gap:4px;}
-.cv3-head-dot{width:5px;height:5px;border-radius:50%;background:#4caf50;display:inline-block;}
-.cv3-close{width:34px;height:34px;border-radius:10px;border:1.5px solid #e8e0d5;background:#f0ebe3;color:#7d9080;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;}
-.cv3-close:hover{background:#fce8ef;border-color:#d4587a;color:#d4587a;transform:rotate(90deg);}
-.cv3-match{display:flex;align-items:center;gap:10px;margin:12px 14px 0;padding:10px 14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:14px;flex-shrink:0;animation:cv3BannerIn .38s cubic-bezier(.34,1.4,.64,1) both;}
-@keyframes cv3BannerIn{from{opacity:0;transform:translateY(-8px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
-.cv3-match-icon{width:30px;height:30px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 3px 10px rgba(245,158,11,.3);}
-.cv3-match-text strong{display:block;font-size:12px;font-weight:700;color:#78350f;}
-.cv3-match-text span{font-size:11px;color:#92400e;opacity:.7;}
-.cv3-msgs{flex:1;overflow-y:auto;padding:18px 16px 8px;display:flex;flex-direction:column;gap:4px;background:#f5f1ea;}
-.cv3-msgs::-webkit-scrollbar{width:4px;}
-.cv3-msgs::-webkit-scrollbar-track{background:transparent;}
-.cv3-msgs::-webkit-scrollbar-thumb{background:#d6ccc0;border-radius:10px;}
-.cv3-date{display:flex;align-items:center;gap:8px;margin:2px 0 10px;opacity:.5;}
-.cv3-date::before,.cv3-date::after{content:'';flex:1;height:1px;background:#d6ccc0;}
-.cv3-date span{font-size:10px;color:#7d9080;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;}
-.cv3-group{display:flex;flex-direction:column;gap:2px;animation:cv3MsgIn .26s cubic-bezier(.34,1.2,.64,1) both;}
-.cv3-group.mine{align-items:flex-end;}
-.cv3-group.them{align-items:flex-start;}
-@keyframes cv3MsgIn{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:translateY(0);}}
-.cv3-row{display:flex;align-items:flex-end;gap:7px;}
-.cv3-row.mine{flex-direction:row-reverse;}
-.cv3-mini-av{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:10px;font-weight:700;color:#1e2a22;flex-shrink:0;margin-bottom:1px;}
-.cv3-bubble{max-width:70%;padding:10px 14px;font-size:14px;line-height:1.55;word-break:break-word;}
-.cv3-bubble.them{background:#fff;color:#1e2a22;border-radius:16px 16px 16px 4px;box-shadow:0 1px 6px rgba(30,42,34,.07);border:1px solid rgba(30,42,34,.05);}
-.cv3-bubble.mine{background:linear-gradient(135deg,#3d7a5c,#2e6048);color:#fff;border-radius:16px 16px 4px 16px;box-shadow:0 3px 12px rgba(61,122,92,.22);}
-.cv3-bubble.them.mid{border-radius:16px;}
-.cv3-bubble.mine.mid{border-radius:16px;}
-.cv3-meta{font-size:10px;color:#a09480;display:flex;align-items:center;gap:3px;padding:0 3px;margin-top:1px;}
-.cv3-meta.mine{justify-content:flex-end;}
-.cv3-tick{color:#3d7a5c;font-size:9px;}
-.cv3-typing{display:flex;align-items:flex-end;gap:7px;animation:cv3MsgIn .24s ease both;}
-.cv3-typing-bub{background:#fff;border:1px solid rgba(30,42,34,.05);border-radius:16px 16px 16px 4px;padding:11px 14px;display:flex;gap:4px;align-items:center;box-shadow:0 1px 6px rgba(30,42,34,.07);}
-.cv3-dot{width:6px;height:6px;border-radius:50%;background:#a0b8a8;animation:cv3Bounce 1.4s ease-in-out infinite;}
-.cv3-dot:nth-child(2){animation-delay:.16s;}
-.cv3-dot:nth-child(3){animation-delay:.32s;}
-@keyframes cv3Bounce{0%,60%,100%{transform:translateY(0) scale(1);opacity:.5;}30%{transform:translateY(-6px) scale(1.15);opacity:1;}}
-.cv3-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 28px;text-align:center;}
-.cv3-empty-icon{width:58px;height:58px;background:#e8f5ec;border:1.5px solid #c8e6d0;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:26px;animation:cv3Float 4s ease-in-out infinite;}
-@keyframes cv3Float{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
-.cv3-empty-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:#1e2a22;}
-.cv3-empty-sub{font-size:12px;color:#7d9080;line-height:1.6;max-width:200px;}
-.cv3-inp-row{padding:12px 14px;background:#fff;border-top:1px solid #ede7df;display:flex;align-items:flex-end;gap:9px;flex-shrink:0;}
-.cv3-inp-wrap{flex:1;background:#f5f1ea;border-radius:16px;border:1.5px solid #e0d8cf;transition:all .18s;overflow:hidden;}
-.cv3-inp-wrap:focus-within{border-color:#3d7a5c;background:#fff;box-shadow:0 0 0 3px rgba(61,122,92,.08);}
-.cv3-inp{width:100%;background:transparent;border:none;outline:none;padding:11px 15px;font-family:'Nunito',sans-serif;font-size:14px;color:#1e2a22;resize:none;max-height:96px;overflow-y:auto;line-height:1.5;display:block;}
-.cv3-inp::placeholder{color:#a09480;}
-.cv3-inp::-webkit-scrollbar{display:none;}
-.cv3-send{width:44px;height:44px;border-radius:14px;border:none;background:linear-gradient(135deg,#3d7a5c,#2e6048);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s cubic-bezier(.34,1.56,.64,1);box-shadow:0 4px 14px rgba(61,122,92,.28);}
-.cv3-send:hover:not(:disabled){transform:translateY(-3px) scale(1.07);box-shadow:0 8px 22px rgba(61,122,92,.4);}
-.cv3-send:active:not(:disabled){transform:scale(.92);}
-.cv3-send.fired{animation:cv3SendFired .42s cubic-bezier(.34,1.56,.64,1);}
-@keyframes cv3SendFired{0%{transform:scale(1) rotate(0);}35%{transform:scale(.85) rotate(-10deg);}70%{transform:scale(1.1) rotate(5deg);}100%{transform:scale(1) rotate(0);}}
-.cv3-send:disabled{background:#e8e0d5;box-shadow:none;cursor:default;color:#b8a898;}
-  `;
-  document.head.appendChild(s);
-}
-
 // ── PROFILE CARD ──────────────────────────────────────────────────────────────
 function ProfileCard({p, liked, sent, onLike, onView}){
   const reg=KZ_REGIONS.find(r=>r.id===p.region);
@@ -2813,12 +2017,20 @@ function ProfileCard({p, liked, sent, onLike, onView}){
         <div className="cn"><span className="cname">{p.name}, {p.age}</span><span className="cprice">{(p.budget || 0).toLocaleString()} ₸</span></div>
         <div className="cloc"><Ic n="pin" size={11}/>{reg?.name||p.region}</div>
         <p className="cbio">{p.bio}</p>
+        {(p.idealRoommate || p.quietHours) && (
+          <div style={{fontSize:"11px",color:"var(--mid)",marginBottom:"10px",lineHeight:"1.5",background:"var(--bg2)",padding:"7px 9px",borderRadius:"8px"}}>
+            {p.idealRoommate && <div><b>Ideal:</b> {p.idealRoommate}</div>}
+            {p.quietHours && <div><b>Quiet:</b> {p.quietHours}</div>}
+          </div>
+        )}
         <div className="tags">
           {p.tags.map(t=><span key={t} className="tag">{t}</span>)}
           {p.pets&&<span className="tag">🐾 Питомец</span>}
           {p.remote&&<span className="tag">💻 Удалёнка</span>}
           {!p.smoking&&<span className="tag">🚭</span>}
+          {p.university&&<span className="tag">🎓 {p.university}</span>}
         </div>
+        {typeof p.recScore === "number" && <div style={{fontSize:"11px",fontWeight:"700",color:"var(--accent)",marginBottom:"8px"}}>Smart match: {p.recScore}%</div>}
         <div className="cact">
           <button className={`btn-like ${liked?"liked":""}`} onClick={onLike}>
             <Ic n={liked?"heartFill":"heart"} size={17} c={liked?"var(--female)":"var(--muted)"}/>
@@ -2834,7 +2046,7 @@ function ProfileCard({p, liked, sent, onLike, onView}){
 
 // ── PROFILE MODAL ─────────────────────────────────────────────────────────────
 export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: regionsFromProp, onLike, onSend, onClose }) {
-  useEffect(() => { injectSendStyles(); }, []);
+
 
   const [isSending, setIsSending] = useState(false);
   const [localPhoto, setLocalPhoto] = useState(0);
@@ -2888,6 +2100,8 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
             <div className="mmi">💰 {(p.budget || 0).toLocaleString()} ₸/мес</div>
             <div className="mmi"><ModalIc n="user" size={13} /> {p.occupation}</div>
             <div className="mmi">📅 {p.move_in}</div>
+            {p.university && <div className="mmi">🎓 {p.university}</div>}
+            {!!p.commuteMax && <div className="mmi">🕒 Коммьют до кампуса: ≤ {p.commuteMax} мин</div>}
           </div>
 
           {p.renterType && (
@@ -2905,6 +2119,12 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
           <div className="msec">
             <div className="mst">О себе</div>
             <p style={{ fontSize:"14px", lineHeight:"1.6", color:"var(--mid)" }}>{p.bio}</p>
+            {(p.idealRoommate || p.quietHours) && (
+              <div style={{ marginTop:"10px", background:"var(--bg2)", borderRadius:"10px", padding:"10px 12px", fontSize:"12px", color:"var(--mid)", lineHeight:"1.6" }}>
+                {p.idealRoommate && <div><b>My ideal roommate is:</b> {p.idealRoommate}</div>}
+                {p.quietHours && <div><b>Quiet hours:</b> {p.quietHours}</div>}
+              </div>
+            )}
           </div>
 
           <div className="msec">
@@ -2980,6 +2200,8 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
     region:auth.region||"",budget:auth.budget||"",renter_type:auth.renter_type||"looking",
     schedule:auth.schedule||"",cleanliness:auth.cleanliness||3,
     pets:auth.pets||"",smoking:auth.smoking||"",alcohol:auth.alcohol||"",remote:auth.remote||"",religion:auth.religion||"",
+    university:auth.university||"",commuteMax:String(auth.commuteMax||""),nearMetro:Boolean(auth.nearMetro),nearBus:Boolean(auth.nearBus),
+    idealRoommate:auth.idealRoommate||"",quietHours:auth.quietHours||"",
   });
   const [photos,setPhotos]=useState(()=>{ const p=Array.isArray(auth.photos)?auth.photos:[]; return [p[0]||null,p[1]||null,p[2]||null]; });
   const [saving,setSaving]=useState(false);
@@ -2994,10 +2216,17 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
   const handleSave=async()=>{
     setSaving(true);
     try{
-      const payload={...form,age:parseInt(form.age)||null,budget:parseInt(form.budget)||null,photos:photos.filter(Boolean)};
+      let tags = Array.isArray(auth.tags) ? auth.tags : [];
+      tags = withMetaTag(tags, "uni", form.university);
+      tags = withMetaTag(tags, "commute", form.commuteMax);
+      tags = withMetaTag(tags, "metro", form.nearMetro ? "yes" : "no");
+      tags = withMetaTag(tags, "bus", form.nearBus ? "yes" : "no");
+      tags = withMetaTag(tags, "ideal", form.idealRoommate);
+      tags = withMetaTag(tags, "quiet", form.quietHours);
+      const payload={...form,age:parseInt(form.age)||null,budget:parseInt(form.budget)||null,photos:photos.filter(Boolean),tags};
       const updated=await api.updateProfile(payload);
       const ini=(updated.name||form.name).split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"??";
-      setAuth(prev=>({...prev,...updated,avatar:ini,initials:ini,photos:photos.filter(Boolean)}));
+      setAuth(prev=>({...prev,...normaliseProfile(updated),avatar:ini,initials:ini,photos:photos.filter(Boolean)}));
       setSaved(true); setTimeout(()=>setSaved(false),3000);
     }catch(err){alert("Ошибка: "+err.message);}
     finally{setSaving(false);}
@@ -3027,6 +2256,25 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
           <div className="fg-form"><label className="fl">Бюджет (₸/мес)</label><input className="fi" type="number" value={form.budget} onChange={e=>upd("budget",e.target.value)} placeholder="80000"/></div>
         </div>
         <div className="fg-form"><label className="fl">Профессия / учёба</label><input className="fi" value={form.occupation} onChange={e=>upd("occupation",e.target.value)} placeholder="Студент, разработчик..."/></div>
+        <div className="grid2">
+          <div className="fg-form"><label className="fl">Университет</label>
+            <select className="fi" value={form.university} onChange={e=>upd("university",e.target.value)}>
+              <option value="">— Не указано —</option>
+              {UNIVERSITY_OPTIONS.map((u)=><option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
+          <div className="fg-form"><label className="fl">Коммьют до кампуса</label>
+            <select className="fi" value={form.commuteMax} onChange={e=>upd("commuteMax",e.target.value)}>
+              <option value="">Не важно</option><option value="30">≤ 30 мин</option><option value="45">≤ 45 мин</option><option value="60">≤ 60 мин</option>
+            </select>
+          </div>
+        </div>
+        <div className="fg-form"><label className="fl">Транспорт рядом</label>
+          <div className="chip-row">
+            <button className={`chip-sel ${form.nearMetro?"on":""}`} onClick={()=>upd("nearMetro",!form.nearMetro)}>🚇 Метро</button>
+            <button className={`chip-sel ${form.nearBus?"on":""}`} onClick={()=>upd("nearBus",!form.nearBus)}>🚌 Автобус</button>
+          </div>
+        </div>
         <div className="fg-form"><label className="fl">Регион</label>
           <select className="fi" value={form.region} onChange={e=>upd("region",e.target.value)}>
             <option value="">— Выберите —</option>
@@ -3040,6 +2288,10 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
           </div></div>
         <div className="fg-form"><label className="fl">О себе</label>
           <textarea className="fi" style={{height:90,resize:"vertical"}} value={form.bio} onChange={e=>upd("bio",e.target.value)} placeholder="Чем занимаетесь, что ищете в соседе..."/></div>
+        <div className="fg-form"><label className="fl">Prompt: My ideal roommate is…</label>
+          <input className="fi" value={form.idealRoommate} onChange={e=>upd("idealRoommate",e.target.value)} placeholder="Ответственный и чистоплотный"/></div>
+        <div className="fg-form"><label className="fl">Prompt: Quiet hours…</label>
+          <input className="fi" value={form.quietHours} onChange={e=>upd("quietHours",e.target.value)} placeholder="23:00 - 08:00"/></div>
       </div>
       <div className="prof-card" style={{marginTop:16}}>
         <h2 className="sec-title">🌿 Образ жизни</h2>
@@ -3079,6 +2331,8 @@ function AuthScreen({onAuth}){
   const [mode, setMode]=useState("login");
   const [step, setStep]=useState(0);
   const [photos, setPhotos] = useState([null, null, null]);
+  const [resetCode, setResetCode] = useState("");
+  const [devResetCode, setDevResetCode] = useState("");
   const [form, setForm]=useState({
     name:"", email:"", password:"", age:"", gender:"", region:"",
     renterType:"looking", address:"", lat:null, lng:null,
@@ -3086,6 +2340,8 @@ function AuthScreen({onAuth}){
     pets:false, smoking:false, remote:false, alcohol:false, schedule: "Гибкий",
     religion:"Нет", guests:"Иногда", noise:"Умеренная",
     studyWork:"Работа", languages:[], bio:"",
+    university:"", commuteMax:"", nearMetro:false, nearBus:true,
+    idealRoommate:"", quietHours:"",
   });
   const [loading, setLoading] = useState(false);
 
@@ -3125,14 +2381,63 @@ function AuthScreen({onAuth}){
         religion:    form.religion    || "Нет",
         guests:      form.guests      || "Иногда",
         noise:       form.noise       || "Умеренная",
-        tags:        [],
+        tags: withMetaTag(
+          withMetaTag(
+            withMetaTag(
+              withMetaTag(
+                withMetaTag([], "uni", form.university),
+                "commute", form.commuteMax
+              ),
+              "metro", form.nearMetro ? "yes" : "no"
+            ),
+            "bus", form.nearBus ? "yes" : "no"
+          ),
+          "ideal", form.idealRoommate
+        ),
+        quietHours: form.quietHours,
       };
+      registerData.tags = withMetaTag(registerData.tags, "quiet", form.quietHours);
       const response = await api.register(registerData);
       if (!response?.token) throw new Error("No token provided");
       api.setToken(response.token);
       onAuth(normaliseProfile(response.user));
     } catch (err) {
       alert("Ошибка регистрации: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotRequest = async () => {
+    if (!form.email?.trim()) return alert("Введите email");
+    setLoading(true);
+    try {
+      const res = await api.forgotPassword(form.email.trim());
+      setDevResetCode(res?.dev_code || "");
+      alert("Код сброса отправлен. Проверьте почту (или используйте dev-код ниже).");
+    } catch (err) {
+      alert("Ошибка запроса: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async () => {
+    if (!form.email?.trim()) return alert("Введите email");
+    if (!resetCode.trim()) return alert("Введите код сброса");
+    if (!form.password || form.password.length < 8) {
+      return alert("Новый пароль должен быть не менее 8 символов");
+    }
+    setLoading(true);
+    try {
+      await api.resetPassword(form.email.trim(), resetCode.trim(), form.password);
+      alert("Пароль обновлен. Теперь войдите в аккаунт.");
+      setMode("login");
+      setResetCode("");
+      setDevResetCode("");
+      setForm(f => ({ ...f, password: "" }));
+    } catch (err) {
+      alert("Ошибка сброса: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -3234,6 +2539,29 @@ function AuthScreen({onAuth}){
             ))}
           </div>
         </div>
+        <div className="fg-form">
+          <label className="fl">Университет рядом</label>
+          <select className="fi" value={form.university} onChange={e=>upd("university",e.target.value)}>
+            <option value="">Не выбрано</option>
+            {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
+          </select>
+        </div>
+        <div className="fg-form">
+          <label className="fl">Коммьют до кампуса</label>
+          <select className="fi" value={form.commuteMax} onChange={e=>upd("commuteMax",e.target.value)}>
+            <option value="">Не важно</option>
+            <option value="30">≤ 30 мин</option>
+            <option value="45">≤ 45 мин</option>
+            <option value="60">≤ 60 мин</option>
+          </select>
+        </div>
+        <div className="fg-form">
+          <label className="fl">Транспорт рядом</label>
+          <div className="chip-row">
+            <button className={`chip-sel ${form.nearMetro?"on":""}`} onClick={()=>upd("nearMetro",!form.nearMetro)}>🚇 Метро</button>
+            <button className={`chip-sel ${form.nearBus?"on":""}`} onClick={()=>upd("nearBus",!form.nearBus)}>🚌 Автобус</button>
+          </div>
+        </div>
       </>
     );
     if(step===2) return(
@@ -3295,6 +2623,14 @@ function AuthScreen({onAuth}){
           <label className="fl">Коротко о себе</label>
           <textarea className="fi" style={{height:"100px",resize:"vertical"}} placeholder="Я студентка 3-го курса, тихая и аккуратная…" value={form.bio} onChange={e=>upd("bio",e.target.value)}/>
         </div>
+        <div className="fg-form">
+          <label className="fl">Prompt: My ideal roommate is…</label>
+          <input className="fi" placeholder="Ответственный, уважает личное пространство…" value={form.idealRoommate} onChange={e=>upd("idealRoommate",e.target.value)} />
+        </div>
+        <div className="fg-form">
+          <label className="fl">Prompt: Quiet hours…</label>
+          <input className="fi" placeholder="23:00 - 08:00" value={form.quietHours} onChange={e=>upd("quietHours",e.target.value)} />
+        </div>
         <div style={{background:"var(--bg2)",borderRadius:"var(--rs)",padding:"16px",marginBottom:"16px"}}>
           <div style={{fontSize:"13px",fontWeight:"700",color:"var(--mid)",marginBottom:"10px"}}>📋 Ваша анкета:</div>
           <div style={{fontSize:"13px",color:"var(--mid)",lineHeight:"1.8"}}>
@@ -3310,6 +2646,52 @@ function AuthScreen({onAuth}){
       </>
     );
   };
+
+  if(mode==="forgot") return(
+    <div className="auth-wrap">
+      <div className="auth-left">
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"Cormorant Garamond",fontSize:"52px",fontWeight:"700",color:"#fff",lineHeight:1}}>Сосед<span style={{color:"var(--warm)"}}>КЗ</span></div>
+          <div style={{color:"rgba(255,255,255,.7)",fontSize:"16px",marginTop:"12px"}}>Восстановление пароля</div>
+        </div>
+      </div>
+      <div className="auth-right">
+        <div className="auth-card">
+          <div className="auth-logo">Сосед<span>КЗ</span></div>
+          <p className="auth-sub">Восстановите доступ к своему аккаунту</p>
+          <div className="atabs">
+            <button className="atab" onClick={()=>setMode("login")}>Вход</button>
+            <button className="atab" onClick={()=>{setMode("register");setStep(0);}}>Регистрация</button>
+            <button className="atab active">Сброс</button>
+          </div>
+          <div className="fg-form">
+            <label className="fl">Email</label>
+            <input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/>
+          </div>
+          <div className="fg-form">
+            <label className="fl">Код сброса</label>
+            <input className="fi" placeholder="6-значный код" value={resetCode} onChange={e=>setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}/>
+          </div>
+          <div className="fg-form" style={{marginBottom:"20px"}}>
+            <label className="fl">Новый пароль</label>
+            <input className="fi" type="password" placeholder="Не менее 8 символов" value={form.password} onChange={e=>upd("password",e.target.value)}/>
+          </div>
+          {!!devResetCode && (
+            <div style={{background:"var(--accent-light)",border:"1px solid var(--accent)",padding:"10px 12px",borderRadius:"10px",fontSize:"12px",marginBottom:"14px",color:"var(--accent2)"}}>
+              Dev код: <b>{devResetCode}</b>
+            </div>
+          )}
+          <div style={{display:"grid",gap:"8px"}}>
+            <button className="btn-ghost" onClick={handleForgotRequest} disabled={loading}>Получить код</button>
+            <button className="btn-primary" onClick={handleResetSubmit} disabled={loading}>{loading ? "Загрузка..." : "Сбросить пароль"}</button>
+          </div>
+          <p style={{textAlign:"center",fontSize:"12px",color:"var(--muted)",marginTop:"16px"}}>
+            Вспомнили пароль?&nbsp;<span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setMode("login")}>Войти</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   if(mode==="login") return(
     <div className="auth-wrap">
@@ -3331,9 +2713,13 @@ function AuthScreen({onAuth}){
           <div className="atabs">
             <button className={`atab ${mode==="login"?"active":""}`} onClick={()=>setMode("login")}>Вход</button>
             <button className={`atab ${mode==="register"?"active":""}`} onClick={()=>{setMode("register");setStep(0);}}>Регистрация</button>
+            <button className={`atab ${mode==="forgot"?"active":""}`} onClick={()=>setMode("forgot")}>Сброс</button>
           </div>
           <div className="fg-form"><label className="fl">Email</label><input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/></div>
           <div className="fg-form" style={{marginBottom:"24px"}}><label className="fl">Пароль</label><input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/></div>
+          <div style={{textAlign:"right",marginTop:"-12px",marginBottom:"14px"}}>
+            <span style={{fontSize:"12px",color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setMode("forgot")}>Забыли пароль?</span>
+          </div>
           <button className="btn-primary" onClick={handleLoginSubmit} disabled={loading}>{loading ? "Загрузка..." : "Войти →"}</button>
           <p style={{textAlign:"center",fontSize:"12px",color:"var(--muted)",marginTop:"16px"}}>
             Нет аккаунта?&nbsp;<span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>{setMode("register");setStep(0);}}>Зарегистрироваться</span>
@@ -3365,6 +2751,7 @@ function AuthScreen({onAuth}){
           <div className="atabs" style={{marginBottom:"20px"}}>
             <button className="atab" onClick={()=>setMode("login")}>Вход</button>
             <button className="atab active">Регистрация</button>
+            <button className="atab" onClick={()=>setMode("forgot")}>Сброс</button>
           </div>
           <div className="reg-steps">{STEPS.map((_,i)=><div key={i} className={`reg-step ${i<step?"done":i===step?"active":""}`}/>)}</div>
           <div style={{maxHeight:"calc(80vh - 220px)",overflowY:"auto",paddingRight:"4px"}}>{stepContent()}</div>
@@ -3385,78 +2772,12 @@ function AuthScreen({onAuth}){
   );
 }
 
-function injectMatchesStyles() {
-  if (document.getElementById("matches-v2-styles")) return;
-  const s = document.createElement("style");
-  s.id = "matches-v2-styles";
-  s.textContent = `
-.mt-page{flex:1;padding:36px 28px 60px;max-width:1200px;margin:0 auto;width:100%;}
-.mt-hero{margin-bottom:40px;position:relative;}
-.mt-hero-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
-.mt-hero-label::before{content:'';display:inline-block;width:24px;height:1.5px;background:var(--muted);opacity:.5;}
-.mt-hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,54px);font-weight:600;color:var(--dark);line-height:1.1;letter-spacing:-1px;margin-bottom:10px;}
-.mt-hero-title em{font-style:italic;color:var(--accent);}
-.mt-hero-sub{font-size:14px;color:var(--muted);font-weight:400;line-height:1.6;max-width:420px;}
-.mt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:40px;}
-@media(max-width:700px){.mt-stats{grid-template-columns:repeat(3,1fr);}}
-.mt-stat{background:var(--card);border-radius:18px;padding:20px 20px 18px;box-shadow:0 2px 16px rgba(30,42,34,.07);border:1.5px solid transparent;transition:all .22s cubic-bezier(.34,1.2,.64,1);position:relative;overflow:hidden;cursor:default;opacity:0;transform:translateY(18px);animation:mtStatIn .4s cubic-bezier(.34,1.2,.64,1) forwards;}
-.mt-stat:nth-child(1){animation-delay:.05s;}.mt-stat:nth-child(2){animation-delay:.12s;}.mt-stat:nth-child(3){animation-delay:.19s;}.mt-stat:nth-child(4){animation-delay:.26s;}
-@keyframes mtStatIn{to{opacity:1;transform:translateY(0);}}
-.mt-stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),transparent);transform:scaleX(0);transform-origin:left;transition:transform .3s ease;}
-.mt-stat:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 28px rgba(30,42,34,.12);}
-.mt-stat:hover::after{transform:scaleX(1);}
-.mt-stat-icon{font-size:22px;margin-bottom:10px;display:block;}
-.mt-stat-n{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700;color:var(--dark);line-height:1;margin-bottom:4px;letter-spacing:-1px;}
-.mt-stat-l{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.2px;}
-.mt-layout{display:flex;gap:28px;align-items:flex-start;}
-.mt-list-col{flex:1;min-width:0;}
-.mt-list-head{display:flex;align-items:baseline;gap:10px;margin-bottom:20px;}
-.mt-list-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--dark);}
-.mt-list-count{font-size:12px;color:var(--muted);font-weight:500;}
-.mt-card{background:var(--card);border-radius:18px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px;border:1.5px solid transparent;cursor:pointer;transition:all .24s cubic-bezier(.34,1.1,.64,1);margin-bottom:10px;position:relative;overflow:hidden;opacity:0;transform:translateX(-12px);animation:mtCardIn .36s cubic-bezier(.34,1.2,.64,1) forwards;}
-.mt-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--accent),transparent);opacity:0;transition:opacity .2s;}
-.mt-card:hover{border-color:rgba(61,122,92,.25);transform:translateX(5px);box-shadow:0 6px 24px rgba(30,42,34,.1);}
-.mt-card:hover::before{opacity:1;}
-.mt-card.active-chat{border-color:var(--accent);background:linear-gradient(135deg,#f6faf7,var(--accent-light));box-shadow:0 6px 24px rgba(61,122,92,.14);}
-.mt-card.active-chat::before{opacity:1;}
-@keyframes mtCardIn{to{opacity:1;transform:translateX(0);}}
-.mt-av{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:var(--dark);flex-shrink:0;position:relative;box-shadow:0 3px 12px rgba(30,42,34,.12);transition:transform .2s;}
-.mt-card:hover .mt-av{transform:scale(1.05) rotate(-2deg);}
-.mt-av-online{position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#4caf50;border:2.5px solid var(--card);box-shadow:0 0 6px rgba(76,175,80,.5);animation:mtPulse 2.5s ease-in-out infinite;}
-@keyframes mtPulse{0%,100%{box-shadow:0 0 6px rgba(76,175,80,.4);}50%{box-shadow:0 0 12px rgba(76,175,80,.75);}}
-.mt-card-body{flex:1;min-width:0;}
-.mt-card-top{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap;}
-.mt-card-name{font-weight:700;font-size:15px;color:var(--dark);letter-spacing:-.2px;}
-.mt-verified{color:var(--accent);font-size:12px;}
-.mt-match-pill{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fcd34d;letter-spacing:.3px;animation:mtMatchGlow 2s ease-in-out infinite alternate;}
-@keyframes mtMatchGlow{from{box-shadow:0 0 0 0 rgba(251,191,36,0);}to{box-shadow:0 0 8px 1px rgba(251,191,36,.35);}}
-.mt-card-meta{font-size:12px;color:var(--muted);margin-bottom:8px;}
-.mt-preview{font-size:13px;color:var(--mid);padding:9px 12px;border-radius:10px;line-height:1.5;position:relative;}
-.mt-preview.sent{background:#f0f7f2;border-left:3px solid var(--accent);}
-.mt-preview.received{background:linear-gradient(135deg,#fffbeb,#fef9e7);border-left:3px solid #fbbf24;font-weight:600;color:var(--dark);}
-.mt-preview.waiting{color:var(--muted);font-style:italic;font-size:12px;padding:0;background:none;border-left:none;}
-.mt-preview-who{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;opacity:.6;display:block;}
-.mt-card-arrow{font-size:16px;color:var(--muted);opacity:0;transition:all .2s;flex-shrink:0;align-self:center;}
-.mt-card:hover .mt-card-arrow{opacity:1;transform:translateX(3px);}
-.mt-empty{padding:80px 30px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;}
-.mt-empty-art{width:80px;height:80px;border-radius:24px;background:linear-gradient(135deg,var(--accent-light),#e8f5ea);border:2px solid rgba(61,122,92,.15);display:flex;align-items:center;justify-content:center;font-size:38px;animation:mtEmptyFloat 4s ease-in-out infinite;box-shadow:0 8px 32px rgba(61,122,92,.12);}
-@keyframes mtEmptyFloat{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-8px) rotate(3deg);}}
-.mt-empty-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--dark);letter-spacing:-.5px;}
-.mt-empty-sub{font-size:14px;color:var(--muted);line-height:1.7;max-width:280px;}
-.mt-empty-btn{margin-top:6px;padding:13px 28px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s cubic-bezier(.34,1.56,.64,1);box-shadow:0 4px 16px rgba(61,122,92,.25);}
-.mt-empty-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(61,122,92,.38);}
-.mt-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:8px;}
-.mt-section-label::after{content:'';flex:1;height:1px;background:var(--bg2);}
-  `;
-  document.head.appendChild(s);
-}
-
 function MatchesTab({
   likedProfiles, matchedProfiles = [], liked, sent, sentMessages, conversations,
   typingFor, activeChat, setActiveChat, setSelected, setMsgText,
   auth, sendChat, sendTyping, setTab, onRefresh
 }) {
-  useEffect(() => { injectMatchesStyles(); }, []);
+
   // Refresh on every mount so the user who was liked (passive side) sees their matches
   useEffect(() => { onRefresh?.(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -3522,21 +2843,15 @@ function MatchesTab({
       </div>
       <div className="mt-stats">
         {[
-          { n: liked.size,     l: "Лайков",     color: "#f43f5e", bg: "#fff1f2" },
-          { n: matched.length, l: "Совпадений", color: "#10b981", bg: "#ecfdf5" },
-          { n: sent.size,      l: "Переписок",  color: "#6366f1", bg: "#eef2ff" },
-        ].map(({ icon, n, l, color, bg }) => (
-          <div className="mt-stat" key={l} style={{borderColor:color+"33",background:`linear-gradient(135deg,${bg},#fff)`}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-              <span style={{fontSize:26}}>{icon}</span>
-              <div style={{width:32,height:32,borderRadius:"50%",background:color+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <div style={{width:16,height:16,borderRadius:"50%",background:color,opacity:.8}}/>
-              </div>
-            </div>
+          { n: liked.size,     l: "Лайков",     color: "var(--female)" },
+          { n: matched.length, l: "Совпадений", color: "var(--accent)" },
+          { n: sent.size,      l: "Переписок",  color: "var(--male)"   },
+        ].map(({ n, l, color }) => (
+          <div className="mt-stat" key={l}>
             <div className="mt-stat-n" style={{color}}>{n}</div>
             <div className="mt-stat-l">{l}</div>
-            <div style={{marginTop:10,height:3,background:color+"22",borderRadius:3,overflow:"hidden"}}>
-              <div style={{width:`${Math.min(n*15,100)}%`,height:"100%",background:color,borderRadius:3,transition:"width .6s ease"}}/>
+            <div style={{marginTop:10,height:3,background:"var(--border)",borderRadius:3,overflow:"hidden"}}>
+              <div style={{width:`${Math.min(n*20,100)}%`,height:"100%",background:color,borderRadius:3,transition:"width .6s ease"}}/>
             </div>
           </div>
         ))}
@@ -3584,56 +2899,4 @@ function MatchesTab({
       )}
     </div>
   );
-}
-
-export function usePollingChat(authUserId, matchedProfiles, setConversations) {
-  const [typingFor, setTypingFor] = useState(null);
-  const pollTimers = useRef({});
-
-  const startPolling = useCallback((profileId) => {
-    if (pollTimers.current[profileId]) return;
-    const poll = async () => {
-      try {
-        const token = localStorage.getItem("roommate_kz_token");
-        const res = await fetch(`${BASE}/api/messages/${profileId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) return;
-        const msgs = await res.json();
-        setConversations((prev) => {
-          const existing = prev[profileId] || [];
-          const existingIds = new Set(existing.map((m) => m.id));
-          const incoming = msgs.filter((m) => !existingIds.has(m.id)).map((m) => ({
-            id:   m.id,
-            text: m.text,
-            mine: String(m.sender_id) === String(authUserId),
-            time: new Date(m.created_at).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }),
-          }));
-          if (incoming.length === 0) return prev;
-          if (incoming.some((m) => !m.mine)) {
-            setTypingFor(profileId);
-            setTimeout(() => setTypingFor(null), 1200);
-          }
-          return { ...prev, [profileId]: [...existing, ...incoming] };
-        });
-      } catch (_) {}
-    };
-    poll();
-    pollTimers.current[profileId] = setInterval(poll, 3000);
-  }, [authUserId, setConversations]);
-
-  const stopPolling = useCallback((profileId) => {
-    clearInterval(pollTimers.current[profileId]);
-    delete pollTimers.current[profileId];
-  }, []);
-
-  useEffect(() => {
-    matchedProfiles.filter((p) => p.matched).forEach((p) => startPolling(p.id));
-    return () => {
-      Object.values(pollTimers.current).forEach(clearInterval);
-      pollTimers.current = {};
-    };
-  }, [matchedProfiles, startPolling]);
-
-  return { typingFor, startPolling, stopPolling };
 }

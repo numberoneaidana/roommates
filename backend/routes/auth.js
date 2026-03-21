@@ -16,6 +16,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { supabaseAdmin } from "../supabase.js";
 import { authMiddleware } from "../middleware/auth.js";
 
@@ -145,6 +146,91 @@ router.post("/login", async (req, res) => {
 
   const token = signToken(user.id, user.email);
   return res.json({ token, user: sanitiseProfile(profile ?? { id: user.id, name: "User" }) });
+});
+
+// ── POST /api/auth/forgot-password ────────────────────────────────────────────
+router.post("/forgot-password", async (req, res) => {
+  const email = String(req.body?.email || "").toLowerCase().trim();
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("id, email")
+    .eq("email", email)
+    .maybeSingle();
+
+  // Always return a generic success message to avoid account enumeration.
+  if (!user) {
+    return res.json({ ok: true, message: "If this email exists, reset instructions were sent." });
+  }
+
+  const code = String(crypto.randomInt(100000, 1000000));
+  const reset_token_hash = await bcrypt.hash(code, 10);
+  const reset_expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+  await supabaseAdmin
+    .from("users")
+    .update({ reset_token_hash, reset_expires_at })
+    .eq("id", user.id);
+
+  // TODO: replace with real email/SMS provider integration.
+  console.log(`[password-reset] ${email} code=${code}`);
+
+  // Expose code in non-production for local/dev testing.
+  const response = {
+    ok: true,
+    message: "Password reset code generated. It expires in 15 minutes.",
+  };
+  if (process.env.NODE_ENV !== "production") {
+    response.dev_code = code;
+  }
+  return res.json(response);
+});
+
+// ── POST /api/auth/reset-password ─────────────────────────────────────────────
+router.post("/reset-password", async (req, res) => {
+  const email = String(req.body?.email || "").toLowerCase().trim();
+  const code = String(req.body?.code || "").trim();
+  const newPassword = String(req.body?.newPassword || "");
+
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: "email, code and newPassword are required" });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
+  }
+
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("id, reset_token_hash, reset_expires_at")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!user?.reset_token_hash || !user?.reset_expires_at) {
+    return res.status(400).json({ error: "Invalid or expired reset code" });
+  }
+
+  if (new Date(user.reset_expires_at).getTime() < Date.now()) {
+    return res.status(400).json({ error: "Reset code expired" });
+  }
+
+  const codeOk = await bcrypt.compare(code, user.reset_token_hash);
+  if (!codeOk) {
+    return res.status(400).json({ error: "Invalid or expired reset code" });
+  }
+
+  const password_hash = await bcrypt.hash(newPassword, 12);
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({
+      password_hash,
+      reset_token_hash: null,
+      reset_expires_at: null,
+    })
+    .eq("id", user.id);
+
+  if (error) return res.status(500).json({ error: "Failed to reset password" });
+  return res.json({ ok: true, message: "Password updated. You can now sign in." });
 });
 
 // ── GET /api/auth/me ──────────────────────────────────────────────────────────

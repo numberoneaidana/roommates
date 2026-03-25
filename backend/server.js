@@ -21,6 +21,7 @@ import matchesRouter from "./routes/matches.js";
 import messagesRouter from "./routes/messages.js";
 import authRouter from "./routes/auth.js";
 import uploadRouter from "./routes/upload.js";
+import verifyRouter from "./routes/verify.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -59,6 +60,7 @@ app.use("/api/profiles", authMiddleware, profilesRouter);
 app.use("/api/matches",  authMiddleware, matchesRouter);
 app.use("/api/messages", authMiddleware, messagesRouter);
 app.use("/api/upload",   authMiddleware, uploadRouter);
+app.use("/api/verify",   authMiddleware, verifyRouter);
 
 // Health check
 app.get("/api/health", (_, res) => res.json({ status: "ok", ts: new Date().toISOString() }));

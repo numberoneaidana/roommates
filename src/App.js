@@ -3375,6 +3375,12 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
                   ))}
                 </div>
               </div>
+              {selectedProfile.id_document_url && (
+                <div style={{marginBottom:"24px"}}>
+                  <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>📸 Загруженный документ</h3>
+                  <img src={selectedProfile.id_document_url} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain"}}/>
+                </div>
+              )}
               {selectedProfile.verification_status === 'pending' && (
                 <div style={{marginBottom:"24px"}}>
                   <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>💬 Причина отклонения</h3>

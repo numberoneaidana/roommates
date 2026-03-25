@@ -36,7 +36,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max (reduced from 10MB to prevent memory issues)
 });
 
 /**
@@ -60,16 +60,16 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     const userId = req.user.id;
-    const fileUrl = `/uploads/verifications/${req.file.filename}`;
+    const filename = req.file.filename;
 
-    console.log("Updating profile for user:", userId, "with URL:", fileUrl);
+    console.log("Updating profile for user:", userId, "with filename:", filename);
 
-    // Update profile in Supabase
+    // Update profile in Supabase (store only filename, not full path)
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({
         verification_status: "pending",
-        id_document_url: fileUrl,
+        id_document_url: filename,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId)
@@ -88,7 +88,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     res.json({
       success: true,
       message: "Document uploaded successfully",
-      url: fileUrl,
+      url: filename,
       status: "pending",
       profile: data,
     });

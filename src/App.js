@@ -2532,18 +2532,35 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
                   if(!verificationFile) return alert("Выберите документ");
                   setUploadingVerification(true);
                   try{
-                    const formData = new FormData();
-                    formData.append('file', verificationFile);
-                    const response = await api.uploadVerification(formData);
-                    setAuth(prev=>({...prev,verification_status:'pending',id_document_url:response.url}));
-                    setShowVerificationModal(false);
-                    setVerificationFile(null);
-                    setVerificationPreview(null);
-                    alert("✓ Документ загружен! Проверка займет менее 24 часов.");
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.onload = async () => {
+                      canvas.width = img.width * 0.7;
+                      canvas.height = img.height * 0.7;
+                      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                      canvas.toBlob(async (blob) => {
+                        const formData = new FormData();
+                        formData.append('file', blob, verificationFile.name);
+                        try{
+                          const response = await api.uploadVerification(formData);
+                          setAuth(prev=>({...prev,verification_status:'pending',id_document_url:response.url}));
+                          setShowVerificationModal(false);
+                          setVerificationFile(null);
+                          setVerificationPreview(null);
+                          alert("✓ Документ загружен! Проверка займет менее 24 часов.");
+                        }catch(err){
+                          console.error("Upload error:", err);
+                          alert("Ошибка загрузки: "+err.message);
+                        }finally{
+                          setUploadingVerification(false);
+                        }
+                      }, 'image/jpeg', 0.8);
+                    };
+                    img.src = verificationPreview;
                   }catch(err){
-                    console.error("Upload error:", err);
-                    alert("Ошибка загрузки: "+err.message);
-                  }finally{
+                    console.error("Compression error:", err);
+                    alert("Ошибка сжатия: "+err.message);
                     setUploadingVerification(false);
                   }
                 }} disabled={!verificationFile||uploadingVerification} style={{flex:1,padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:!verificationFile||uploadingVerification?"not-allowed":"pointer",transition:"all 0.2s",opacity:!verificationFile||uploadingVerification?0.5:1}} onMouseEnter={e=>{if(!uploadingVerification&&verificationFile)e.target.style.background="#5a8f6f"}} onMouseLeave={e=>{e.target.style.background="#7A9E7E"}}>
@@ -3385,7 +3402,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
               {selectedProfile.id_document_url && (
                 <div style={{marginBottom:"24px"}}>
                   <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>📸 Загруженный документ</h3>
-                  <img src={`/uploads/verifications/${selectedProfile.id_document_url.split('/').pop()}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain"}} onError={(e)=>{e.target.src=selectedProfile.id_document_url;}}/>
+                  <img src={`/uploads/verifications/${selectedProfile.id_document_url}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",background:"#F2F8F1"}} loading="lazy"/>
                 </div>
               )}
               {selectedProfile.verification_status === 'pending' && (

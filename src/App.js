@@ -1907,8 +1907,27 @@ const sendChat = async (profileId, text) => {
       )}
 
       {tab==="admin" && auth?.is_admin && (
-        <AdminVerificationDashboard allProfiles={allProfiles} onVerify={(profileId, status, reason) => {
-          setAllProfiles(prev => prev.map(p => p.id === profileId ? {...p, verification_status: status, rejection_reason: reason} : p));
+        <AdminVerificationDashboard allProfiles={allProfiles} onVerify={async (profileId, status, reason) => {
+          try {
+            // Make API call to verify/reject
+            const response = await fetch(`${api.baseURL()}/api/verify/${profileId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('roommate_kz_token')}`
+              },
+              body: JSON.stringify({ verification_status: status, rejection_reason: reason })
+            });
+            if (response.ok) {
+              // Update local state after successful API call
+              setAllProfiles(prev => prev.map(p => p.id === profileId ? {...p, verification_status: status, rejection_reason: reason} : p));
+            } else {
+              alert('Failed to update verification status');
+            }
+          } catch (err) {
+            console.error('Verification error:', err);
+            alert('Error: ' + err.message);
+          }
         }} />
       )}
 

@@ -203,19 +203,33 @@ router.patch("/:profileId", async (req, res) => {
  * Serve verification document file
  */
 router.get("/file/:filename", (req, res) => {
-  const filename = req.params.filename;
+  let filename = req.params.filename;
+  
+  // Decode URL-encoded filename
+  try {
+    filename = decodeURIComponent(filename);
+  } catch (e) {
+    return res.status(400).json({ error: "Invalid filename" });
+  }
+  
   const filepath = path.join(uploadsDir, filename);
   
   // Security: prevent directory traversal
-  if (!filepath.startsWith(uploadsDir)) {
+  const realPath = path.resolve(filepath);
+  const realUploadDir = path.resolve(uploadsDir);
+  if (!realPath.startsWith(realUploadDir)) {
+    console.error(`Directory traversal attempt: ${realPath}`);
     return res.status(403).json({ error: "Access denied" });
   }
   
   // Check if file exists
   if (!fs.existsSync(filepath)) {
     console.error(`File not found: ${filepath}`);
+    console.error(`Available files in ${uploadsDir}:`, fs.readdirSync(uploadsDir));
     return res.status(404).json({ error: "File not found" });
   }
+  
+  console.log(`Serving file: ${filepath}`);
   
   // Set proper headers for image
   res.type('image');

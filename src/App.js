@@ -1585,9 +1585,9 @@ const sendChat = async (profileId, text) => {
 
       {/* Top Navigation Tabs */}
       <div style={{background:"#fff",borderBottom:"2px solid #e0e0e0",padding:"0",display:"flex",justifyContent:"center",gap:"0",zIndex:"40",position:"sticky",top:"60px"}}>
-        {[["browse", "Обзор"],["swipe","Свайп"],["map","Карта"],["matches","Понрвилось"],["profile","Профиль"]].map(([id,icon,lb])=>(
+        {[["browse", "Обзор"],["swipe","Свайп"],["map","Карта"],["matches","Понрaвилось"],["profile","Профиль"],...(auth?.is_admin ? [["admin","Админ"]] : [])].map(([id,lb])=>(
           <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
-            <span style={{fontSize:"18px"}}>{icon}</span>
+            <span style={{fontSize:"18px"}}>{id==="browse"?"🏠":id==="swipe"?"💬":id==="map"?"🗺️":id==="matches"?"❤️":id==="profile"?"👤":"🔐"}</span>
             <span>{lb}</span>
             {id==="matches"&&liked.size>0&&<span style={{background:"#ff6b6b",color:"#fff",borderRadius:"10px",padding:"2px 6px",fontSize:"11px",fontWeight:"700",marginLeft:"4px"}}>{liked.size}</span>}
           </button>
@@ -1613,207 +1613,186 @@ const sendChat = async (profileId, text) => {
       )}
 
       {tab==="browse"&&(
-        <div style={{maxWidth:"1200px",margin:"0 auto",padding:"0 40px 40px 40px"}}>
-          {/* Smart Match Algorithm Banner with Images - IMPROVED */}
-          <div style={{background:"linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)",borderRadius:"16px",padding:"32px 40px",margin:"0 0 32px 0",position:"relative",overflow:"hidden",color:"#fff"}}>
-            <div style={{position:"absolute",top:0,right:0,width:"300px",height:"100%",background:"url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80')",backgroundSize:"cover",backgroundPosition:"center",opacity:"0.2",zIndex:"1"}}/>
-            <div style={{position:"relative",zIndex:"2"}}>
-              <div style={{fontSize:"12px",fontWeight:"700",color:"rgba(255,255,255,0.9)",marginBottom:"10px",letterSpacing:"0.6px",textTransform:"uppercase"}}>✨ Умный алгоритм подбора</div>
-              <h2 style={{fontSize:"32px",fontWeight:"800",color:"#fff",marginBottom:"10px",letterSpacing:"-0.5px",margin:"0 0 10px 0"}}>Найдите соседа быстрее</h2>
-              <p style={{fontSize:"14px",color:"rgba(255,255,255,0.95)",margin:"0 0 16px 0",lineHeight:"1.5",maxWidth:"600px"}}>Наш ИИ анализирует ваши привычки, бюджет и образ жизни, подбирая совместимые матчи</p>
-              <div style={{display:"flex",gap:"20px",flexWrap:"wrap"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"16px"}}>✓</span>
-                  <span style={{fontSize:"13px",fontWeight:"600",color:"rgba(255,255,255,0.9)"}}>По бюджету</span>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"16px"}}>✓</span>
-                  <span style={{fontSize:"13px",fontWeight:"600",color:"rgba(255,255,255,0.9)"}}>По стилю</span>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"16px"}}>✓</span>
-                  <span style={{fontSize:"13px",fontWeight:"600",color:"rgba(255,255,255,0.9)"}}>По локации</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div style={{background:"#FAFDF9",minHeight:"100vh"}}>
+          <style>{`
+            @keyframes softUp {
+              from { opacity: 0; transform: translateY(22px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-10px) rotate(-1deg)} }
+            .float-a { animation: floatA 6s ease-in-out infinite; }
+            .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s ease; }
+            .reveal.visible { opacity: 1; transform: none; }
+          `}</style>
 
-          {/* Filter by City Section - COMPACT */}
-          <div style={{marginBottom:"32px"}}>
-            <h3 style={{fontSize:"18px",fontWeight:"700",color:"#1e4a36",margin:"0 0 16px 0"}}>Фильтр по городам</h3>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:"16px"}}>
-              {[
-                {name:"Алматы",count:"1 240 результатов",emoji:"📍",img:"https://images.unsplash.com/photo-1570158268183-d296b3552fd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"},
-                {name:"Астана",count:"850 результатов",emoji:"🏙️",img:"https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"},
-                {name:"Шымкент",count:"320 результатов",emoji:"👥",img:"https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"},
-                {name:"Другие города",count:"45 регионов",emoji:"🗺️",img:"https://images.unsplash.com/photo-1470252649378-9c29740ff023?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"}
-              ].map((city,i)=>(
-                <div key={i} style={{background:"#fff",borderRadius:"12px",border:"1px solid #e0e0e0",cursor:"pointer",transition:"all 0.2s",overflow:"hidden",height:"160px",display:"flex",flexDirection:"column"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.12)"; e.currentTarget.style.borderColor="#5a8f6f"; e.currentTarget.style.transform="translateY(-4px)";}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="none"; e.currentTarget.style.borderColor="#e0e0e0"; e.currentTarget.style.transform="translateY(0)";}}>
-                  <div style={{height:"100px",background:`url('${city.img}')`,backgroundSize:"cover",backgroundPosition:"center",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.3) 100%)"}}/>
-                  </div>
-                  <div style={{padding:"10px 14px",flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-                    <div style={{fontSize:"15px",fontWeight:"700",color:"#1e4a36"}}>{city.name}</div>
-                    <div style={{fontSize:"12px",color:"#999",marginTop:"3px"}}>{city.count}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* HERO SECTION */}
+          <section style={{minHeight:"100vh",padding:"100px 72px",background:"#FAFDF9",position:"relative",display:"grid",gridTemplateColumns:"1fr 1fr",overflow:"hidden",alignItems:"center"}}>
+            {/* Blobs */}
+            <div style={{position:"absolute",width:"600px",height:"600px",borderRadius:"50%",background:"rgba(168,197,160,0.22)",top:"-100px",right:"-100px",filter:"blur(90px)",pointerEvents:"none"}}/>
+            <div style={{position:"absolute",width:"400px",height:"400px",borderRadius:"50%",background:"rgba(200,222,196,0.18)",bottom:0,left:"20%",filter:"blur(90px)",pointerEvents:"none"}}/>
 
-          {/* Smart Browse Section - IMPROVED */}
-          <div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <h3 style={{fontSize:"18px",fontWeight:"700",color:"#1e4a36",margin:0}}>Умный поиск</h3>
-                  <span style={{fontSize:"16px"}}>✨</span>
-                </div>
+            {/* LEFT CONTENT */}
+            <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",justifyContent:"center",paddingRight:"80px"}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#E4F0E0",border:"1px solid #C8DEC4",padding:"6px 14px",borderRadius:"100px",width:"fit-content",marginBottom:"36px",fontSize:"0.76rem",fontWeight:500,color:"#7A9E7E",letterSpacing:"0.3px",animation:"softUp 0.8s ease both"}}>
+                <span style={{width:"5px",height:"5px",background:"#7A9E7E",borderRadius:"50%"}}/>
+                 Сделано в Казахстане
               </div>
-              <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-                <button onClick={()=>setShowF(!showF)} style={{padding:"10px 14px",background:"#f8f9fa",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",gap:"6px"}} onMouseEnter={e=>{e.target.style.borderColor="#5a8f6f"; e.target.style.background="#e8f5f0";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.background="#f8f9fa";}}>
-                  ☰ Фильтры {showF?"▲":"▼"}
-                </button>
-                <div style={{display:"flex",gap:"4px",border:"1px solid #e0e0e0",borderRadius:"8px",padding:"4px"}}>
-                  <button className={view==="grid"?"active":""} onClick={()=>setView("grid")} style={{padding:"8px 12px",background:view==="grid"?"#5a8f6f":"transparent",color:view==="grid"?"#fff":"#666",border:"none",borderRadius:"6px",cursor:"pointer",transition:"all 0.2s",fontSize:"13px"}}>▦</button>
-                  <button className={view==="list"?"active":""} onClick={()=>setView("list")} style={{padding:"8px 12px",background:view==="list"?"#5a8f6f":"transparent",color:view==="list"?"#fff":"#666",border:"none",borderRadius:"6px",cursor:"pointer",transition:"all 0.2s",fontSize:"13px"}}>≡</button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Search and Filters - CONVEYER STYLE */}
-            <div style={{display:"flex",gap:"10px",marginBottom:"20px",flexWrap:"wrap",alignItems:"center"}}>
-              <div style={{flex:1,minWidth:"200px",position:"relative"}}>
-                <input type="text" placeholder="Поиск по имени…" value={filters.search} onChange={e=>setFilters(f=>({...f,search:e.target.value}))} style={{width:"100%",padding:"10px 14px 10px 36px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",outline:"none",transition:"all 0.2s"}} onFocus={e=>{e.target.style.borderColor="#5a8f6f"; e.target.style.boxShadow="0 0 0 3px rgba(90,143,111,0.1)";}} onBlur={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.boxShadow="none";}}/>
-                <span style={{position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",fontSize:"14px"}}>🔍</span>
-              </div>
-              <select value={filters.region} onChange={e=>setFilters(f=>({...f,region:e.target.value}))} style={{padding:"10px 12px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none",transition:"all 0.2s",minWidth:"140px"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
-                <option value="">Регион</option>
-                {KZ_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-              <select value={filters.gender} onChange={e=>setFilters(f=>({...f,gender:e.target.value}))} style={{padding:"10px 12px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none",transition:"all 0.2s",minWidth:"130px"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
-                <option value="">Пол</option>
-                <option value="female">♀ Девушки</option>
-                <option value="male">♂ Парни</option>
-              </select>
-              <select value={filters.schedule} onChange={e=>setFilters(f=>({...f,schedule:e.target.value}))} style={{padding:"10px 12px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none",transition:"all 0.2s",minWidth:"130px"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
-                <option value="">Режим</option>
-                <option value="Жаворонок">🌅 Жаворонок</option>
-                <option value="Сова">🌙 Сова</option>
-                <option value="Гибкий">🔄 Гибкий</option>
-              </select>
-            </div>
 
-            {showF&&(
-              <div style={{background:"#fff",borderRadius:"12px",border:"1px solid #e0e0e0",padding:"24px",marginBottom:"28px"}}>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))",gap:"24px"}}>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Макс. бюджет <span style={{color:"#5a8f6f",fontWeight:"700"}}>{filters.budget.toLocaleString()} ₸</span></label>
-                    <input type="range" min={30000} max={300000} step={5000} value={filters.budget} onChange={e=>setFilters(f=>({...f,budget:+e.target.value}))} style={{width:"100%",cursor:"pointer"}}/>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Питомцы</label>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                      {[["Любые",""],["Есть 🐾","yes"],["Нет","no"]].map(([l,v])=>(
-                        <button key={l} onClick={()=>setFilters(f=>({...f,pets:v}))} style={{padding:"8px 14px",background:filters.pets===v?"#5a8f6f":"#f8f9fa",color:filters.pets===v?"#fff":"#666",border:filters.pets===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.pets!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.pets!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Удалённая работа</label>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                      {[["Любая",""],["Да 💻","yes"],["Нет","no"]].map(([l,v])=>(
-                        <button key={l} onClick={()=>setFilters(f=>({...f,remote:v}))} style={{padding:"8px 14px",background:filters.remote===v?"#5a8f6f":"#f8f9fa",color:filters.remote===v?"#fff":"#666",border:filters.remote===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.remote!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.remote!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Курение</label>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                      {[["Любое",""],["Некурящий","no"]].map(([l,v])=>(
-                        <button key={l} onClick={()=>setFilters(f=>({...f,smoking:v}))} style={{padding:"8px 14px",background:filters.smoking===v?"#5a8f6f":"#f8f9fa",color:filters.smoking===v?"#fff":"#666",border:filters.smoking===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.smoking!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.smoking!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Алкоголь</label>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                      {[["Любой",""],["Не пьёт","no"]].map(([l,v])=>(
-                        <button key={l} onClick={()=>setFilters(f=>({...f,alcohol:v}))} style={{padding:"8px 14px",background:filters.alcohol===v?"#5a8f6f":"#f8f9fa",color:filters.alcohol===v?"#fff":"#666",border:filters.alcohol===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.alcohol!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.alcohol!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Вероисповедание</label>
-                    <select value={filters.religion} onChange={e=>setFilters(f=>({...f,religion:e.target.value}))} style={{width:"100%",padding:"8px 12px",border:"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
-                      <option value="">Любое</option>
-                      <option value="Мусульманка">Мусульманка</option>
-                      <option value="Мусульманин">Мусульманин</option>
-                      <option value="Нет">Нерелигиозный</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Университет рядом</label>
-                    <select value={filters.university} onChange={e=>setFilters(f=>({...f,university:e.target.value}))} style={{width:"100%",padding:"8px 12px",border:"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
-                      <option value="">Любой</option>
-                      {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                  
-                </div>
-                <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} style={{marginTop:"20px",padding:"10px 20px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#ff6b6b"; e.target.style.color="#ff6b6b";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}}>
-                  Сбросить все фильтры
+              <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(3rem, 5vw, 4.5rem)",fontWeight:600,lineHeight:1.1,letterSpacing:"-1.5px",color:"#1C2B1E",marginBottom:"28px",animation:"softUp 0.8s 0.1s ease both"}}>
+                Найдите своего<br/><em style={{fontStyle:"italic",color:"#7A9E7E"}}>идеального</em><br/>соседа
+              </h1>
+
+              <p style={{fontSize:"1rem",fontWeight:300,color:"rgba(28,43,30,0.6)",lineHeight:1.8,maxWidth:"420px",marginBottom:"44px",animation:"softUp 0.8s 0.2s ease both"}}>
+                Умный подбор по образу жизни, не только по бюджету и площади
+              </p>
+
+              <div style={{display:"flex",gap:"14px",flexWrap:"wrap",animation:"softUp 0.8s 0.3s ease both"}}>
+                <button onClick={()=>setTab("map")} style={{display:"inline-flex",alignItems:"center",gap:"10px",background:"#1C2B1E",color:"white",padding:"16px 32px",borderRadius:"100px",fontFamily:"'Geologica', sans-serif",fontSize:"0.92rem",fontWeight:500,textDecoration:"none",border:"none",cursor:"pointer",transition:"background 0.25s, transform 0.25s"}}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="white" strokeWidth="1.4"/><path d="M11 11L14 14" stroke="white" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                  Посмотрите анкеты
                 </button>
               </div>
-            )}
 
-            {/* Profile Cards Grid or List */}
-            {view==="grid"?(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"24px"}}>
-                {rankedFiltered.map(p=>(
-                  <ProfileCard key={p.id} p={p} liked={liked.has(p.id)} sent={sent.has(p.id)}
-                    onLike={async()=>{setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
-                      try{const r=await api.likeProfile(p.id);if(r?.matched)await handleMatch(p.id);}catch(e){console.warn(e);}
-                    }}
-                    onView={()=>{setSelected(p);setMsgText("");}}/>
+              <div style={{display:"flex",gap:0,marginTop:"60px",paddingTop:"44px",borderTop:"1px solid #C8DEC4",animation:"softUp 0.8s 0.4s ease both"}}>
+                {[
+                  {n:"4,200",s:"+",l:"Активных пользователей"},
+                  {n:"17",s:"",l:"Городов по Казахстану"},
+                  {n:"92",s:"%",l:"Удовлетворенность совпадений"}
+                ].map((stat,i)=>(
+                  <div key={i} style={{flex:1,paddingRight:i<2?"24px":0,paddingLeft:i>0?"24px":0,borderRight:i<2?"1px solid #C8DEC4":"none"}}>
+                    <div style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"2.4rem",fontWeight:600,color:"#1C2B1E",letterSpacing:"-1px",lineHeight:1,marginBottom:"4px"}}>
+                      {stat.n}<span style={{color:"#7A9E7E"}}>{stat.s}</span>
+                    </div>
+                    <div style={{fontSize:"0.78rem",fontWeight:300,color:"rgba(28,43,30,0.6)",letterSpacing:"0.3px"}}>{stat.l}</div>
+                  </div>
                 ))}
               </div>
-            ):(
-              <div>
-                {rankedFiltered.map(p=>{
-                  const reg=KZ_REGIONS.find(r=>r.id===p.region);
-                  return(
-                    <div key={p.id} style={{background:"#fff",borderRadius:"8px",padding:"16px",marginBottom:"12px",display:"flex",gap:"16px",alignItems:"center",cursor:"pointer",border:"1px solid #e0e0e0",transition:"all 0.2s"}} onClick={()=>{setSelected(p);setMsgText("");}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.08)"; e.currentTarget.style.transform="translateX(4px)";}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="none"; e.currentTarget.style.transform="translateX(0)";}}>
-                      <div style={{width:"80px",height:"80px",borderRadius:"10px",background:`url('${p.photos[0]}')`,backgroundSize:"cover",backgroundPosition:"center",flexShrink:0}}/>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}}>
-                          <span style={{fontWeight:"700",fontSize:"15px"}}>{p.name}</span>
-                          {p.verified&&<span style={{color:"#5a8f6f",fontSize:"12px",fontWeight:"700"}}>✓</span>}
-                          <span style={{fontSize:"11px",background:p.gender==="female"?"rgba(255,107,107,0.1)":"rgba(59,89,152,0.1)",color:p.gender==="female"?"#ff6b6b":"#3b5998",borderRadius:"10px",padding:"2px 8px",fontWeight:"600"}}>{p.gender==="female"?"♀ Девушка":"♂ Парень"}</span>
+            </div>
+          </section>
+
+          {/* FEATURES SECTION */}
+          <section style={{padding:"100px 72px",background:"#FFFFFF",borderTop:"1px solid #C8DEC4"}}>
+            <div style={{maxWidth:"1200px",margin:"0 auto"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"64px"}}>
+                <div>
+                  <div style={{fontSize:"0.72rem",fontWeight:500,letterSpacing:"3px",textTransform:"uppercase",color:"#7A9E7E",marginBottom:"12px",display:"flex",alignItems:"center",gap:"8px"}}>
+                    <span style={{width:"20px",height:"1px",background:"#7A9E7E"}}/>
+                    Преимущества
+                  </div>
+                  <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(2rem, 3.5vw, 3rem)",fontWeight:600,letterSpacing:"-0.5px",lineHeight:1.08,color:"#1C2B1E"}}>Почему выбирают<br/>Roomate.kz</h2>
+                </div>
+              </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:"24px",marginBottom:"60px"}}>
+                {[
+                  {icon:"🤖",title:"Умный алгоритм",desc:"Анализирует 40+ параметров образа жизни для точных совпадений"},
+                  {icon:"🛡️",title:"Проверка ИИН",desc:"Каждый профиль проверен и верифицирован для вашей безопасности"},
+                  {icon:"🗺️",title:"17 городов",desc:"От Алматы до Актау — охватываем весь Казахстан"},
+                  {icon:"💬",title:"3 языка",desc:"Общайтесь на казахском, русском или английском"},
+                  {icon:"⚡",title:"Быстрый подбор",desc:"Найдите идеального соседа менее чем за неделю"},
+                  {icon:"✨",title:"Совместимость",desc:"Детальный анализ совместимости по 20+ критериям"}
+                ].map((feature,i)=>(
+                  <div key={i} className="reveal" style={{background:"#FAFDF9",border:"1px solid #C8DEC4",borderRadius:"24px",padding:"32px 28px",textAlign:"center",transition:"all 0.3s"}}>
+                    <div style={{fontSize:"2.8rem",marginBottom:"16px"}}>{feature.icon}</div>
+                    <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"8px"}}>{feature.title}</h3>
+                    <p style={{fontSize:"0.85rem",fontWeight:300,color:"rgba(28,43,30,0.6)",lineHeight:1.6}}>{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* FEATURED PROFILES */}
+          <section style={{padding:"100px 72px",background:"#FAFDF9"}}>
+            <div style={{maxWidth:"1200px",margin:"0 auto"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"64px"}}>
+                <div>
+                  <div style={{fontSize:"0.72rem",fontWeight:500,letterSpacing:"3px",textTransform:"uppercase",color:"#7A9E7E",marginBottom:"12px",display:"flex",alignItems:"center",gap:"8px"}}>
+                    <span style={{width:"20px",height:"1px",background:"#7A9E7E"}}/>
+                    Совместимые соседи
+                  </div>
+                  <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(2rem, 3.5vw, 3rem)",fontWeight:600,letterSpacing:"-0.5px",lineHeight:1.08,color:"#1C2B1E"}}>Исследуйте<br/>совместимые профили</h2>
+                </div>
+              </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"24px",marginBottom:"60px"}}>
+                {allProfiles.slice(0,6).map((profile,idx)=>{
+                  const compatibility = Math.floor(Math.random()*30)+70;
+                  return (
+                    <div key={idx} onClick={()=>{setSelected(profile);setMsgText("");}} style={{background:"#FFFFFF",border:"1px solid #C8DEC4",borderRadius:"24px",padding:"20px",cursor:"pointer",transition:"transform 0.2s, box-shadow 0.2s",position:"relative",overflow:"hidden"}} onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="0 12px 40px rgba(122,158,126,0.15)";}} onMouseLeave={(e)=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 0 0 transparent";}}>
+                      {/* Header with Avatar */}
+                      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
+                        <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"#E4F0E0",border:"2px solid #C8DEC4",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#7A9E7E",flexShrink:0}}>
+                          {(profile.full_name||"").split(" ").map(n=>n[0]).join("").toUpperCase()||"?"}
                         </div>
-                        <div style={{fontSize:"12px",color:"#999",marginBottom:"8px"}}>{reg?.name||""} · {(p.budget || 0).toLocaleString()} ₸/мес · {p.occupation}</div>
-                        <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-                          {p.tags.slice(0,3).map(t=><span key={t} style={{fontSize:"11px",background:"#f0fdf4",color:"#2c5f47",borderRadius:"6px",padding:"2px 8px",fontWeight:"500"}}>{t}</span>)}
+                        <div>
+                          <div style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",lineHeight:1.2}}>{profile.full_name}</div>
+                          <div style={{fontSize:"0.7rem",fontWeight:300,color:"rgba(28,43,30,0.6)",marginTop:"2px",display:"flex",alignItems:"center",gap:"3px"}}>
+                            📍 {(profile.region||"Казахстан").split(",")[0]}
+                          </div>
                         </div>
                       </div>
-                      <span style={{fontSize:"18px",color:"#ccc"}}>→</span>
+
+                      {/* Tags */}
+                      <div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"14px"}}>
+                        {[profile.gender||"—",profile.housing_type||"—",profile.occupation||"—",(profile.budget_min&&profile.budget_max)?`₸${profile.budget_min/1000 | 0}-${profile.budget_max/1000 | 0}k`:"Не указан"].map((tag,i)=>(
+                          <span key={i} style={{fontSize:"0.65rem",fontWeight:400,padding:"4px 10px",borderRadius:"100px",background:i<2?"#E4F0E0":"#FFFFFF",color:i<2?"#7A9E7E":"rgba(28,43,30,0.6)",border:`1px solid ${i<2?"#C8DEC4":"rgba(28,43,30,0.08)"}`,letterSpacing:"0.2px"}}>
+                            {tag}
+                          </span>
+                        ))}
+                        {profile.verification_status === 'approved' && (
+                          <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#E4F0E0",color:"#7A9E7E",border:"1px solid #C8DEC4",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
+                            ✓ Верифицирован
+                          </span>
+                        )}
+                        {profile.verification_status === 'pending' && (
+                          <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#FEF3C7",color:"#92400E",border:"1px solid rgba(146,64,14,0.2)",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
+                            ⏳ На проверке
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Compatibility Bar */}
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",background:"#F2F8F1",borderRadius:"12px"}}>
+                        <span style={{fontSize:"0.7rem",color:"rgba(28,43,30,0.6)",fontWeight:300,flex:1}}>Совместимость</span>
+                        <div style={{flex:2,height:"4px",background:"#C8DEC4",borderRadius:"2px"}}>
+                          <div style={{height:"100%",borderRadius:"2px",background:"#7A9E7E",width:`${compatibility}%`}}/>
+                        </div>
+                        <span style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.1rem",fontWeight:600,color:"#7A9E7E"}}>{compatibility}%</span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            )}
+            </div>
+          </section>
 
-            {rankedFiltered.length===0&&(
-              <div style={{background:"#fff",borderRadius:"12px",border:"1px solid #e0e0e0",padding:"60px 40px",textAlign:"center"}}>
-                <div style={{fontSize:"56px",marginBottom:"16px"}}>🔍</div>
-                <div style={{fontSize:"20px",fontWeight:"700",color:"#1e4a36",marginBottom:"8px"}}>Ничего не найдено</div>
-                <p style={{fontSize:"14px",color:"#666",marginBottom:"24px"}}>Попробуйте изменить фильтры или найти идеального соседа среди новых профилей</p>
-                <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} style={{padding:"12px 28px",background:"#5a8f6f",border:"none",borderRadius:"8px",color:"#fff",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>e.target.style.background="#4a7f5f"} onMouseLeave={e=>e.target.style.background="#5a8f6f"}>
-                  Сбросить фильтры
-                </button>
+          {/* CTA SECTION */}
+          <section style={{padding:"100px 72px",background:"#FFFFFF"}}>
+            <div style={{maxWidth:"1200px",margin:"0 auto"}}>
+              <div style={{background:"linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)",borderRadius:"32px",padding:"80px 72px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"60px",alignItems:"center",position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",top:"-80px",right:"-80px",width:"320px",height:"320px",background:"rgba(255,255,255,0.08)",borderRadius:"50%"}}/>
+                <div style={{position:"absolute",bottom:"-60px",left:"30%",width:"200px",height:"200px",background:"rgba(255,255,255,0.05)",borderRadius:"50%"}}/>
+                <div style={{position:"relative",zIndex:2}}>
+                  <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(2.2rem, 3.5vw, 3.2rem)",fontWeight:600,lineHeight:1.08,letterSpacing:"-0.5px",color:"white",marginBottom:"16px"}}>
+                    Готовы найти<br/>вашего <em style={{fontStyle:"italic",color:"rgba(255,255,255,0.7)"}}>идеального</em> соседа?
+                  </h2>
+                  <p style={{fontSize:"0.95rem",fontWeight:300,color:"rgba(255,255,255,0.72)",lineHeight:1.75}}>
+                    Присоединяйтесь к сообществу более 4,200 соседей по комнате, которые уже нашли идеальное совпадение на Roomate.kz
+                  </p>
+                </div>
+                <div style={{position:"relative",zIndex:2}}>
+                  <button onClick={()=>setTab("map")} style={{width:"100%",padding:"16px",borderRadius:"14px",border:"none",background:"white",color:"#7A9E7E",fontFamily:"'Geologica', sans-serif",fontSize:"0.92rem",fontWeight:600,cursor:"pointer",transition:"transform 0.2s, box-shadow 0.2s",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="#7A9E7E" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                    Посмотрите профили на карте
+                  </button>
+                  <div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.45)",marginTop:"10px",textAlign:"center",fontWeight:300}}>
+                    Бесплатные совпадения · Проверенные профили
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          </section>
         </div>
       )}
 
@@ -1860,7 +1839,13 @@ const sendChat = async (profileId, text) => {
         <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} />
       )}
 
-{selected && (
+      {tab==="admin" && auth?.is_admin && (
+        <AdminVerificationDashboard allProfiles={allProfiles} onVerify={(profileId, status, reason) => {
+          setAllProfiles(prev => prev.map(p => p.id === profileId ? {...p, verification_status: status, rejection_reason: reason} : p));
+        }} />
+      )}
+
+    {selected && (
         <ProfileModal
           p={selected}
           liked={liked.has(selected.id)}
@@ -2129,125 +2114,173 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
   };
 
   return (
-    <div className="overlay" style={{ zIndex: 1000 }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="mhero" style={{background:p.photos[0]?.startsWith("http")?`url(${p.photos[0]}) center/cover`:`linear-gradient(160deg,${p.photos[0]||"#e8a598"},${p.photos[2]||"#c9a89a"})`}}>
-          <div className="mav">{p.avatar}</div>
-          <button className="mclose" onClick={onClose}><ModalIc n="x" size={15} /></button>
-          {p.online && (
-            <div style={{ position:"absolute", bottom:"14px", left:"14px", background:"rgba(255,255,255,.9)", borderRadius:"20px", padding:"3px 10px", fontSize:"12px", color:"#4caf50", fontWeight:"700", display:"flex", alignItems:"center", gap:"5px" }}>
-              <span style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#4caf50", display:"inline-block" }} />Онлайн
-            </div>
-          )}
-          <div style={{ position:"absolute", top:"14px", right:"14px", display:"flex", gap:"5px", alignItems:"center" }}>
+    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"20px"}} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{background:"#FFFFFF",borderRadius:"32px",width:"100%",maxWidth:"520px",maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 80px rgba(122,158,126,0.25)"}}>
+        
+        {/* HERO IMAGE */}
+        <div style={{position:"relative",height:"280px",background:p.photos[0]?.startsWith("http")?`url(${p.photos[0]}) center/cover`:`linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)`,backgroundSize:"cover",backgroundPosition:"center"}}>
+          
+          {/* Close Button */}
+          <button onClick={onClose} style={{position:"absolute",top:"16px",right:"16px",width:"40px",height:"40px",borderRadius:"50%",background:"rgba(255,255,255,0.95)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",boxShadow:"0 4px 12px rgba(0,0,0,0.15)"}}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5L15 15" stroke="#1C2B1E" strokeWidth="2" strokeLinecap="round"/></svg>
+          </button>
+
+          {/* Photo Indicators */}
+          <div style={{position:"absolute",bottom:"16px",left:"16px",display:"flex",gap:"6px"}}>
             {p.photos.map((_, i) => (
-              <div key={i} onClick={() => setLocalPhoto(i)} style={{ width:"8px", height:"8px", borderRadius:"50%", background: localPhoto===i ? "#fff" : "rgba(255,255,255,.4)", cursor:"pointer", transition:"all .2s" }} />
+              <button key={i} onClick={() => setLocalPhoto(i)} style={{width:"10px",height:"10px",borderRadius:"50%",background:localPhoto===i?"white":"rgba(255,255,255,0.4)",border:"none",cursor:"pointer",transition:"all 0.2s"}}/>
             ))}
           </div>
-          <div style={{ position:"absolute", bottom:"14px", right:"14px", background: p.gender==="female" ? "var(--female-light)" : "var(--male-light)", borderRadius:"20px", padding:"4px 12px", fontSize:"12px", fontWeight:"700", color: p.gender==="female" ? "var(--female)" : "var(--male)" }}>
-            {p.gender==="female" ? "♀ Девушка" : "♂ Парень"}
-          </div>
+
+          {/* Online Status */}
+          {p.online && (
+            <div style={{position:"absolute",bottom:"16px",right:"16px",background:"#FFFFFF",borderRadius:"100px",padding:"6px 12px",display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",fontWeight:600,color:"#22C55E"}}>
+              <span style={{width:"8px",height:"8px",borderRadius:"50%",background:"#22C55E"}}/>
+              Онлайн
+            </div>
+          )}
         </div>
 
-        <div className="mbody">
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:"10px", flexWrap:"wrap", gap:"10px" }}>
-            <div>
-              <div className="mname">{p.name}, {p.age}</div>
-              {p.verified && <span className="badge badge-g" style={{ fontSize:"11px" }}><ModalIc n="check" size={10} c="var(--accent)" /> Верифицирован</span>}
-            </div>
-            <button onClick={onLike} style={{ background: liked ? "var(--female-light)" : "var(--bg)", border: `1.5px solid ${liked ? "var(--female)" : "var(--bg2)"}`, borderRadius:"var(--rs)", padding:"9px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", fontSize:"13px", fontWeight:"700", color: liked ? "var(--female)" : "var(--muted)", fontFamily:"Nunito,sans-serif" }}>
-              <ModalIc n={liked ? "heartFill" : "heart"} size={15} c={liked ? "var(--female)" : "var(--muted)"} />
-              {liked ? "В избранном" : "В избранное"}
-            </button>
-          </div>
-
-          <div className="mmeta">
-            <div className="mmi"><ModalIc n="pin" size={13} /> {reg?.name || p.region}</div>
-            <div className="mmi">💰 {(p.budget || 0).toLocaleString()} ₸/мес</div>
-            <div className="mmi"><ModalIc n="user" size={13} /> {p.occupation}</div>
-            <div className="mmi">📅 {p.move_in}</div>
-            {p.university && <div className="mmi">🎓 {p.university}</div>}
-            {!!p.commuteMax && <div className="mmi">🕒 Коммьют до кампуса: ≤ {p.commuteMax} мин</div>}
-          </div>
-
-          {p.renterType && (
-            <div style={{ background: p.renterType==="has_place" ? "linear-gradient(135deg,#fef3c7,#fde68a)" : "linear-gradient(135deg,#e0f2fe,#bae6fd)", borderRadius:"var(--rs)", padding:"14px 16px", marginBottom:"16px", border: `2px solid ${p.renterType==="has_place" ? "#fbbf24" : "#0ea5e9"}` }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                <div style={{ fontSize:"24px" }}>{p.renterType==="has_place" ? "🏠" : "🔍"}</div>
-                <div>
-                  <div style={{ fontSize:"13px", fontWeight:"700", color: p.renterType==="has_place" ? "#92400e" : "#075985" }}>{p.renterType==="has_place" ? "Есть своё жильё" : "Ищет жильё"}</div>
-                  <div style={{ fontSize:"11px", opacity:".8", color: p.renterType==="has_place" ? "#92400e" : "#075985" }}>{p.renterType==="has_place" ? "Ищет соседа к себе" : "Ищет квартиру + соседа"}</div>
+        {/* CONTENT */}
+        <div style={{padding:"32px"}}>
+          
+          {/* Header */}
+          <div style={{marginBottom:"24px"}}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px",marginBottom:"12px"}}>
+              <div>
+                <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"2rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 4px 0",lineHeight:1}}>{p.name}, {p.age}</h2>
+                <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
+                  {p.verified && (
+                    <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"#E4F0E0",color:"#7A9E7E",padding:"4px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:600}}>
+                      ✓ Верифицирован
+                    </div>
+                  )}
+                  {!p.verified && (
+                    <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"#FEF3C7",color:"#92400E",padding:"4px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:600}}>
+                      ⏳ На проверке
+                    </div>
+                  )}
                 </div>
+              </div>
+              <button onClick={onLike} style={{background:liked?"#E4F0E0":"#F2F8F1",border:`2px solid ${liked?"#7A9E7E":"#C8DEC4"}`,borderRadius:"14px",padding:"10px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",fontWeight:600,color:liked?"#7A9E7E":"#1C2B1E",transition:"all 0.2s",fontFamily:"'Geologica', sans-serif"}}>
+                {liked?"❤️ В избранном":"🤍 В избранное"}
+              </button>
+            </div>
+          </div>
+
+          {/* Meta Info Grid */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"24px"}}>
+            <div style={{background:"#F2F8F1",borderRadius:"16px",padding:"12px 14px",fontSize:"13px"}}>
+              <div style={{color:"rgba(28,43,30,0.6)",fontWeight:500,marginBottom:"2px"}}>Локация</div>
+              <div style={{color:"#1C2B1E",fontWeight:600}}>📍 {reg?.name || p.region}</div>
+            </div>
+            <div style={{background:"#F2F8F1",borderRadius:"16px",padding:"12px 14px",fontSize:"13px"}}>
+              <div style={{color:"rgba(28,43,30,0.6)",fontWeight:500,marginBottom:"2px"}}>Бюджет</div>
+              <div style={{color:"#1C2B1E",fontWeight:600}}>💰 ₸{(p.budget || 0).toLocaleString()}/мес</div>
+            </div>
+            <div style={{background:"#F2F8F1",borderRadius:"16px",padding:"12px 14px",fontSize:"13px"}}>
+              <div style={{color:"rgba(28,43,30,0.6)",fontWeight:500,marginBottom:"2px"}}>Профессия</div>
+              <div style={{color:"#1C2B1E",fontWeight:600}}>{p.occupation || "—"}</div>
+            </div>
+            <div style={{background:"#F2F8F1",borderRadius:"16px",padding:"12px 14px",fontSize:"13px"}}>
+              <div style={{color:"rgba(28,43,30,0.6)",fontWeight:500,marginBottom:"2px"}}>Въезд</div>
+              <div style={{color:"#1C2B1E",fontWeight:600}}>{p.move_in || "—"}</div>
+            </div>
+          </div>
+
+          {/* Renter Type Badge */}
+          {p.renterType && (
+            <div style={{background:p.renterType==="has_place"?"linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)":"linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)",borderRadius:"16px",padding:"16px",marginBottom:"24px",border:`2px solid ${p.renterType==="has_place"?"#FBBF24":"#0EA5E9"}`,display:"flex",alignItems:"center",gap:"12px"}}>
+              <span style={{fontSize:"28px"}}>{p.renterType==="has_place"?"🏠":"🔍"}</span>
+              <div>
+                <div style={{fontSize:"14px",fontWeight:600,color:p.renterType==="has_place"?"#92400E":"#075985"}}>{p.renterType==="has_place"?"Есть своё жильё":"Ищет жильё"}</div>
+                <div style={{fontSize:"12px",color:p.renterType==="has_place"?"#92400E":"#075985",opacity:0.8}}>{p.renterType==="has_place"?"Ищет соседа к себе":"Ищет квартиру и соседа"}</div>
               </div>
             </div>
           )}
 
-          <div className="msec">
-            <div className="mst">О себе</div>
-            <p style={{ fontSize:"14px", lineHeight:"1.6", color:"var(--mid)" }}>{p.bio}</p>
+          {/* About Section */}
+          <div style={{marginBottom:"24px"}}>
+            <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.2rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 12px 0"}}>О себе</h3>
+            <p style={{fontSize:"14px",lineHeight:1.7,color:"rgba(28,43,30,0.7)",margin:0}}>{p.bio}</p>
             {(p.idealRoommate || p.quietHours) && (
-              <div style={{ marginTop:"10px", background:"var(--bg2)", borderRadius:"10px", padding:"10px 12px", fontSize:"12px", color:"var(--mid)", lineHeight:"1.6" }}>
-                {p.idealRoommate && <div><b>My ideal roommate is:</b> {p.idealRoommate}</div>}
-                {p.quietHours && <div><b>Quiet hours:</b> {p.quietHours}</div>}
+              <div style={{marginTop:"12px",background:"#F2F8F1",borderRadius:"12px",padding:"12px 14px",fontSize:"12px",color:"rgba(28,43,30,0.7)",lineHeight:1.6,borderLeft:"4px solid #7A9E7E"}}>
+                {p.idealRoommate && <div style={{marginBottom:"6px"}}><b style={{color:"#1C2B1E"}}>Идеальный сосед:</b> {p.idealRoommate}</div>}
+                {p.quietHours && <div><b style={{color:"#1C2B1E"}}>Тихие часы:</b> {p.quietHours}</div>}
               </div>
             )}
           </div>
 
-          <div className="msec">
-            <div className="mst">Образ жизни</div>
-            {[["Чистоплотность", p.cleanliness], ["Общительность", p.social]].map(([l, v]) => (
-              <div key={l} className="trait">
-                <span className="tlabel">{l}</span>
-                <div className="ttrack"><div className="tfill" style={{ width: `${v * 20}%` }} /></div>
-                <span style={{ fontSize:"12px", fontWeight:"700", color:"var(--accent)", width:"24px" }}>{v}/5</span>
+          {/* Lifestyle Section */}
+          <div style={{marginBottom:"24px"}}>
+            <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.2rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 14px 0"}}>Образ жизни</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:"14px",marginBottom:"14px"}}>
+              {[["Чистоплотность", p.cleanliness], ["Общительность", p.social]].map(([l, v]) => (
+                <div key={l}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",fontSize:"13px"}}>
+                    <span style={{fontWeight:600,color:"#1C2B1E"}}>{l}</span>
+                    <span style={{fontWeight:600,color:"#7A9E7E"}}>{v || 0}/5</span>
+                  </div>
+                  <div style={{height:"6px",background:"#E4F0E0",borderRadius:"3px"}}>
+                    <div style={{height:"100%",background:"#7A9E7E",borderRadius:"3px",width:`${((v || 0) / 5) * 100}%`}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+              {p.pets && <span style={{background:"#E4F0E0",color:"#7A9E7E",padding:"6px 12px",borderRadius:"100px",fontSize:"12px",fontWeight:500}}>🐾 Питомец</span>}
+              {p.remote && <span style={{background:"#E4F0E0",color:"#7A9E7E",padding:"6px 12px",borderRadius:"100px",fontSize:"12px",fontWeight:500}}>💻 Удалёнка</span>}
+              {!p.smoking && <span style={{background:"#E4F0E0",color:"#7A9E7E",padding:"6px 12px",borderRadius:"100px",fontSize:"12px",fontWeight:500}}>🚭 Не курит</span>}
+              {!p.alcohol && <span style={{background:"#E4F0E0",color:"#7A9E7E",padding:"6px 12px",borderRadius:"100px",fontSize:"12px",fontWeight:500}}>🥤 Не пьёт</span>}
+            </div>
+          </div>
+
+          {/* Interests Section */}
+          {p.tags && p.tags.length > 0 && (
+            <div style={{marginBottom:"24px"}}>
+              <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.2rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 12px 0"}}>Интересы</h3>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+                {p.tags.map(t => (
+                  <span key={t} style={{background:"#F2F8F1",color:"#7A9E7E",padding:"6px 12px",borderRadius:"100px",fontSize:"12px",fontWeight:500,border:"1px solid #C8DEC4"}}>
+                    {t}
+                  </span>
+                ))}
               </div>
-            ))}
-            <div style={{ display:"flex", flexWrap:"wrap", gap:"7px", marginTop:"12px" }}>
-              {p.pets && <span className="badge badge-b">🐾 Питомец есть</span>}
-              {p.remote && <span className="badge badge-b">💻 Удалёнка</span>}
-              {!p.smoking && <span className="badge badge-g">🚭 Не курит</span>}
-              {!p.alcohol && <span className="badge badge-g">🥤 Не пьёт</span>}
             </div>
-          </div>
+          )}
 
-          <div className="msec">
-            <div className="mst">Интересы</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:"7px" }}>
-              {p.tags.map(t => <span key={t} className="tag" style={{ fontSize:"13px", padding:"5px 12px" }}>{t}</span>)}
-            </div>
-          </div>
-
-          <div className="msgbox">
+          {/* Message Section */}
+          <div style={{borderTop:"1px solid #C8DEC4",paddingTop:"24px"}}>
             {p.matched && sent ? (
               <>
-                <div style={{ background:"rgba(245,158,11,.1)", border:"1px solid rgba(245,158,11,.35)", borderRadius:"var(--rs)", padding:"10px 14px", display:"flex", alignItems:"center", gap:"8px", marginBottom:"12px" }}>
-                  <span style={{ fontSize:"18px" }}>🤝</span>
-                  <span style={{ fontSize:"13px", fontWeight:"700", color:"#92400e" }}>Совпадение! {p.name.split(" ")[0]} тоже хочет познакомиться</span>
+                <div style={{background:"linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",borderRadius:"16px",padding:"14px 16px",display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px",border:"1px solid #FBBF24"}}>
+                  <span style={{fontSize:"20px"}}>🤝</span>
+                  <div style={{fontSize:"13px",fontWeight:600,color:"#92400E"}}>Совпадение! {p.name.split(" ")[0]} хочет познакомиться</div>
                 </div>
-                <button className="btn-primary" style={{ background:"var(--match)", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }} onClick={onClose}>
-                  <ModalIc n="msg" size={15} c="#fff" /> Перейти в чат
+                <button style={{width:"100%",padding:"14px",background:"linear-gradient(135deg, #7A9E7E 0%, #5a8f6f 100%)",color:"white",border:"none",borderRadius:"14px",fontFamily:"'Geologica', sans-serif",fontSize:"14px",fontWeight:600,cursor:"pointer",transition:"transform 0.2s, box-shadow 0.2s"}} onClick={onClose}>
+                  💬 Перейти в чат
                 </button>
-                <p style={{ fontSize:"11px", color:"var(--muted)", textAlign:"center", marginTop:"8px" }}>Откройте вкладку «Избранное» для переписки</p>
+                <p style={{fontSize:"12px",color:"rgba(28,43,30,0.6)",textAlign:"center",marginTop:"10px"}}>Откройте вкладку «Избранное» для переписки</p>
               </>
             ) : sent ? (
               <>
-                <div className="msghead"><ModalIc n="check" size={14} c="var(--accent)" /> Сообщение отправлено!</div>
-                <p className="msgnote">Если ответят — откроется чат 💬</p>
-                <div style={{ background:"var(--bg2)", borderRadius:"var(--rs)", padding:"10px 13px", fontSize:"13px", color:"var(--mid)", borderLeft:"3px solid var(--accent)", marginTop:"10px" }}>{msgText}</div>
+                <div style={{background:"#E4F0E0",borderRadius:"14px",padding:"14px 16px",marginBottom:"12px",borderLeft:"4px solid #7A9E7E"}}>
+                  <div style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"4px"}}>✓ Сообщение отправлено!</div>
+                  <div style={{fontSize:"12px",color:"rgba(28,43,30,0.7)"}}>Если ответят — откроется чат 💬</div>
+                </div>
+                <div style={{background:"#F2F8F1",borderRadius:"12px",padding:"12px 14px",fontSize:"13px",color:"rgba(28,43,30,0.7)",borderLeft:"4px solid #7A9E7E"}}>{msgText}</div>
               </>
             ) : (
               <>
-                <div className="msghead"><ModalIc n="msg" size={14} c="var(--accent)" /> Написать сообщение</div>
-                <p className="msgnote">Одно сообщение — сделайте его запоминающимся ✨</p>
-                <textarea className="msgtxt" placeholder={`Привет, ${p.name.split(" ")[0]}! Увидел(а) твою анкету и…`} value={msgText} onChange={e => setMsgText(e.target.value.slice(0, max))} />
-                <div className="msgchar">{msgText.length}/{max}</div>
-                <button className={`btn-primary${isSending ? " sending" : ""}`} style={{ marginTop:"10px" }} onClick={handleSend} disabled={msgText.trim().length < 10 || isSending}>
-                  <span className="send-label">
-                    {isSending
-                      ? <><ModalIc n="check" size={14} c="#fff" /> Отправляется…</>
-                      : <><ModalIc n="send"  size={14} c="#fff" /> Отправить</>
-                    }
-                  </span>
+                <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.1rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 6px 0"}}>Написать сообщение</h3>
+                <p style={{fontSize:"13px",color:"rgba(28,43,30,0.6)",margin:"0 0 12px 0"}}>Одно сообщение — сделайте его запоминающимся ✨</p>
+                <textarea placeholder={`Привет, ${p.name.split(" ")[0]}! Увидел(а) твою анкету и…`} value={msgText} onChange={e => setMsgText(e.target.value.slice(0, max))} style={{width:"100%",padding:"12px 14px",border:"1px solid #C8DEC4",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",color:"#1C2B1E",background:"#FAFDF9",outline:"none",resize:"vertical",minHeight:"80px",boxSizing:"border-box",transition:"border-color 0.2s"}} onFocus={(e)=>e.target.style.borderColor="#7A9E7E"} onBlur={(e)=>e.target.style.borderColor="#C8DEC4"}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"8px 0 14px 0",fontSize:"12px",color:"rgba(28,43,30,0.6)"}}>
+                  <span>Минимум 10 символов</span>
+                  <span>{msgText.length}/{max}</span>
+                </div>
+                <button onClick={handleSend} disabled={msgText.trim().length < 10 || isSending} style={{width:"100%",padding:"14px",background:msgText.trim().length < 10?"#E4F0E0":"linear-gradient(135deg, #7A9E7E 0%, #5a8f6f 100%)",color:msgText.trim().length < 10?"#A8C5A0":"white",border:"none",borderRadius:"14px",fontFamily:"'Geologica', sans-serif",fontSize:"14px",fontWeight:600,cursor:msgText.trim().length < 10?"not-allowed":"pointer",transition:"all 0.2s",opacity:isSending?0.7:1}}>
+                  {isSending?"✓ Отправляется…":"📤 Отправить"}
                 </button>
               </>
             )}
@@ -3103,6 +3136,138 @@ function MatchesTab({
               />
             );
           })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ADMIN VERIFICATION DASHBOARD ──────────────────────────────────────────────
+export function AdminVerificationDashboard({ allProfiles, onVerify }) {
+  const [filter, setFilter] = useState('pending');
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  const filteredProfiles = allProfiles.filter(p => {
+    if (filter === 'pending') return p.verification_status === 'pending';
+    if (filter === 'approved') return p.verification_status === 'approved';
+    if (filter === 'rejected') return p.verification_status === 'rejected';
+    return true;
+  });
+
+  const handleVerify = (profileId, approved) => {
+    onVerify(profileId, approved ? 'approved' : 'rejected', rejectionReason);
+    setSelectedProfile(null);
+    setRejectionReason('');
+  };
+
+  return (
+    <div style={{background:"#FAFDF9",minHeight:"100vh",padding:"40px 72px"}}>
+      <style>{`
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .admin-card { animation: slideIn 0.4s ease both; }
+      `}</style>
+
+      <div style={{maxWidth:"1400px",margin:"0 auto"}}>
+        {/* Header */}
+        <div style={{marginBottom:"40px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"8px"}}>
+            <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"2.4rem",fontWeight:600,color:"#1C2B1E",margin:0}}>
+              🔍 Панель верификации
+            </h1>
+          </div>
+          <p style={{fontSize:"15px",color:"rgba(28,43,30,0.6)",margin:0}}>Проверьте и верифицируйте профили</p>
+        </div>
+
+        {/* Filter Tabs */}
+        <div style={{display:"flex",gap:"12px",marginBottom:"32px",borderBottom:"2px solid #C8DEC4",paddingBottom:"16px"}}>
+          {[
+            {id:'pending',label:`⏳ На проверке (${allProfiles.filter(p=>p.verification_status==='pending').length})`},
+            {id:'approved',label:`✓ Верифицированы (${allProfiles.filter(p=>p.verification_status==='approved').length})`},
+            {id:'rejected',label:`✗ Отклонены (${allProfiles.filter(p=>p.verification_status==='rejected').length})`}
+          ].map(tab=>(
+            <button key={tab.id} onClick={()=>setFilter(tab.id)} style={{padding:"10px 18px",borderRadius:"12px",border:"none",background:filter===tab.id?"#7A9E7E":"transparent",color:filter===tab.id?"white":"#1C2B1E",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Profiles Grid */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))",gap:"20px",marginBottom:"40px"}}>
+          {filteredProfiles.map((profile)=>(
+            <div key={profile.id} className="admin-card" style={{background:"#FFFFFF",border:"1px solid #C8DEC4",borderRadius:"20px",overflow:"hidden",boxShadow:"0 4px 12px rgba(0,0,0,0.08)",transition:"all 0.2s",cursor:"pointer"}} onMouseEnter={(e)=>{e.currentTarget.style.boxShadow="0 8px 24px rgba(122,158,126,0.2)";e.currentTarget.style.transform="translateY(-4px)";}} onMouseLeave={(e)=>{e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.08)";e.currentTarget.style.transform="translateY(0)";}}>
+              <div style={{height:"180px",background:profile.photos?.[0]?.startsWith("http")?`url(${profile.photos[0]}) center/cover`:`linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
+                <div style={{position:"absolute",top:"12px",right:"12px",background:profile.verification_status==="approved"?"#E4F0E0":profile.verification_status==="rejected"?"#FEE2E2":"#FEF3C7",color:profile.verification_status==="approved"?"#7A9E7E":profile.verification_status==="rejected"?"#DC2626":"#92400E",padding:"6px 12px",borderRadius:"100px",fontSize:"12px",fontWeight:600}}>
+                  {profile.verification_status==="approved"?"✓":profile.verification_status==="rejected"?"✗":"⏳"}
+                </div>
+              </div>
+              <div style={{padding:"16px"}}>
+                <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.1rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 4px 0"}}>{profile.full_name}</h3>
+                <div style={{fontSize:"13px",color:"rgba(28,43,30,0.6)",marginBottom:"12px"}}>📍 {(profile.region || "—").split(",")[0]}</div>
+                <button onClick={()=>setSelectedProfile(profile)} style={{width:"100%",padding:"10px",background:profile.verification_status==="pending"?"linear-gradient(135deg, #7A9E7E 0%, #5a8f6f 100%)":"#F2F8F1",color:profile.verification_status==="pending"?"white":"#7A9E7E",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>
+                  {profile.verification_status==="pending"?"🔍 Проверить":"👁️ Детали"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredProfiles.length === 0 && (
+          <div style={{textAlign:"center",padding:"60px 20px"}}>
+            <div style={{fontSize:"3rem",marginBottom:"16px"}}>✓</div>
+            <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.6rem",fontWeight:600,color:"#1C2B1E"}}>Нет профилей</h2>
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {selectedProfile && (
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:2000,padding:"20px"}} onClick={e=>e.target===e.currentTarget&&setSelectedProfile(null)}>
+          <div style={{background:"#FFFFFF",borderRadius:"28px",width:"100%",maxWidth:"600px",maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 80px rgba(122,158,126,0.25)"}}>
+            <div style={{padding:"24px",borderBottom:"1px solid #C8DEC4",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.6rem",fontWeight:600,color:"#1C2B1E",margin:0}}>{selectedProfile.full_name}</h2>
+              <button onClick={()=>setSelectedProfile(null)} style={{width:"36px",height:"36px",borderRadius:"50%",background:"#F2F8F1",border:"none",cursor:"pointer"}}>✕</button>
+            </div>
+            <div style={{padding:"24px"}}>
+              <div style={{marginBottom:"24px"}}>
+                <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>ℹ️ Информация</h3>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+                  {[
+                    {label:"Возраст",value:selectedProfile.age},
+                    {label:"Пол",value:selectedProfile.gender},
+                    {label:"Регион",value:(selectedProfile.region||"—").split(",")[0]},
+                    {label:"Бюджет",value:selectedProfile.budget?`₸${selectedProfile.budget}`:"-"}
+                  ].map((item,i)=>(
+                    <div key={i} style={{background:"#F2F8F1",borderRadius:"12px",padding:"12px"}}>
+                      <div style={{fontSize:"12px",color:"rgba(28,43,30,0.6)",marginBottom:"4px"}}>{item.label}</div>
+                      <div style={{fontSize:"14px",fontWeight:600,color:"#1C2B1E"}}>{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {selectedProfile.verification_status === 'pending' && (
+                <div style={{marginBottom:"24px"}}>
+                  <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>💬 Причина отклонения</h3>
+                  <textarea value={rejectionReason} onChange={(e)=>setRejectionReason(e.target.value)} placeholder="Причина..." style={{width:"100%",padding:"12px 14px",border:"1px solid #C8DEC4",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",color:"#1C2B1E",background:"#FAFDF9",outline:"none",resize:"vertical",minHeight:"70px",boxSizing:"border-box"}}/>
+                </div>
+              )}
+              <div style={{marginBottom:"24px"}}>
+                <div style={{background:selectedProfile.verification_status==="approved"?"#E4F0E0":selectedProfile.verification_status==="rejected"?"#FEE2E2":"#FEF3C7",color:selectedProfile.verification_status==="approved"?"#7A9E7E":selectedProfile.verification_status==="rejected"?"#DC2626":"#92400E",padding:"12px 14px",borderRadius:"12px",fontWeight:600,fontSize:"14px"}}>
+                  {selectedProfile.verification_status==="approved"?"✓ Верифицирован":selectedProfile.verification_status==="rejected"?"✗ Отклонен":"⏳ На проверке"}
+                </div>
+              </div>
+              {selectedProfile.verification_status === 'pending' && (
+                <div style={{display:"flex",gap:"12px"}}>
+                  <button onClick={()=>handleVerify(selectedProfile.id, false)} style={{flex:1,padding:"12px",background:"#FEE2E2",color:"#DC2626",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer"}}>
+                    ✗ Отклонить
+                  </button>
+                  <button onClick={()=>handleVerify(selectedProfile.id, true)} style={{flex:1,padding:"12px",background:"#E4F0E0",color:"#7A9E7E",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer"}}>
+                    ✓ Верифицировать
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

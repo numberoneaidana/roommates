@@ -578,14 +578,6 @@ const MapScreen = () => {
             Roomate<span>.kz</span>
           </div>
 
-          <div className="map-search-bar">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="6" cy="6" r="4.5" stroke={colors.matcha} strokeWidth="1.3" />
-              <path d="M9.5 9.5L12.5 12.5" stroke={colors.matcha} strokeWidth="1.3" strokeLinecap="round" />
-            </svg>
-            <input type="text" placeholder="Search by district, metro, or name…" defaultValue="Алматы, Медеу" />
-          </div>
-
           <div className="map-filter-chips">
             {['All nearby', '90%+ match', 'Early bird', 'Night owl', 'Non-smoker', 'Pets ok', 'WFH'].map(chip => (
               <div

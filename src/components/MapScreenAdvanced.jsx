@@ -1130,120 +1130,7 @@ const MapScreenAdvanced = ({
           </div>
 
           <div className="map-adv-controls">
-            <div className="map-adv-search">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <circle cx="6" cy="6" r="4.5" stroke={colors.matcha} strokeWidth="1.3" />
-                <path d="M9.5 9.5L12.5 12.5" stroke={colors.matcha} strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-              <input 
-                type="text" 
-                placeholder="Find people by name, job, tags…" 
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </div>
-
-            <div className="map-adv-radius-ctrl" title="Drag on map to adjust radius">
-              <label>Within</label>
-              <span className="map-adv-radius-val" style={{ cursor: 'grab', fontWeight: 600, color: '#7A9E7E' }}>
-                {searchRadius.toFixed(1)} km
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'rgba(28,43,30,0.6)', marginLeft: '4px' }}>🖱️ drag on map</span>
-            </div>
-
-            <div className="map-adv-location-badge">
-              📍 {nearestRegion.substring(0, 20)}
-            </div>
-          </div>
-
-          <div className="map-adv-topbar-right">
-            <div className="map-adv-btn">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 1L10 5.5H15L11.5 8.5L12.5 13L8 10.5L3.5 13L4.5 8.5L1 5.5H6L8 1Z" stroke={colors.matcha} strokeWidth="1.3" />
-              </svg>
-            </div>
-            <div className="map-adv-avi">{auth?.initials || 'U'}</div>
-          </div>
-        </div>
-
-        {/* SIDEBAR */}
-        <div className="map-adv-sidebar">
-          <div className="map-adv-sidebar-header">
-            <div className="map-adv-sidebar-title">Quick regions</div>
-            <div className="map-adv-regions">
-              {popularRegions.map(region => (
-                <div
-                  key={region.id}
-                  className={`map-adv-region-chip ${selectedRegion === region.id ? 'active' : ''}`}
-                  onClick={() => {
-                    if (selectedRegion === region.id) {
-                      console.log('Clearing region filter');
-                      setSelectedRegion("");
-                      setZoomLevel(10);
-                    } else {
-                      console.log('Setting region filter to:', region.id, region.name);
-                      setSelectedRegion(region.id);
-                      setSelectedCenter([region.lat, region.lng]);
-                      setZoomLevel(13);
-                    }
-                  }}
-                  title={region.name}
-                >
-                  {region.name.substring(0, 15)}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="map-adv-sidebar-content">
-            <div className="map-adv-results">
-              {filteredPeople.length > 0 ? (
-                filteredPeople.map(person => (
-                  <div
-                    key={person.id}
-                    className={`map-adv-card ${selectedPerson?.id === person.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedPerson(person)}
-                  >
-                    <div className="map-adv-card-avatar">{getInitials(person.name)}</div>
-                    <div className="map-adv-card-body">
-                      <div className="map-adv-card-name">{person.name}, {person.age}</div>
-                      <div className="map-adv-card-region">📍 {getRegionName(person.region)}</div>
-                      <div className="map-adv-card-distance">{person.distance?.toFixed(1)} km away</div>
-                      <div className="map-adv-card-tags">
-                        {(person.tags || []).slice(0, 2).map((tag, i) => (
-                          <span key={i} className="map-adv-card-tag">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="map-adv-empty">
-                  <p>No people found within {searchRadius} km</p>
-                  <p style={{ fontSize: '0.73rem', marginTop: '6px' }}>Try adjusting the radius or center point</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* MAP CANVAS */}
-        <div className="map-adv-canvas">
-          <MapContainer
-            center={DEFAULT_CENTER}
-            zoom={12}
-            style={{ width: '100%', height: '100%' }}
-            dragging={false}
-            touchZoom={true}
-            scrollWheelZoom={true}
-            keyboard={false}
-            doubleClickZoom={false}
-            zoomControl={true}
-          >
-            <InnerMapContent />
-          </MapContainer>
-
-          {/* Housing filter buttons */}
+                      {/* Housing filter buttons */}
           <div style={{
             position: 'absolute',
             top: '20px',
@@ -1564,6 +1451,108 @@ const MapScreenAdvanced = ({
               Clear ({drawnShapes.length})
             </button>
           </div>
+
+            
+
+            <div className="map-adv-radius-ctrl" title="Drag on map to adjust radius">
+              <label>Within</label>
+              <span className="map-adv-radius-val" style={{ cursor: 'grab', fontWeight: 600, color: '#7A9E7E' }}>
+                {searchRadius.toFixed(1)} km
+              </span>
+              <span style={{ fontSize: '0.65rem', color: 'rgba(28,43,30,0.6)', marginLeft: '4px' }}>🖱️ drag on map</span>
+            </div>
+
+            <div className="map-adv-location-badge">
+              📍 {nearestRegion.substring(0, 20)}
+            </div>
+          </div>
+
+          <div className="map-adv-topbar-right">
+            <div className="map-adv-btn">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1L10 5.5H15L11.5 8.5L12.5 13L8 10.5L3.5 13L4.5 8.5L1 5.5H6L8 1Z" stroke={colors.matcha} strokeWidth="1.3" />
+              </svg>
+            </div>
+            <div className="map-adv-avi">{auth?.initials || 'U'}</div>
+          </div>
+        </div>
+
+        {/* SIDEBAR */}
+        <div className="map-adv-sidebar">
+          <div className="map-adv-sidebar-header">
+            <div className="map-adv-sidebar-title">Quick regions</div>
+            <div className="map-adv-regions">
+              {popularRegions.map(region => (
+                <div
+                  key={region.id}
+                  className={`map-adv-region-chip ${selectedRegion === region.id ? 'active' : ''}`}
+                  onClick={() => {
+                    if (selectedRegion === region.id) {
+                      console.log('Clearing region filter');
+                      setSelectedRegion("");
+                      setZoomLevel(10);
+                    } else {
+                      console.log('Setting region filter to:', region.id, region.name);
+                      setSelectedRegion(region.id);
+                      setSelectedCenter([region.lat, region.lng]);
+                      setZoomLevel(13);
+                    }
+                  }}
+                  title={region.name}
+                >
+                  {region.name.substring(0, 15)}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="map-adv-sidebar-content">
+            <div className="map-adv-results">
+              {filteredPeople.length > 0 ? (
+                filteredPeople.map(person => (
+                  <div
+                    key={person.id}
+                    className={`map-adv-card ${selectedPerson?.id === person.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedPerson(person)}
+                  >
+                    <div className="map-adv-card-avatar">{getInitials(person.name)}</div>
+                    <div className="map-adv-card-body">
+                      <div className="map-adv-card-name">{person.name}, {person.age}</div>
+                      <div className="map-adv-card-region">📍 {getRegionName(person.region)}</div>
+                      <div className="map-adv-card-distance">{person.distance?.toFixed(1)} km away</div>
+                      <div className="map-adv-card-tags">
+                        {(person.tags || []).slice(0, 2).map((tag, i) => (
+                          <span key={i} className="map-adv-card-tag">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="map-adv-empty">
+                  <p>No people found within {searchRadius} km</p>
+                  <p style={{ fontSize: '0.73rem', marginTop: '6px' }}>Try adjusting the radius or center point</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* MAP CANVAS */}
+        <div className="map-adv-canvas">
+          <MapContainer
+            center={DEFAULT_CENTER}
+            zoom={12}
+            style={{ width: '100%', height: '100%' }}
+            dragging={false}
+            touchZoom={true}
+            scrollWheelZoom={true}
+            keyboard={false}
+            doubleClickZoom={false}
+            zoomControl={true}
+          >
+            <InnerMapContent />
+          </MapContainer>
 
           {/* Detail panel */}
           {selectedPerson && (

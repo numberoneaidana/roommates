@@ -292,6 +292,75 @@ function HomePage({onGetStarted}) {
           </div>
         </section>
 
+        {/* VERIFICATION SECTION */}
+        <section style={{padding: '100px 72px', background: colors.white}}>
+          <div style={{maxWidth: '1200px', margin: '0 auto'}}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '64px'}}>
+              <div>
+                <div style={{fontSize: '0.72rem', fontWeight: 500, letterSpacing: '3px', textTransform: 'uppercase', color: colors.matcha, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  <span style={{width: '20px', height: '1px', background: colors.matcha}}/>
+                  Безопасность
+                </div>
+                <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>Проверенные<br/>профили для вашей<br/>безопасности</h2>
+              </div>
+            </div>
+
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center', marginBottom: '60px'}}>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '24px'}}>
+                {[
+                  {icon: '🛡️', title: 'Проверка ИИН', desc: 'Все профили проверяются по базе ИИН для полной безопасности'},
+                  {icon: '⏱️', title: 'Проверка 24 часа', desc: 'Каждый новый профиль проходит верификацию в течение суток'},
+                  {icon: '🚫', title: 'Блокировка мошенников', desc: 'Система автоматически выявляет и блокирует подозрительные аккаунты'},
+                  {icon: '📱', title: 'Подтверждение номера', desc: 'Обязательная верификация по номеру телефона'}
+                ].map((item, i) => (
+                  <div key={i} className="reveal" style={{display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 20px', background: colors.matchaMist, borderRadius: '16px', border: `1px solid ${colors.matchaLight}`, transition: 'all 0.3s'}}>
+                    <div style={{fontSize: '1.8rem', flexShrink: 0}}>{item.icon}</div>
+                    <div>
+                      <h4 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '1rem', fontWeight: 600, color: colors.ink, marginBottom: '4px'}}>{item.title}</h4>
+                      <p style={{fontSize: '0.85rem', fontWeight: 300, color: colors.ink60, margin: 0, lineHeight: 1.5}}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                <div style={{position: 'absolute', width: '320px', height: '320px', borderRadius: '50%', background: 'rgba(122,158,126,0.15)', filter: 'blur(80px)', pointerEvents: 'none'}}/>
+                <div className="float-a" style={{position: 'relative', zIndex: 2, width: '280px', background: colors.white, border: `2px solid ${colors.matchaLight}`, borderRadius: '28px', padding: '32px 24px', boxShadow: `0 12px 48px rgba(122,158,126,0.18)`, textAlign: 'center'}}>
+                  <div style={{fontSize: '3.2rem', marginBottom: '14px'}}>✓</div>
+                  <div style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', fontWeight: 600, color: colors.ink, marginBottom: '8px'}}>Верифицирован</div>
+                  <div style={{fontSize: '0.85rem', color: colors.ink60, marginBottom: '20px', lineHeight: 1.6}}>Все профили на Roomate.kz прошли проверку и верифицированы</div>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: colors.ink60}}>
+                      <span style={{color: colors.matcha, fontWeight: 600}}>✓</span> ID проверка
+                    </div>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: colors.ink60}}>
+                      <span style={{color: colors.matcha, fontWeight: 600}}>✓</span> Номер подтвержден
+                    </div>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: colors.ink60}}>
+                      <span style={{color: colors.matcha, fontWeight: 600}}>✓</span> Анкета подтверждена
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Verification Stats */}
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px'}}>
+              {[
+                {stat: '100%', label: 'Профилей верифицировано', emoji: '✓'},
+                {stat: '<24ч', label: 'Время проверки', emoji: '⏱️'},
+                {stat: '0%', label: 'Мошеннических профилей', emoji: '🔒'}
+              ].map((item, i) => (
+                <div key={i} className="reveal" style={{background: colors.matchaMist, border: `1px solid ${colors.matchaLight}`, borderRadius: '24px', padding: '32px 24px', textAlign: 'center', transition: 'all 0.3s', cursor: 'pointer'}} onMouseEnter={(e) => e.currentTarget.style.background = colors.matchaLight} onMouseLeave={(e) => e.currentTarget.style.background = colors.matchaMist}>
+                  <div style={{fontSize: '2.4rem', marginBottom: '12px'}}>{item.emoji}</div>
+                  <div style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '2rem', fontWeight: 600, color: colors.matcha, marginBottom: '8px'}}>{item.stat}</div>
+                  <div style={{fontSize: '0.85rem', color: colors.ink60, fontWeight: 300}}>{item.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section style={{padding: '80px 72px', background: colors.matchaMist}}>
           <div className="reveal" style={{background: colors.matcha, borderRadius: '32px', padding: '80px 72px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center', position: 'relative', overflow: 'hidden'}}>

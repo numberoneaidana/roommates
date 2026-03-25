@@ -3403,7 +3403,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
               {selectedProfile.id_document_url && (
                 <div style={{marginBottom:"24px"}}>
                   <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>📸 Загруженный документ</h3>
-                  <img src={`/uploads/verifications/${selectedProfile.id_document_url}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",background:"#F2F8F1",cursor:"pointer",transition:"all 0.2s",transformOrigin:"center"}} onClick={()=>setExpandedImage(`/uploads/verifications/${selectedProfile.id_document_url}`)} onMouseEnter={(e)=>{e.target.style.transform="scale(1.05)"}} onMouseLeave={(e)=>{e.target.style.transform="scale(1)"}} loading="lazy"/>
+                  <img src={`/api/verify/file/${encodeURIComponent(selectedProfile.id_document_url)}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",background:"#F2F8F1",cursor:"pointer",transition:"all 0.2s",transformOrigin:"center"}} onClick={()=>setExpandedImage(`/api/verify/file/${encodeURIComponent(selectedProfile.id_document_url)}`)} onMouseEnter={(e)=>{e.target.style.transform="scale(1.05)"}} onMouseLeave={(e)=>{e.target.style.transform="scale(1)"}} loading="lazy" onError={(e)=>{console.error("Image load error:", e); e.target.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' font-size='14' fill='%23999'%3EОшибка загрузки%3C/text%3E%3C/svg%3E"}}/>
                 </div>
               )}
               {selectedProfile.verification_status === 'pending' && (
@@ -3427,8 +3427,9 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
       {expandedImage && (
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:3000,padding:"20px",cursor:"pointer"}} onClick={()=>setExpandedImage(null)}>
           <div style={{position:"relative",maxWidth:"90vw",maxHeight:"90vh"}}>
-            <img src={expandedImage} alt="Full-size document" style={{width:"100%",height:"100%",maxHeight:"90vh",objectFit:"contain",borderRadius:"12px"}}/>
-            <button onClick={()=>setExpandedImage(null)} style={{position:"absolute",top:"16px",right:"16px",width:"44px",height:"44px",borderRadius:"50%",background:"rgba(255,255,255,0.2)",border:"2px solid white",color:"white",cursor:"pointer",fontSize:"24px",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}} onMouseEnter={(e)=>{e.target.style.background="rgba(255,255,255,0.3)"}} onMouseLeave={(e)=>{e.target.style.background="rgba(255,255,255,0.2)"}}>✕</button>
+            <img src={expandedImage} alt="Full-size document" style={{width:"100%",height:"100%",maxHeight:"90vh",objectFit:"contain",borderRadius:"12px"}} onError={(e)=>{e.target.style.display="none"; const errorMsg = e.currentTarget.nextElementSibling; if(errorMsg) errorMsg.style.display="block"}}/>
+            <div style={{display:"none",position:"absolute",top:"50%",left:"50%",transform:"translate(-50%, -50%)",color:"white",fontSize:"16px",textAlign:"center",background:"rgba(220, 38, 38, 0.3)",padding:"20px",borderRadius:"12px",width:"200px"}}>❌ Ошибка загрузки файла<br/><small>Проверьте наличие файла</small></div>
+            <button onClick={()=>setExpandedImage(null)} style={{position:"absolute",top:"16px",right:"16px",width:"44px",height:"44px",borderRadius:"50%",background:"rgba(255,255,255,0.2)",border:"2px solid white",color:"white",cursor:"pointer",fontSize:"24px",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",zIndex:1}} onMouseEnter={(e)=>{e.target.style.background="rgba(255,255,255,0.3)"}} onMouseLeave={(e)=>{e.target.style.background="rgba(255,255,255,0.2)"}}>✕</button>
           </div>
         </div>
       )}

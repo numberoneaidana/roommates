@@ -198,4 +198,29 @@ router.patch("/:profileId", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/verify/file/:filename
+ * Serve verification document file
+ */
+router.get("/file/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const filepath = path.join(uploadsDir, filename);
+  
+  // Security: prevent directory traversal
+  if (!filepath.startsWith(uploadsDir)) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+  
+  // Check if file exists
+  if (!fs.existsSync(filepath)) {
+    console.error(`File not found: ${filepath}`);
+    return res.status(404).json({ error: "File not found" });
+  }
+  
+  // Set proper headers for image
+  res.type('image');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(filepath);
+});
+
 export default router;

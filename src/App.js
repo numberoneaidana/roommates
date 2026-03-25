@@ -1769,6 +1769,11 @@ const sendChat = async (profileId, text) => {
                             ⏳ На проверке
                           </span>
                         )}
+                        {!profile.verification_status || profile.verification_status === 'rejected' && (
+                          <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#FEE2E2",color:"#DC2626",border:"1px solid rgba(220,38,38,0.2)",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
+                            ⚠️ Не верифицирован
+                          </span>
+                        )}
                       </div>
 
                       {/* Compatibility Bar */}
@@ -2169,14 +2174,19 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
               <div>
                 <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"2rem",fontWeight:600,color:"#1C2B1E",margin:"0 0 4px 0",lineHeight:1}}>{p.name}, {p.age}</h2>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-                  {p.verified && (
+                  {p.verification_status === 'approved' && (
                     <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"#E4F0E0",color:"#7A9E7E",padding:"4px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:600}}>
                       ✓ Верифицирован
                     </div>
                   )}
-                  {!p.verified && (
+                  {p.verification_status === 'pending' && (
                     <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"#FEF3C7",color:"#92400E",padding:"4px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:600}}>
                       ⏳ На проверке
+                    </div>
+                  )}
+                  {!p.verification_status || p.verification_status === 'rejected' && (
+                    <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"#FEE2E2",color:"#DC2626",padding:"4px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:600}}>
+                      ⚠️ Не верифицирован
                     </div>
                   )}
                 </div>

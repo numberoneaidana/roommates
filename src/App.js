@@ -1368,6 +1368,7 @@ export default function App() {
   const [showF, setShowF] = useState(false);
   const [msgText, setMsgText] = useState("");
   const [passed, setPassed] = useState(new Set());
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [superLiked, setSuperLiked] = useState(new Set());
   const [filters, setFilters] = useState({
     search: "", region: "", budget: 200000, gender: "",
@@ -1625,6 +1626,24 @@ const sendChat = async (profileId, text) => {
             .reveal.visible { opacity: 1; transform: none; }
           `}</style>
 
+          {/* VERIFICATION BANNER */}
+          {auth?.verification_status !== 'approved' && (
+            <div style={{background:"linear-gradient(135deg, #FEF3C7 0%, #FEFCE8 100%)",borderBottom:"2px solid #FEF08A",padding:"20px 72px",position:"sticky",top:0,zIndex:45}}>
+              <div style={{maxWidth:"1200px",margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"24px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"16px",flex:1}}>
+                  <div style={{fontSize:"28px",flexShrink:0}}>⚠️</div>
+                  <div>
+                    <div style={{fontSize:"14px",fontWeight:600,color:"#92400E",marginBottom:"4px"}}>Ваш профиль не верифицирован</div>
+                    <div style={{fontSize:"12px",color:"rgba(146,64,14,0.7)"}}>Загрузите документ для подтверждения личности и получите больше совпадений</div>
+                  </div>
+                </div>
+                <button onClick={()=>setTab("profile")} style={{background:"#92400E",color:"white",border:"none",borderRadius:"12px",padding:"10px 20px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s",whiteSpace:"nowrap",flexShrink:0}}>
+                  📤 Верифицировать сейчас
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* HERO SECTION */}
           <section style={{minHeight:"100vh",padding:"100px 72px",background:"#FAFDF9",position:"relative",display:"grid",gridTemplateColumns:"1fr 1fr",overflow:"hidden",alignItems:"center"}}>
             {/* Blobs */}
@@ -1836,7 +1855,7 @@ const sendChat = async (profileId, text) => {
       )}
 
       {tab==="profile"&&(
-        <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} />
+        <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} showVerificationModal={showVerificationModal} setShowVerificationModal={setShowVerificationModal} />
       )}
 
       {tab==="admin" && auth?.is_admin && (
@@ -2293,7 +2312,7 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
 
 // ── REGISTRATION (MULTI-STEP) ─────────────────────────────────────────────────
 
-function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
+function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal, setShowVerificationModal }) {
   const [form, setForm] = useState({
     name:auth.name||"",age:auth.age||"",bio:auth.bio||"",occupation:auth.occupation||"",
     region:auth.region||"",budget:auth.budget||"",renter_type:auth.renter_type||"looking",
@@ -2305,6 +2324,9 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
   const [photos,setPhotos]=useState(()=>{ const p=Array.isArray(auth.photos)?auth.photos:[]; return [p[0]||null,p[1]||null,p[2]||null]; });
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
+  const [verificationFile, setVerificationFile] = useState(null);
+  const [verificationPreview, setVerificationPreview] = useState(null);
+  const [uploadingVerification, setUploadingVerification] = useState(false);
   const upd=(k,v)=>setForm(f=>({...f,[k]:v}));
 
   const handlePhotosSaved=async(urls)=>{
@@ -2430,7 +2452,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
               <p style={{fontSize:13,color:"rgba(28,43,30,0.6)",marginBottom:12,lineHeight:1.6}}>
                 Загрузите фото вашего удостоверения личности (паспорт или ИИН) для быстрой верификации вашего профиля. Проверка занимает менее 24 часов.
               </p>
-              <button style={{width:"100%",padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>
+              <button onClick={()=>setShowVerificationModal(true)} style={{width:"100%",padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>
                 📤 Загрузить документ для проверки
               </button>
               <div style={{fontSize:12,color:"rgba(28,43,30,0.6)",marginTop:8,textAlign:"center"}}>
@@ -2449,6 +2471,82 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
         {saving?"⏳ Сохранение...":saved?"✅ Сохранено!":"Сохранить профиль"}
       </button>
       <div style={{height:40}}/>
+
+      {/* VERIFICATION UPLOAD MODAL */}
+      {showVerificationModal && (
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:2000,padding:"20px"}} onClick={e=>e.target===e.currentTarget&&setShowVerificationModal(false)}>
+          <div style={{background:"#FFFFFF",borderRadius:"28px",width:"100%",maxWidth:"500px",maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 80px rgba(122,158,126,0.25)"}}>
+            <div style={{padding:"24px",borderBottom:"1px solid #C8DEC4",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.6rem",fontWeight:600,color:"#1C2B1E",margin:0}}>📤 Верификация профиля</h2>
+              <button onClick={()=>setShowVerificationModal(false)} style={{width:"36px",height:"36px",borderRadius:"50%",background:"#F2F8F1",border:"none",cursor:"pointer",fontSize:"18px"}}>✕</button>
+            </div>
+            <div style={{padding:"24px"}}>
+              <p style={{fontSize:"14px",color:"rgba(28,43,30,0.6)",marginBottom:"20px",lineHeight:1.6}}>
+                Загрузите четкое фото вашего паспорта или удостоверения личности (ИИН). Проверка проводится автоматически и занимает менее 24 часов.
+              </p>
+
+              {/* FILE INPUT */}
+              <div style={{marginBottom:"20px"}}>
+                <label style={{display:"block",fontSize:"13px",fontWeight:600,color:"#1C2B1E",marginBottom:"10px"}}>Выберите документ</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e)=>{
+                    if(e.target.files[0]){
+                      setVerificationFile(e.target.files[0]);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setVerificationPreview(ev.target.result);
+                      reader.readAsDataURL(e.target.files[0]);
+                    }
+                  }}
+                  style={{display:"none"}}
+                  id="verification-file-input"
+                />
+                <label htmlFor="verification-file-input" style={{display:"block",padding:"20px",border:"2px dashed #C8DEC4",borderRadius:"14px",textAlign:"center",cursor:"pointer",transition:"all 0.2s",background:verificationFile?"#E4F0E0":"#F2F8F1"}}>
+                  <div style={{fontSize:"28px",marginBottom:"8px"}}>📸</div>
+                  <div style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"4px"}}>{verificationFile?"Документ выбран":"Кликните или перетащите файл"}</div>
+                  <div style={{fontSize:"12px",color:"rgba(28,43,30,0.6)"}}>{verificationFile?verificationFile.name:"JPG, PNG (макс 10MB)"}</div>
+                </label>
+              </div>
+
+              {/* PREVIEW */}
+              {verificationPreview && (
+                <div style={{marginBottom:"20px"}}>
+                  <div style={{fontSize:"13px",fontWeight:600,color:"#1C2B1E",marginBottom:"10px"}}>Предпросмотр</div>
+                  <img src={verificationPreview} alt="preview" style={{width:"100%",borderRadius:"12px",maxHeight:"200px",objectFit:"contain"}}/>
+                </div>
+              )}
+
+              {/* ACTION BUTTONS */}
+              <div style={{display:"flex",gap:"12px"}}>
+                <button onClick={()=>{setShowVerificationModal(false);setVerificationFile(null);setVerificationPreview(null);}} style={{flex:1,padding:"12px",background:"#F2F8F1",color:"#7A9E7E",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer"}}>
+                  Отмена
+                </button>
+                <button onClick={async()=>{
+                  if(!verificationFile) return alert("Выберите документ");
+                  setUploadingVerification(true);
+                  try{
+                    const formData = new FormData();
+                    formData.append('file', verificationFile);
+                    const response = await api.uploadVerification(formData);
+                    setAuth(prev=>({...prev,verification_status:'pending',id_document_url:response.url}));
+                    setShowVerificationModal(false);
+                    setVerificationFile(null);
+                    setVerificationPreview(null);
+                    alert("✓ Документ загружен! Проверка займет менее 24 часов.");
+                  }catch(err){
+                    alert("Ошибка загрузки: "+err.message);
+                  }finally{
+                    setUploadingVerification(false);
+                  }
+                }} disabled={!verificationFile||uploadingVerification} style={{flex:1,padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",opacity:!verificationFile||uploadingVerification?0.5:1}}>
+                  {uploadingVerification?"⏳ Загрузка...":"✓ Отправить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div></div>
   );
 }

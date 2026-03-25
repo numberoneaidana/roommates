@@ -146,4 +146,25 @@ export default class ApiClient {
   async markMessagesRead(profileId) {
     return this._fetch(`/api/messages/${profileId}/read`, { method: "PUT" });
   }
+
+  // ── Verification ─────────────────────────────────────────────────────────────
+  async uploadVerification(formData) {
+    const headers = {};
+    if (this._token) headers["Authorization"] = `Bearer ${this._token}`;
+
+    const res = await fetch(`${BASE}/api/verify/upload`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const body = await res.json(); msg = body.error ?? msg; } catch {}
+      throw new Error(msg);
+    }
+
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
 }

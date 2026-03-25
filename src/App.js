@@ -3,6 +3,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import './design/components.css';
 import { KZ_REGIONS, BASE_URL } from './logic/constants';
 import { Ic } from './components/Icons';
+import HomePage from './components/HomePage';
+import DashboardLayout from './components/DashboardLayout';
+import MapScreenAdvanced from './components/MapScreenAdvanced';
+import LikesScreen from './components/LikesScreen';
+import SwipeScreen from './components/SwipeScreen';
 // usePollingChat is exported from ./logic/hooks for external/backend use;
 // internally useRealtimeChat handles all polling via its own fallback.
 import 'leaflet/dist/leaflet.css';
@@ -316,6 +321,8 @@ const ModalIc = ({ n, size = 18, c = "currentColor" }) => {
 // Normalise a DB profile so the UI always gets consistent fields
 const normaliseProfile = (p) => ({
   ...p,
+  latitude: p.lat || p.latitude,
+  longitude: p.lng || p.longitude,
   avatar:   getInitials(p.name),
   initials: getInitials(p.name),
   renterType: p.renter_type ?? p.renterType ?? "looking",
@@ -442,7 +449,7 @@ function PhotoUpload({ photos, onChange, onSaved, label = "Фото профил
   );
 }
 // ── SWIPE TAB (TINDER STYLE) ─────────────────────────────────────────────────
-function SwipeTab({ profiles, onLike, onPass, onViewProfile, onSuperLike }) {
+function SwipeTab({ profiles, onLike, onPass, onViewProfile, onSuperLike, userGender }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging]     = useState(false);
   const [dragX, setDragX]               = useState(0);
@@ -455,7 +462,7 @@ function SwipeTab({ profiles, onLike, onPass, onViewProfile, onSuperLike }) {
 
   // ── helpers ────────────────────────────────────────────────────────────────
   const THRESHOLD = 100; // px needed to trigger like/pass
-  const swipeProfiles = (profiles || []).filter((p) => (mode === "places" ? p.renterType === "has_place" : true));
+  const swipeProfiles = (profiles || []).filter((p) => (mode === "places" ? p.renterType === "has_place" : true) && p.gender === userGender);
 
   const dismissCard = useCallback((direction) => {
     setIsAnimatingOut(direction);
@@ -1068,6 +1075,8 @@ function LeafletMap({ profiles, onView, onRadiusFilterChange, authUser, focusReg
 function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilters }) {
   const [cityFilter,   setCityFilter]   = useState("all");
   const [radiusFilter, setRadiusFilter] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const profilesPerPage = 10;
 
   useEffect(() => {
     if (allProfiles.length === 0) return;
@@ -1151,7 +1160,16 @@ function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilte
   };
   const pillActive   = { background: "var(--accent)", color: "#fff",       borderColor: "var(--accent)" };
   const pillInactive = { background: "var(--bg)",     color: "var(--mid)", borderColor: "var(--bg2)"   };
-  const pillEmpty    = { ...pillInactive, opacity: 0.4, cursor: "default" };
+  const pillEmpty    = { ...pillInactive, opacity: 0.5, cursor: "not-allowed" };
+  // Pagination logic
+  const totalPages = Math.ceil(displayedProfiles.length / profilesPerPage);
+  const startIndex = (currentPage - 1) * profilesPerPage;
+  const endIndex = startIndex + profilesPerPage;
+  const currentProfiles = displayedProfiles.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className="page">
@@ -1229,29 +1247,6 @@ function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilte
               <option value="">Любой</option>
               {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
             </select>
-          </div>
-          <div>
-            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🕒 Коммьют</div>
-            <select className="fsel" value={filters.commuteMax || ""} onChange={e=>setFilters(f=>({...f,commuteMax:e.target.value}))}>
-              <option value="">Не важно</option>
-              <option value="30">≤ 30 мин</option>
-              <option value="45">≤ 45 мин</option>
-              <option value="60">≤ 60 мин</option>
-            </select>
-          </div>
-          <div>
-            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🚇🚌 Транспорт</div>
-            <div style={{ display: "flex", gap: "6px" }}>
-              {[["Любой",""],["Метро","metro"],["Автобус","bus"]].map(([label,val]) => {
-                const on = (filters.transit || "") === val;
-                return (
-                  <button key={val} onClick={() => setFilters(f => ({ ...f, transit: val }))}
-                    style={{ ...pillBase, ...(on ? pillActive : pillInactive) }}>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
           <div style={{ flex:1, minWidth:"220px", alignSelf:"flex-end", background:"linear-gradient(135deg,var(--accent-light),#e8f5ea)", borderRadius:"var(--rs)", padding:"10px 14px", border:"2px solid var(--accent)", display:"flex", alignItems:"center", gap:"8px" }}>
             <span style={{ fontSize:"20px" }}>🖍️</span>
@@ -1355,13 +1350,14 @@ export default function App() {
     const token = localStorage.getItem("roommate_kz_token");
     return token ? "loading" : null;
   });
+  const [showAuthFlow, setShowAuthFlow] = useState(false);
   const [allProfiles, setAllProfiles] = useState([]);
   // matchedProfiles holds users fetched directly from /api/matches — independent
   // of allProfiles so the passive side (who was liked) always sees their matches
   // even if the other person was never in their discovery feed.
   const [matchedProfiles, setMatchedProfiles] = useState([]);
-
-  const [tab, setTab] = useState("swipe");
+  
+  const [tab, setTab] = useState("browse");
   const [liked, setLiked] = useState(new Set());
   const [sent, setSent] = useState(new Set());
   const [sentMessages, setSentMessages] = useState({});
@@ -1413,24 +1409,37 @@ export default function App() {
   }, [auth]);
 
   const fetchProfiles = useCallback(async () => {
-    if (!auth || auth === "loading") return;
+    if (!auth || auth === "loading") {
+      console.log("fetchProfiles skipped: auth =", auth);
+      return;
+    }
     try {
+      console.log("Starting fetchProfiles...");
       const baseFilters = { limit: 100, mode: "browse" };
       if (filters.region) baseFilters.region = filters.region;
       if (filters.gender) baseFilters.gender = filters.gender;
       if (filters.budget && filters.budget < 300000) baseFilters.max_budget = filters.budget;
+      console.log("Filters:", baseFilters);
+      
       const raw = await api.getProfiles(baseFilters);
+      console.log("Raw profiles from API:", raw?.length || 0, raw);
+      
       const normalised = raw.map(normaliseProfile);
+      console.log("Normalised profiles:", normalised?.length || 0, normalised);
+      
       setAllProfiles(normalised);
       setLiked(prev => {
         const next = new Set(prev);
         normalised.forEach(p => { if (p.liked || p.matched) next.add(p.id); });
         return next;
       });
+      console.log("Profiles set successfully");
     } catch (err) {
-      console.error("Не удалось загрузить анкеты:", err.message);
+      console.error("Не удалось загрузить анкеты:", err.message, err);
     }
-    await fetchMatches().catch(() => {});
+    await fetchMatches().catch((e) => {
+      console.error("fetchMatches error:", e);
+    });
   }, [auth, filters.region, filters.gender, filters.budget, fetchMatches]);
 
   useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
@@ -1550,22 +1559,16 @@ const sendChat = async (profileId, text) => {
   const likedProfiles = Array.from(likedProfilesMap.values());
   const genderColor = (g) => g === "female" ? "var(--female)" : "var(--male)";
 
+  if (!auth && !showAuthFlow) return <HomePage onGetStarted={() => setShowAuthFlow(true)} />;
   if (!auth) return <AuthScreen onAuth={setAuth} />;
 
   return (
-    <div className="app">
-      <nav className="nav">
-        <div className="nav-logo">No Bachidao<span>КЗ</span></div>
-        <div className="nav-links">
-          {[["swipe","heart","Свайп"],["browse","home","Обзор"],["map","map","Карта"],["matches","heart","Избранное"],["profile","user","Профиль"]].map(([id,ic,lb]) => (
-            <button key={id} className={`nl ${tab===id?"active":""}`} onClick={()=>setTab(id)}>
-              <Ic n={ic} size={15}/><span>{lb}</span>
-              {id==="matches"&&liked.size>0&&<span style={{background:"var(--female)",color:"#fff",borderRadius:"10px",padding:"1px 6px",fontSize:"10px",marginLeft:"2px"}}>{liked.size}</span>}
-            </button>
-          ))}
-        </div>
-        <div className="nav-right">
-           <div title={connected ? "Подключено" : "Переподключение…"}
+    <div style={{minHeight:"100vh",background:"#f8f9fa",fontFamily:"var(--font-body)"}}>
+      {/* Header */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e0e0e0",padding:"16px 40px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:"50",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+        <div style={{fontSize:"20px",fontWeight:"700",color:"#2c5f47",fontFamily:"var(--font-display)"}}>Matcha</div>
+        <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
+          <div title={connected ? "Подключено" : "Переподключение…"}
             style={{
               width: 8, height: 8, borderRadius: "50%",
               background: connected ? "#4caf50" : "#f59e0b",
@@ -1573,14 +1576,29 @@ const sendChat = async (profileId, text) => {
               transition: "all .4s",
             }}
           />
-          <button className="nl" onClick={()=>setAuth(null)} title="Выйти"><Ic n="logout" size={15}/></button>
-          <div className="nav-av">{auth.initials}</div>
+          <button style={{padding:"8px 16px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"14px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#2c5f47"; e.target.style.color="#2c5f47";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}} onClick={()=>setAuth(null)} title="Выйти">
+            Выход
+          </button>
+          <div style={{width:"40px",height:"40px",borderRadius:"50%",background:"#5a8f6f",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"14px"}}>{auth.initials}</div>
         </div>
-      </nav>
+      </div>
+
+      {/* Top Navigation Tabs */}
+      <div style={{background:"#fff",borderBottom:"2px solid #e0e0e0",padding:"0",display:"flex",justifyContent:"center",gap:"0",zIndex:"40",position:"sticky",top:"60px"}}>
+        {[["browse","🔍","Обзор"],["swipe","❤️","Свайп"],["map","📍","Карта"],["matches","⭐","Избранное"],["profile","👤","Профиль"]].map(([id,icon,lb])=>(
+          <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
+            <span style={{fontSize:"18px"}}>{icon}</span>
+            <span>{lb}</span>
+            {id==="matches"&&liked.size>0&&<span style={{background:"#ff6b6b",color:"#fff",borderRadius:"10px",padding:"2px 6px",fontSize:"11px",fontWeight:"700",marginLeft:"4px"}}>{liked.size}</span>}
+          </button>
+        ))}
+      </div>
 
       {tab==="swipe"&&(
-        <SwipeTab
-          profiles={rankedFiltered.filter(p => !liked.has(p.id) && !passed.has(p.id))}
+        <SwipeScreen
+          allProfiles={rankedFiltered.filter(p => !liked.has(p.id) && !passed.has(p.id))}
+          liked={liked}
+          onSelectProfile={(p)=>{setSelected(p);setMsgText("");}}
           onLike={async (p)=>{
             setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
             try {
@@ -1590,203 +1608,267 @@ const sendChat = async (profileId, text) => {
               }
             } catch(e) { console.warn("likeProfile error:", e.message); }
           }}
-          onSuperLike={async (p) => {
-            setSuperLiked((s) => { const n = new Set(s); n.add(p.id); return n; });
-            setLiked((s)=>{const n=new Set(s);n.add(p.id);return n;});
-            try {
-              const result = await api.likeProfile(p.id);
-              if (result?.matched) handleMatch(p.id);
-            } catch (e) { console.warn("superLike error:", e.message); }
-          }}
-          onPass={async (p)=>{
-            setPassed(s=>{const n=new Set(s);n.add(p.id);return n;});
-            try { await api.passProfile(p.id); } catch(_) {}
-          }}
-          onViewProfile={(p)=>{setSelected(p);setMsgText("");}}
+          auth={auth}
         />
       )}
 
       {tab==="browse"&&(
-        <div className="page">
-          <div className="ph" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:"14px"}}>
-            <div>
-              <h1 className="pt">Найди соседа 🏠</h1>
-              <p className="ps">{rankedFiltered.length} человек по вашим критериям в Казахстане</p>
-            </div>
-            <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-              <button onClick={()=>setShowF(!showF)} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:"6px"}}><Ic n="sliders" size={14}/>Фильтры {showF?"▲":"▼"}</button>
-              <div className="vt">
-                <button className={`vb ${view==="grid"?"active":""}`} onClick={()=>setView("grid")}><Ic n="grid" size={14}/></button>
-                <button className={`vb ${view==="list"?"active":""}`} onClick={()=>setView("list")}><Ic n="list" size={14}/></button>
+        <div style={{maxWidth:"1200px",margin:"0 auto",padding:"0 40px 40px 40px"}}>
+          {/* Smart Match Algorithm Banner with Images - IMPROVED */}
+          <div style={{background:"linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)",borderRadius:"16px",padding:"32px 40px",margin:"0 0 32px 0",position:"relative",overflow:"hidden",color:"#fff"}}>
+            <div style={{position:"absolute",top:0,right:0,width:"300px",height:"100%",background:"url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80')",backgroundSize:"cover",backgroundPosition:"center",opacity:"0.2",zIndex:"1"}}/>
+            <div style={{position:"relative",zIndex:"2"}}>
+              <div style={{fontSize:"12px",fontWeight:"700",color:"rgba(255,255,255,0.9)",marginBottom:"10px",letterSpacing:"0.6px",textTransform:"uppercase"}}>✨ Умный алгоритм подбора</div>
+              <h2 style={{fontSize:"32px",fontWeight:"800",color:"#fff",marginBottom:"10px",letterSpacing:"-0.5px",margin:"0 0 10px 0"}}>Найдите соседа быстрее</h2>
+              <p style={{fontSize:"14px",color:"rgba(255,255,255,0.95)",margin:"0 0 16px 0",lineHeight:"1.5",maxWidth:"600px"}}>Наш ИИ анализирует ваши привычки, бюджет и образ жизни, подбирая совместимые матчи</p>
+              <div style={{display:"flex",gap:"20px",flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                  <span style={{fontSize:"16px"}}>✓</span>
+                  <span style={{fontSize:"13px",fontWeight:"600",color:"rgba(255,255,255,0.9)"}}>По бюджету</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                  <span style={{fontSize:"16px"}}>✓</span>
+                  <span style={{fontSize:"13px",fontWeight:"600",color:"rgba(255,255,255,0.9)"}}>По стилю</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                  <span style={{fontSize:"16px"}}>✓</span>
+                  <span style={{fontSize:"13px",fontWeight:"600",color:"rgba(255,255,255,0.9)"}}>По локации</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="fbar">
-            <div className="ftop">
-              <div className="fsearch">
-                <span className="fsearch-ic"><Ic n="search" size={15}/></span>
-                <input placeholder="Поиск по имени…" value={filters.search} onChange={e=>setFilters(f=>({...f,search:e.target.value}))}/>
+
+          {/* Filter by City Section - COMPACT */}
+          <div style={{marginBottom:"32px"}}>
+            <h3 style={{fontSize:"18px",fontWeight:"700",color:"#1e4a36",margin:"0 0 16px 0"}}>Фильтр по городам</h3>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:"16px"}}>
+              {[
+                {name:"Алматы",count:"1 240 результатов",emoji:"📍",img:"https://images.unsplash.com/photo-1570158268183-d296b3552fd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"},
+                {name:"Астана",count:"850 результатов",emoji:"🏙️",img:"https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"},
+                {name:"Шымкент",count:"320 результатов",emoji:"👥",img:"https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"},
+                {name:"Другие города",count:"45 регионов",emoji:"🗺️",img:"https://images.unsplash.com/photo-1470252649378-9c29740ff023?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80"}
+              ].map((city,i)=>(
+                <div key={i} style={{background:"#fff",borderRadius:"12px",border:"1px solid #e0e0e0",cursor:"pointer",transition:"all 0.2s",overflow:"hidden",height:"160px",display:"flex",flexDirection:"column"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.12)"; e.currentTarget.style.borderColor="#5a8f6f"; e.currentTarget.style.transform="translateY(-4px)";}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="none"; e.currentTarget.style.borderColor="#e0e0e0"; e.currentTarget.style.transform="translateY(0)";}}>
+                  <div style={{height:"100px",background:`url('${city.img}')`,backgroundSize:"cover",backgroundPosition:"center",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.3) 100%)"}}/>
+                  </div>
+                  <div style={{padding:"10px 14px",flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+                    <div style={{fontSize:"15px",fontWeight:"700",color:"#1e4a36"}}>{city.name}</div>
+                    <div style={{fontSize:"12px",color:"#999",marginTop:"3px"}}>{city.count}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Smart Browse Section - IMPROVED */}
+          <div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"12px"}}>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <h3 style={{fontSize:"18px",fontWeight:"700",color:"#1e4a36",margin:0}}>Умный поиск</h3>
+                  <span style={{fontSize:"16px"}}>✨</span>
+                </div>
               </div>
-              <select className="fsel" value={filters.region} onChange={e=>setFilters(f=>({...f,region:e.target.value}))}>
-                <option value="">Весь Казахстан</option>
+              <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+                <button onClick={()=>setShowF(!showF)} style={{padding:"10px 14px",background:"#f8f9fa",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",gap:"6px"}} onMouseEnter={e=>{e.target.style.borderColor="#5a8f6f"; e.target.style.background="#e8f5f0";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.background="#f8f9fa";}}>
+                  ☰ Фильтры {showF?"▲":"▼"}
+                </button>
+                <div style={{display:"flex",gap:"4px",border:"1px solid #e0e0e0",borderRadius:"8px",padding:"4px"}}>
+                  <button className={view==="grid"?"active":""} onClick={()=>setView("grid")} style={{padding:"8px 12px",background:view==="grid"?"#5a8f6f":"transparent",color:view==="grid"?"#fff":"#666",border:"none",borderRadius:"6px",cursor:"pointer",transition:"all 0.2s",fontSize:"13px"}}>▦</button>
+                  <button className={view==="list"?"active":""} onClick={()=>setView("list")} style={{padding:"8px 12px",background:view==="list"?"#5a8f6f":"transparent",color:view==="list"?"#fff":"#666",border:"none",borderRadius:"6px",cursor:"pointer",transition:"all 0.2s",fontSize:"13px"}}>≡</button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Search and Filters - CONVEYER STYLE */}
+            <div style={{display:"flex",gap:"10px",marginBottom:"20px",flexWrap:"wrap",alignItems:"center"}}>
+              <div style={{flex:1,minWidth:"200px",position:"relative"}}>
+                <input type="text" placeholder="Поиск по имени…" value={filters.search} onChange={e=>setFilters(f=>({...f,search:e.target.value}))} style={{width:"100%",padding:"10px 14px 10px 36px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",outline:"none",transition:"all 0.2s"}} onFocus={e=>{e.target.style.borderColor="#5a8f6f"; e.target.style.boxShadow="0 0 0 3px rgba(90,143,111,0.1)";}} onBlur={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.boxShadow="none";}}/>
+                <span style={{position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",fontSize:"14px"}}>🔍</span>
+              </div>
+              <select value={filters.region} onChange={e=>setFilters(f=>({...f,region:e.target.value}))} style={{padding:"10px 12px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none",transition:"all 0.2s",minWidth:"140px"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
+                <option value="">Регион</option>
                 {KZ_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
-              <select className="fsel" value={filters.gender} onChange={e=>setFilters(f=>({...f,gender:e.target.value}))}>
-                <option value="">Любой пол</option>
-                <option value="female">♀ Только девушки</option>
-                <option value="male">♂ Только парни</option>
+              <select value={filters.gender} onChange={e=>setFilters(f=>({...f,gender:e.target.value}))} style={{padding:"10px 12px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none",transition:"all 0.2s",minWidth:"130px"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
+                <option value="">Пол</option>
+                <option value="female">♀ Девушки</option>
+                <option value="male">♂ Парни</option>
               </select>
-              <select className="fsel" value={filters.schedule} onChange={e=>setFilters(f=>({...f,schedule:e.target.value}))}>
-                <option value="">Любой режим</option>
-                <option value="Жаворонок">Жаворонок 🌅</option>
-                <option value="Сова">Сова 🌙</option>
-                <option value="Переменный">Гибкий 🔄</option>
+              <select value={filters.schedule} onChange={e=>setFilters(f=>({...f,schedule:e.target.value}))} style={{padding:"10px 12px",border:"1px solid #e0e0e0",borderRadius:"8px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none",transition:"all 0.2s",minWidth:"130px"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
+                <option value="">Режим</option>
+                <option value="Жаворонок">🌅 Жаворонок</option>
+                <option value="Сова">🌙 Сова</option>
+                <option value="Гибкий">🔄 Гибкий</option>
               </select>
             </div>
+
             {showF&&(
-              <div className="fexp">
-                <div className="fg">
-                  <label>Макс. бюджет <span className="rv">{filters.budget.toLocaleString()} ₸</span></label>
-                  <input type="range" className="frange" min={30000} max={300000} step={5000} value={filters.budget} onChange={e=>setFilters(f=>({...f,budget:+e.target.value}))}/>
-                </div>
-                <div className="fg">
-                  <label>Питомцы</label>
-                  <div className="chip-row">
-                    {[["Любые",""],["Есть 🐾","yes"],["Нет","no"]].map(([l,v])=>(
-                      <button key={l} className={`chip ${filters.pets===v?"chip-on":"chip-off"}`} onClick={()=>setFilters(f=>({...f,pets:v}))}>{l}</button>
-                    ))}
+              <div style={{background:"#fff",borderRadius:"12px",border:"1px solid #e0e0e0",padding:"24px",marginBottom:"28px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))",gap:"24px"}}>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Макс. бюджет <span style={{color:"#5a8f6f",fontWeight:"700"}}>{filters.budget.toLocaleString()} ₸</span></label>
+                    <input type="range" min={30000} max={300000} step={5000} value={filters.budget} onChange={e=>setFilters(f=>({...f,budget:+e.target.value}))} style={{width:"100%",cursor:"pointer"}}/>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Питомцы</label>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                      {[["Любые",""],["Есть 🐾","yes"],["Нет","no"]].map(([l,v])=>(
+                        <button key={l} onClick={()=>setFilters(f=>({...f,pets:v}))} style={{padding:"8px 14px",background:filters.pets===v?"#5a8f6f":"#f8f9fa",color:filters.pets===v?"#fff":"#666",border:filters.pets===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.pets!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.pets!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Удалённая работа</label>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                      {[["Любая",""],["Да 💻","yes"],["Нет","no"]].map(([l,v])=>(
+                        <button key={l} onClick={()=>setFilters(f=>({...f,remote:v}))} style={{padding:"8px 14px",background:filters.remote===v?"#5a8f6f":"#f8f9fa",color:filters.remote===v?"#fff":"#666",border:filters.remote===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.remote!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.remote!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Курение</label>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                      {[["Любое",""],["Некурящий","no"]].map(([l,v])=>(
+                        <button key={l} onClick={()=>setFilters(f=>({...f,smoking:v}))} style={{padding:"8px 14px",background:filters.smoking===v?"#5a8f6f":"#f8f9fa",color:filters.smoking===v?"#fff":"#666",border:filters.smoking===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.smoking!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.smoking!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Алкоголь</label>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                      {[["Любой",""],["Не пьёт","no"]].map(([l,v])=>(
+                        <button key={l} onClick={()=>setFilters(f=>({...f,alcohol:v}))} style={{padding:"8px 14px",background:filters.alcohol===v?"#5a8f6f":"#f8f9fa",color:filters.alcohol===v?"#fff":"#666",border:filters.alcohol===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.alcohol!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.alcohol!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Вероисповедание</label>
+                    <select value={filters.religion} onChange={e=>setFilters(f=>({...f,religion:e.target.value}))} style={{width:"100%",padding:"8px 12px",border:"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
+                      <option value="">Любое</option>
+                      <option value="Мусульманка">Мусульманка</option>
+                      <option value="Мусульманин">Мусульманин</option>
+                      <option value="Нет">Нерелигиозный</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Университет рядом</label>
+                    <select value={filters.university} onChange={e=>setFilters(f=>({...f,university:e.target.value}))} style={{width:"100%",padding:"8px 12px",border:"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
+                      <option value="">Любой</option>
+                      {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Коммьют до кампуса</label>
+                    <select value={filters.commuteMax} onChange={e=>setFilters(f=>({...f,commuteMax:e.target.value}))} style={{width:"100%",padding:"8px 12px",border:"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
+                      <option value="">Не важно</option>
+                      <option value="30">≤ 30 мин</option>
+                      <option value="45">≤ 45 мин</option>
+                      <option value="60">≤ 60 мин</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Транспорт рядом</label>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                      {[["Любой",""],["Метро","metro"],["Автобус","bus"]].map(([l,v])=>(
+                        <button key={l} onClick={()=>setFilters(f=>({...f,transit:v}))} style={{padding:"8px 14px",background:filters.transit===v?"#5a8f6f":"#f8f9fa",color:filters.transit===v?"#fff":"#666",border:filters.transit===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.transit!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.transit!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="fg">
-                  <label>Удалённая работа</label>
-                  <div className="chip-row">
-                    {[["Любая",""],["Да 💻","yes"],["Нет","no"]].map(([l,v])=>(
-                      <button key={l} className={`chip ${filters.remote===v?"chip-on":"chip-off"}`} onClick={()=>setFilters(f=>({...f,remote:v}))}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="fg">
-                  <label>Курение</label>
-                  <div className="chip-row">
-                    {[["Любое",""],["Некурящий","no"]].map(([l,v])=>(
-                      <button key={l} className={`chip ${filters.smoking===v?"chip-on":"chip-off"}`} onClick={()=>setFilters(f=>({...f,smoking:v}))}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="fg">
-                  <label>Алкоголь</label>
-                  <div className="chip-row">
-                    {[["Любой",""],["Не пьёт","no"]].map(([l,v])=>(
-                      <button key={l} className={`chip ${filters.alcohol===v?"chip-on":"chip-off"}`} onClick={()=>setFilters(f=>({...f,alcohol:v}))}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="fg">
-                  <label>Вероисповедание</label>
-                  <select className="fsel" style={{width:"100%"}} value={filters.religion} onChange={e=>setFilters(f=>({...f,religion:e.target.value}))}>
-                    <option value="">Любое</option>
-                    <option value="Мусульманка">Мусульманка</option>
-                    <option value="Мусульманин">Мусульманин</option>
-                    <option value="Нет">Нерелигиозный</option>
-                  </select>
-                </div>
-                <div className="fg">
-                  <label>Университет рядом</label>
-                  <select className="fsel" style={{width:"100%"}} value={filters.university} onChange={e=>setFilters(f=>({...f,university:e.target.value}))}>
-                    <option value="">Любой</option>
-                    {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
-                  </select>
-                </div>
-                <div className="fg">
-                  <label>Коммьют до кампуса</label>
-                  <select className="fsel" style={{width:"100%"}} value={filters.commuteMax} onChange={e=>setFilters(f=>({...f,commuteMax:e.target.value}))}>
-                    <option value="">Не важно</option>
-                    <option value="30">≤ 30 мин</option>
-                    <option value="45">≤ 45 мин</option>
-                    <option value="60">≤ 60 мин</option>
-                  </select>
-                </div>
-                <div className="fg">
-                  <label>Транспорт рядом</label>
-                  <div className="chip-row">
-                    {[["Любой",""],["Метро","metro"],["Автобус","bus"]].map(([l,v])=>(
-                      <button key={l} className={`chip ${filters.transit===v?"chip-on":"chip-off"}`} onClick={()=>setFilters(f=>({...f,transit:v}))}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="fg" style={{gridColumn:"1/-1",alignItems:"flex-start"}}>
-                  <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} className="btn-ghost" style={{width:"auto"}}>Сбросить все фильтры</button>
-                </div>
+                <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} style={{marginTop:"20px",padding:"10px 20px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#ff6b6b"; e.target.style.color="#ff6b6b";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}}>
+                  Сбросить все фильтры
+                </button>
+              </div>
+            )}
+
+            {/* Profile Cards Grid or List */}
+            {view==="grid"?(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"24px"}}>
+                {rankedFiltered.map(p=>(
+                  <ProfileCard key={p.id} p={p} liked={liked.has(p.id)} sent={sent.has(p.id)}
+                    onLike={async()=>{setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
+                      try{const r=await api.likeProfile(p.id);if(r?.matched)await handleMatch(p.id);}catch(e){console.warn(e);}
+                    }}
+                    onView={()=>{setSelected(p);setMsgText("");}}/>
+                ))}
+              </div>
+            ):(
+              <div>
+                {rankedFiltered.map(p=>{
+                  const reg=KZ_REGIONS.find(r=>r.id===p.region);
+                  return(
+                    <div key={p.id} style={{background:"#fff",borderRadius:"8px",padding:"16px",marginBottom:"12px",display:"flex",gap:"16px",alignItems:"center",cursor:"pointer",border:"1px solid #e0e0e0",transition:"all 0.2s"}} onClick={()=>{setSelected(p);setMsgText("");}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.08)"; e.currentTarget.style.transform="translateX(4px)";}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="none"; e.currentTarget.style.transform="translateX(0)";}}>
+                      <div style={{width:"80px",height:"80px",borderRadius:"10px",background:`url('${p.photos[0]}')`,backgroundSize:"cover",backgroundPosition:"center",flexShrink:0}}/>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}}>
+                          <span style={{fontWeight:"700",fontSize:"15px"}}>{p.name}</span>
+                          {p.verified&&<span style={{color:"#5a8f6f",fontSize:"12px",fontWeight:"700"}}>✓</span>}
+                          <span style={{fontSize:"11px",background:p.gender==="female"?"rgba(255,107,107,0.1)":"rgba(59,89,152,0.1)",color:p.gender==="female"?"#ff6b6b":"#3b5998",borderRadius:"10px",padding:"2px 8px",fontWeight:"600"}}>{p.gender==="female"?"♀ Девушка":"♂ Парень"}</span>
+                        </div>
+                        <div style={{fontSize:"12px",color:"#999",marginBottom:"8px"}}>{reg?.name||""} · {(p.budget || 0).toLocaleString()} ₸/мес · {p.occupation}</div>
+                        <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                          {p.tags.slice(0,3).map(t=><span key={t} style={{fontSize:"11px",background:"#f0fdf4",color:"#2c5f47",borderRadius:"6px",padding:"2px 8px",fontWeight:"500"}}>{t}</span>)}
+                        </div>
+                      </div>
+                      <span style={{fontSize:"18px",color:"#ccc"}}>→</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {rankedFiltered.length===0&&(
+              <div style={{background:"#fff",borderRadius:"12px",border:"1px solid #e0e0e0",padding:"60px 40px",textAlign:"center"}}>
+                <div style={{fontSize:"56px",marginBottom:"16px"}}>🔍</div>
+                <div style={{fontSize:"20px",fontWeight:"700",color:"#1e4a36",marginBottom:"8px"}}>Ничего не найдено</div>
+                <p style={{fontSize:"14px",color:"#666",marginBottom:"24px"}}>Попробуйте изменить фильтры или найти идеального соседа среди новых профилей</p>
+                <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} style={{padding:"12px 28px",background:"#5a8f6f",border:"none",borderRadius:"8px",color:"#fff",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>e.target.style.background="#4a7f5f"} onMouseLeave={e=>e.target.style.background="#5a8f6f"}>
+                  Сбросить фильтры
+                </button>
               </div>
             )}
           </div>
-          {view==="grid"?(
-            <div className="grid">
-              {rankedFiltered.map(p=>(
-                <ProfileCard key={p.id} p={p} liked={liked.has(p.id)} sent={sent.has(p.id)}
-                  onLike={async()=>{setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
-                    try{const r=await api.likeProfile(p.id);if(r?.matched)await handleMatch(p.id);}catch(e){console.warn(e);}
-                  }}
-                  onView={()=>{setSelected(p);setMsgText("");}}/>
-              ))}
-            </div>
-          ):(
-            <div>
-              {rankedFiltered.map(p=>{
-                const reg=KZ_REGIONS.find(r=>r.id===p.region);
-                return(
-                  <div key={p.id} className="list-item" onClick={()=>{setSelected(p);setMsgText("");}}>
-                    <div className="mat-av" style={{backgroundImage:p.photos[0]?.startsWith("http")?`url(${p.photos[0]})`:"none",background:p.photos[0]?.startsWith("http")?"transparent":(p.photos[0]||"var(--bg2)"),backgroundSize:"cover",backgroundPosition:"center"}}>{p.photos[0]?.startsWith("http")?"":p.avatar}</div>
-                    <div style={{flex:1}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"2px"}}>
-                        <span style={{fontWeight:"700",fontSize:"15px"}}>{p.name}</span>
-                        {p.verified&&<span style={{color:"var(--accent)",fontSize:"12px",fontWeight:"700"}}>✓</span>}
-                        <span style={{fontSize:"11px",background:p.gender==="female"?"var(--female-light)":"var(--male-light)",color:genderColor(p.gender),borderRadius:"10px",padding:"1px 7px",fontWeight:"600"}}>{p.gender==="female"?"♀ Девушка":"♂ Парень"}</span>
-                      </div>
-                      <div style={{fontSize:"12px",color:"var(--muted)"}}>{reg?.name||""} · {(p.budget || 0).toLocaleString()} ₸/мес · {p.occupation}</div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                      {p.tags.slice(0,1).map(t=><span key={t} className="tag">{t}</span>)}
-                      <Ic n="chevron" size={15} c="var(--muted)"/>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {rankedFiltered.length===0&&(
-            <div className="empty">
-              <div className="empty-ic">🔍</div>
-              <div className="empty-t">Ничего не найдено</div>
-              <p>Попробуйте изменить фильтры</p>
-              <button className="btn-primary" style={{marginTop:"18px",width:"auto",padding:"11px 28px"}} onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})}>Сбросить фильтры</button>
-            </div>
-          )}
         </div>
       )}
 
       {tab === "map" && (
-        <MapTabContent allProfiles={allProfiles} onViewProfile={(p) => { setSelected(p); setMsgText(""); }} authUser={auth} filters={filters} setFilters={setFilters} />
+        <MapScreenAdvanced 
+          allProfiles={allProfiles}
+          auth={auth}
+          onSelectProfile={(p) => { setSelected(p); setMsgText(""); }}
+          liked={liked}
+          onLike={async (p) => {
+            setLiked(s => { const n = new Set(s); n.add(p.id); return n; });
+            try {
+              const result = await api.likeProfile(p.id);
+              if (result?.matched) await handleMatch(p.id);
+            } catch(e) { console.warn("likeProfile error:", e.message); }
+          }}
+          conversations={conversations}
+          onSendMessage={(profileId, msgText) => sendChat(profileId, msgText)}
+          setTab={setTab}
+        />
       )}
 
       {tab === "matches" && (
-        <MatchesTab
-          likedProfiles={likedProfiles}
-          matchedProfiles={matchedProfiles}
+        <LikesScreen 
+          allProfiles={allProfiles}
           liked={liked}
-          sent={sent}
-          sentMessages={sentMessages}
+          onSelectProfile={(p) => { setSelected(p); setMsgText(""); }}
+          onLike={async (p) => {
+            setLiked(s => { const n = new Set(s); n.add(p.id); return n; });
+            try {
+              const result = await api.likeProfile(p.id);
+              if (result?.matched) await handleMatch(p.id);
+            } catch(e) { console.warn("likeProfile error:", e.message); }
+          }}
+          matchedProfiles={matchedProfiles}
           conversations={conversations}
-          typingFor={typingFor}
+          onSendMessage={(profileId, msgText) => sendChat(profileId, msgText)}
           activeChat={activeChat}
           setActiveChat={setActiveChat}
-          setSelected={setSelected}
-          setMsgText={setMsgText}
-          auth={auth}
-          sendChat={sendChat}
-          sendTyping={sendTyping}
-          setTab={setTab}
-          onRefresh={async () => { await Promise.all([fetchProfiles(), fetchMatches()]); }}
         />
       )}
 
@@ -2263,11 +2345,6 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
               {UNIVERSITY_OPTIONS.map((u)=><option key={u} value={u}>{u}</option>)}
             </select>
           </div>
-          <div className="fg-form"><label className="fl">Коммьют до кампуса</label>
-            <select className="fi" value={form.commuteMax} onChange={e=>upd("commuteMax",e.target.value)}>
-              <option value="">Не важно</option><option value="30">≤ 30 мин</option><option value="45">≤ 45 мин</option><option value="60">≤ 60 мин</option>
-            </select>
-          </div>
         </div>
         <div className="fg-form"><label className="fl">Транспорт рядом</label>
           <div className="chip-row">
@@ -2327,8 +2404,94 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
   );
 }
 
+
+const TRANSLATIONS = {
+  ru: {
+    appName: "Matcha",
+    findRoommate: "Найдите идеального соседа сегодня",
+    connectRoommates: "Свяжитесь с соседями по всему Казахстану",
+    verifiedRoommates: "Проверенные соседи",
+    verifiedDesc: "Найдите надежных людей в поиске квартир по Казахстану",
+    languagePreferences: "Предпочтения языка",
+    languageDesc: "Общайтесь на казахском, русском или английском языке",
+    smartMatching: "Умное сопоставление",
+    smartDesc: "Подбор соседей на основе стиля жизни и предпочтений",
+    createProfile: "Создайте профиль",
+    findPerfectMatch: "Давайте найдем вашего идеального соседа",
+    logIn: "Вход",
+    signUp: "Регистрация",
+    email: "Email",
+    password: "Пароль",
+    rememberMe: "Запомнить меня",
+    forgotPassword: "Забыли пароль?",
+    enterSanctuary: "Войти в Matcha",
+    prefLanguages: "Предпочтительные языки",
+    next: "Далее →",
+    back: "← Назад",
+    createBtn: "Создать профиль 🎉",
+    creating: "Создание...",
+    welcomeBack: "С возвращением",
+    signInMessage: "Войдите, чтобы найти идеального соседа",
+    newToNeighborhood: "Новичок в округе?",
+    joinCommunity: "Присоединяйтесь к сообществу",
+    alreadyHaveAccount: "Уже есть аккаунт?",
+    basicInfo: "Основная информация",
+    tellAboutYourself: "Расскажите нам о себе",
+    name: "Имя",
+    age: "Возраст",
+    gender: "Пол",
+    region: "Регион",
+    budget: "Бюджет (₸/мес)",
+    yourSituation: "Ваша ситуация",
+    lookingForPlace: "Ищу квартиру",
+    lookingForRoommate: "Ищу соседа",
+    havePlace: "Есть квартира",
+    lookingForRoommate2: "Ищу соседа",
+    housing: "Жилье и работа",
+    yourConditions: "Ваши условия и требования",
+    moveInDate: "Дата заезда",
+    remoteWork: "Удаленная работа",
+    schedule: "График",
+    languages: "Языки",
+    lifestyle: "Образ жизни",
+    finalStep: "Финальный шаг для лучших рекомендаций",
+    profession: "Профессия / Учеба",
+    cleanliness: "Чистоплотность",
+    sociability: "Общительность",
+    badHabits: "Вредные привычки",
+    smoking: "Курение",
+    alcohol: "Алкоголь",
+    pets: "Питомцы",
+    hasPet: "Есть питомец",
+    noPet: "Нет питомца",
+    guests: "Гости",
+    noiseLevel: "Уровень шума",
+    religion: "Вероисповедание",
+    quiet: "Тихо",
+    moderate: "Умеренно",
+    loud: "Громко",
+    yes: "Да",
+    no: "Нет",
+    never: "Никогда",
+    rarely: "Редко",
+    sometimes: "Иногда",
+    often: "Часто",
+    university: "Университет",
+    commute: "Коммьют до кампуса",
+    aboutYourself: "О себе",
+    saveProfile: "Сохранить профиль",
+    saved: "Сохранено!",
+    saving: "Сохранение...",
+    resetPassword: "Сброс пароля",
+    resetCode: "Код сброса",
+    newPassword: "Новый пароль",
+  }
+};
+
 function AuthScreen({onAuth}){
   const [mode, setMode]=useState("login");
+  const uiLang = "ru";
+  const [showReset, setShowReset] = useState(false);
   const [step, setStep]=useState(0);
   const [photos, setPhotos] = useState([null, null, null]);
   const [resetCode, setResetCode] = useState("");
@@ -2345,9 +2508,21 @@ function AuthScreen({onAuth}){
   });
   const [loading, setLoading] = useState(false);
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return re.test(password);
+  };
+
   const handleLoginSubmit = async () => {
-    if (!form.email?.trim())    return alert("Введите email");
+    if (!form.email?.trim()) return alert("Введите email");
+    if (!validateEmail(form.email.trim())) return alert("Введите корректный email");
     if (!form.password?.trim()) return alert("Введите пароль");
+    if (!validatePassword(form.password)) return alert("Пароль должен содержать минимум 8 символов, включая заглавную букву, строчную букву, цифру и специальный символ");
     setLoading(true);
     try {
       const response = await api.login(form.email.trim(), form.password);
@@ -2355,17 +2530,36 @@ function AuthScreen({onAuth}){
       api.setToken(response.token);
       onAuth(normaliseProfile(response.user));
     } catch (err) {
-      alert("Ошибка входа: " + err.message);
+      let errorMsg = "Не удалось войти в аккаунт";
+      const errStr = (err.message || "").toLowerCase();
+      
+      if (errStr.includes("network error") || errStr.includes("unable to connect") || errStr.includes("failed to fetch")) {
+        errorMsg = "Ошибка сети: Проверьте интернет-соединение или сервер может быть недоступен. Попробуйте снова.";
+      } else if (errStr.includes("401") || errStr.includes("invalid credentials") || errStr.includes("unauthorized")) {
+        errorMsg = "Неверный email или пароль";
+      } else if (errStr.includes("404") || errStr.includes("not found") || errStr.includes("user not found")) {
+        errorMsg = "Аккаунт не найден. Пожалуйста, зарегистрируйтесь";
+      } else if (err.message && err.message !== "No token provided") {
+        errorMsg = err.message;
+      }
+      alert(errorMsg);
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleRegisterSubmit = async () => {
-    if (!form.name?.trim())    return alert("Введите имя");
-    if (!form.email?.trim())   return alert("Введите email");
-    if (!form.password || form.password.length < 8) return alert("Пароль должен быть не менее 8 символов");
-    if (!form.gender)          return alert("Выберите пол");
+    if (!form.name?.trim()) return alert("Введите имя");
+    if (!form.age?.trim() || isNaN(parseInt(form.age))) return alert("Введите корректный возраст");
+    if (!form.gender) return alert("Выберите пол");
+    if (!form.email?.trim()) return alert("Введите email");
+    if (!validateEmail(form.email.trim())) return alert("Введите корректный email");
+    if (!form.password || !validatePassword(form.password)) return alert("Пароль должен содержать минимум 8 символов, включая заглавную букву, строчную букву, цифру и специальный символ");
+    if (!form.region) return alert("Выберите регион");
+    if (!form.budget?.trim() || isNaN(parseInt(form.budget))) return alert("Введите корректный бюджет");
+    if (!form.renterType) return alert("Выберите ситуацию");
+    if (form.renterType === "has_place" && (!form.address?.trim() || !form.lat || !form.lng)) return alert("Введите адрес жилья и выберите на карте");
     setLoading(true);
     let validSchedule = form.schedule;
     if (!validSchedule || validSchedule === "Гибкий") validSchedule = "Переменный";
@@ -2381,22 +2575,12 @@ function AuthScreen({onAuth}){
         religion:    form.religion    || "Нет",
         guests:      form.guests      || "Иногда",
         noise:       form.noise       || "Умеренная",
+        languages:   form.languages   || [],
         tags: withMetaTag(
-          withMetaTag(
-            withMetaTag(
-              withMetaTag(
-                withMetaTag([], "uni", form.university),
-                "commute", form.commuteMax
-              ),
-              "metro", form.nearMetro ? "yes" : "no"
-            ),
-            "bus", form.nearBus ? "yes" : "no"
-          ),
-          "ideal", form.idealRoommate
+          withMetaTag([], "uni", form.university),
+          "commute", form.commuteMax
         ),
-        quietHours: form.quietHours,
       };
-      registerData.tags = withMetaTag(registerData.tags, "quiet", form.quietHours);
       const response = await api.register(registerData);
       if (!response?.token) throw new Error("No token provided");
       api.setToken(response.token);
@@ -2432,7 +2616,7 @@ function AuthScreen({onAuth}){
     try {
       await api.resetPassword(form.email.trim(), resetCode.trim(), form.password);
       alert("Пароль обновлен. Теперь войдите в аккаунт.");
-      setMode("login");
+      setShowReset(false);
       setResetCode("");
       setDevResetCode("");
       setForm(f => ({ ...f, password: "" }));
@@ -2445,7 +2629,7 @@ function AuthScreen({onAuth}){
 
   const upd=(k,v)=>setForm(f=>({...f,[k]:v}));
   const toggleLang=(l)=>setForm(f=>({...f,languages:f.languages.includes(l)?f.languages.filter(x=>x!==l):[...f.languages,l]}));
-  const STEPS=["Основное","Жильё","Образ жизни","О себе"];
+  const STEPS=["Основное","Жильё","Образ жизни + О себе"];
 
   const stepContent=()=>{
     if(step===0) return(
@@ -2454,7 +2638,7 @@ function AuthScreen({onAuth}){
         <div className="step-sub">Расскажите немного о себе</div>
         <div className="grid2">
           <div className="fg-form"><label className="fl">Имя *</label><input className="fi" placeholder="Айгерим" value={form.name} onChange={e=>upd("name",e.target.value)}/></div>
-          <div className="fg-form"><label className="fl">Возраст <span style={{fontSize:11,color:'var(--muted)',fontWeight:400}}>(необязательно)</span></label><input className="fi" type="number" placeholder="23" value={form.age} onChange={e=>upd("age",e.target.value)}/></div>
+          <div className="fg-form"><label className="fl">Возраст *</label><input className="fi" type="number" placeholder="23" value={form.age} onChange={e=>upd("age",e.target.value)}/></div>
         </div>
         <div className="fg-form"><label className="fl">Email *</label><input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/></div>
         <div className="fg-form"><label className="fl">Пароль *</label><input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/></div>
@@ -2466,12 +2650,14 @@ function AuthScreen({onAuth}){
             ))}
           </div>
         </div>
-        <div className="fg-form">
-          <label className="fl">Регион <span style={{fontSize:11,color:'var(--muted)',fontWeight:400}}>(необязательно)</span></label>
-          <select className="fi" value={form.region} onChange={e=>upd("region",e.target.value)}>
-            <option value="">Выберите регион</option>
-            {KZ_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
+        <div className="grid2">
+          <div className="fg-form"><label className="fl">Регион *</label>
+            <select className="fi" value={form.region} onChange={e=>upd("region",e.target.value)}>
+              <option value="">Выберите регион</option>
+              {KZ_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
+          <div className="fg-form"><label className="fl">Бюджет (₸/мес) *</label><input className="fi" type="number" placeholder="80000" value={form.budget} onChange={e=>upd("budget",e.target.value)}/></div>
         </div>
         <div className="fg-form">
           <label className="fl">Ваша ситуация *</label>
@@ -2502,20 +2688,23 @@ function AuthScreen({onAuth}){
     if(step===1) return(
       <>
         <div className="step-title">Жильё и работа</div>
-        <div className="step-sub">Ваши условия и требования · <span style={{color:'var(--muted)',fontSize:12}}>все поля необязательны</span></div>
-        <div className="grid2">
-          <div className="fg-form"><label className="fl">Бюджет (₸/мес)</label><input className="fi" type="number" placeholder="80000" value={form.budget} onChange={e=>upd("budget",e.target.value)}/></div>
+        <div className="step-sub">Ваши условия и требования</div>
+        {form.renterType === "looking" && (
           <div className="fg-form"><label className="fl">Дата заезда</label><input className="fi" type="date" value={form.move_in} onChange={e=>upd("move_in",e.target.value)}/></div>
-        </div>
-        <div className="fg-form"><label className="fl">Профессия / учёба</label><input className="fi" placeholder="Студентка, дизайнер, врач…" value={form.occupation} onChange={e=>upd("occupation",e.target.value)}/></div>
-        <div className="fg-form">
-          <label className="fl">Статус</label>
-          <div className="chip-row">
-            {[["💼 Работа","Работа"],["📚 Учёба","Учёба"],["🔄 Оба","Оба"]].map(([l,v])=>(
-              <button key={v} className={`chip-sel ${form.studyWork===v?"on":""}`} onClick={()=>upd("studyWork",v)}>{l}</button>
-            ))}
+        )}
+        {form.renterType === "has_place" && (
+          <div className="fg-form" style={{background:"linear-gradient(135deg,#f0fdf4,var(--accent-light))",padding:"16px",borderRadius:"var(--rs)",border:"2px solid var(--accent)"}}>
+            <label className="fl" style={{color:"var(--accent2)"}}>📍 Адрес вашего жилья *</label>
+            <input className="fi" placeholder="ул. Абая 150, кв. 45" value={form.address} onChange={e=>upd("address",e.target.value)}/>
+            <AddressMapSelector address={form.address} lat={form.lat} lng={form.lng} region={form.region} onAddressChange={(addr) => upd("address", addr)} onLocationChange={(lat, lng) => { setForm(f => ({ ...f, lat, lng })); }}/>
+            <div style={{fontSize:"11px",color:"var(--mid)",marginTop:"6px",lineHeight:"1.5"}}>💡 Вы можете ввести адрес вручную или кликнуть на карту.</div>
+            {form.lat && form.lng && (
+              <div style={{marginTop:'10px',padding:'8px 12px',background:'rgba(255,255,255,.7)',borderRadius:'8px',fontSize:'11px',color:'#666',display:'flex',alignItems:'center',gap:'6px'}}>
+                <span style={{fontSize:'14px'}}>✓</span><span>Координаты: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}</span>
+              </div>
+            )}
           </div>
-        </div>
+        )}
         <div className="fg-form">
           <label className="fl">Удалённая работа</label>
           <div className="chip-row">
@@ -2539,35 +2728,31 @@ function AuthScreen({onAuth}){
             ))}
           </div>
         </div>
-        <div className="fg-form">
-          <label className="fl">Университет рядом</label>
-          <select className="fi" value={form.university} onChange={e=>upd("university",e.target.value)}>
-            <option value="">Не выбрано</option>
-            {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
-        </div>
-        <div className="fg-form">
-          <label className="fl">Коммьют до кампуса</label>
-          <select className="fi" value={form.commuteMax} onChange={e=>upd("commuteMax",e.target.value)}>
-            <option value="">Не важно</option>
-            <option value="30">≤ 30 мин</option>
-            <option value="45">≤ 45 мин</option>
-            <option value="60">≤ 60 мин</option>
-          </select>
-        </div>
-        <div className="fg-form">
-          <label className="fl">Транспорт рядом</label>
-          <div className="chip-row">
-            <button className={`chip-sel ${form.nearMetro?"on":""}`} onClick={()=>upd("nearMetro",!form.nearMetro)}>🚇 Метро</button>
-            <button className={`chip-sel ${form.nearBus?"on":""}`} onClick={()=>upd("nearBus",!form.nearBus)}>🚌 Автобус</button>
+        {form.studyWork === "Учёба" && (
+          <div className="fg-form">
+            <label className="fl">Университет</label>
+            <select className="fi" value={form.university} onChange={e=>upd("university",e.target.value)}>
+              <option value="">Не выбрано</option>
+              {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
           </div>
-        </div>
+        )}
       </>
     );
     if(step===2) return(
       <>
-        <div className="step-title">Образ жизни</div>
-        <div className="step-sub">Поможет найти совместимого соседа · <span style={{color:'var(--muted)',fontSize:12}}>необязательно</span></div>
+        <div className="step-title">Образ жизни + О себе</div>
+        <div className="step-sub">Финальный шаг для лучших smart-рекомендаций</div>
+        <div className="fg-form"><label className="fl">Профессия / учёба</label><input className="fi" placeholder="Студентка, дизайнер, врач…" value={form.occupation} onChange={e=>upd("occupation",e.target.value)}/></div>
+        {form.studyWork === "Учёба" && (
+          <div className="fg-form">
+            <label className="fl">Университет</label>
+            <select className="fi" value={form.university} onChange={e=>upd("university",e.target.value)}>
+              <option value="">Не выбрано</option>
+              {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
+        )}
         {[["Чистоплотность","cleanliness",["😕 Нет","😐 Средне","🙂 Хорошо","😊 Очень","✨ Идеал"]],["Общительность","social",["🤫 Тихоня","😐 Средне","🙂 Общаюсь","😄 Активный","🎉 Тусовщик"]]].map(([l,k,labels])=>(
           <div className="fg-form" key={k}>
             <label className="fl">{l}: <span style={{color:"var(--accent)",fontWeight:"700"}}>{labels[form[k]-1]}</span></label>
@@ -2612,24 +2797,10 @@ function AuthScreen({onAuth}){
             ))}
           </div>
         </div>
-      </>
-    );
-    if(step===3) return(
-      <>
-        <div className="step-title">О себе</div>
-        <div className="step-sub">Последний шаг — расскажите о себе!</div>
         <PhotoUpload photos={photos} onChange={setPhotos}/>
         <div className="fg-form">
           <label className="fl">Коротко о себе</label>
           <textarea className="fi" style={{height:"100px",resize:"vertical"}} placeholder="Я студентка 3-го курса, тихая и аккуратная…" value={form.bio} onChange={e=>upd("bio",e.target.value)}/>
-        </div>
-        <div className="fg-form">
-          <label className="fl">Prompt: My ideal roommate is…</label>
-          <input className="fi" placeholder="Ответственный, уважает личное пространство…" value={form.idealRoommate} onChange={e=>upd("idealRoommate",e.target.value)} />
-        </div>
-        <div className="fg-form">
-          <label className="fl">Prompt: Quiet hours…</label>
-          <input className="fi" placeholder="23:00 - 08:00" value={form.quietHours} onChange={e=>upd("quietHours",e.target.value)} />
         </div>
         <div style={{background:"var(--bg2)",borderRadius:"var(--rs)",padding:"16px",marginBottom:"16px"}}>
           <div style={{fontSize:"13px",fontWeight:"700",color:"var(--mid)",marginBottom:"10px"}}>📋 Ваша анкета:</div>
@@ -2638,6 +2809,7 @@ function AuthScreen({onAuth}){
             <div>📍 {KZ_REGIONS.find(r=>r.id===form.region)?.name||"Не указан"}</div>
             <div>💰 {(+form.budget||0).toLocaleString()} ₸/мес · 📅 {form.move_in||"Не указано"}</div>
             <div>🕐 {form.schedule||"Не указан"} · {form.remote?"💻 Удалёнка":"🏢 Офис"}</div>
+            <div>🎓 {form.studyWork === "Учёба" ? (form.university || "Университет не указан") : (form.occupation || "Профессия не указана")}</div>
             {form.smoking&&<div>🚬 Курю</div>}
             {form.alcohol&&<div>🍷 Пью алкоголь</div>}
             {form.pets&&<div>🐾 Есть питомец</div>}
@@ -2647,83 +2819,124 @@ function AuthScreen({onAuth}){
     );
   };
 
-  if(mode==="forgot") return(
+  if(mode=="login") return(
     <div className="auth-wrap">
       <div className="auth-left">
-        <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"Cormorant Garamond",fontSize:"52px",fontWeight:"700",color:"#fff",lineHeight:1}}>Сосед<span style={{color:"var(--warm)"}}>КЗ</span></div>
-          <div style={{color:"rgba(255,255,255,.7)",fontSize:"16px",marginTop:"12px"}}>Восстановление пароля</div>
+        <div className="auth-left-content">
+          <div style={{marginBottom:"48px"}}>
+            <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"32px",fontFamily:"var(--font-display)",letterSpacing:"0.5px",opacity:"0.95"}}>Matcha</div>
+            <div style={{fontSize:"56px",fontWeight:"800",color:"#fff",lineHeight:"1.1",marginBottom:"28px",letterSpacing:"-1px"}}>
+              {uiLang === "en" ? (
+                <>Find Your<br/><span style={{color:"#A8D5BA"}}>Sanctuary</span><br/>in Kazakhstan</>
+              ) : uiLang === "kk" ? (
+                <>Өзіңіздің<br/><span style={{color:"#A8D5BA"}}>Орасын</span><br/>Табыңыз</>
+              ) : (
+                <>Найдите Ваше<br/><span style={{color:"#A8D5BA"}}>Убежище</span><br/>в Казахстане</>
+              )}
+            </div>
+            <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"0",lineHeight:"1.7",fontWeight:"400"}}>{TRANSLATIONS[uiLang].connectRoommates}</p>
+          </div>
+          
+          <div style={{display:"flex",flexDirection:"column",gap:"28px"}}>
+            <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
+              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
+              <div style={{paddingTop:"4px"}}>
+                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Настоящие профили</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Проверенные люди в поиске жилья и соседей</div>
+              </div>
+            </div>
+            
+            <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
+              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>🗺️</div>
+              <div style={{paddingTop:"4px"}}>
+                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Интерактивные карты</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Исследуйте районы Алматы и Астаны с местными подсказками</div>
+              </div>
+            </div>
+            
+            <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
+              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✨</div>
+              <div style={{paddingTop:"4px"}}>
+                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Идеальная совместимость</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Подбор по образу жизни, не только по бюджету и площади</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
       <div className="auth-right">
-        <div className="auth-card">
-          <div className="auth-logo">Сосед<span>КЗ</span></div>
-          <p className="auth-sub">Восстановите доступ к своему аккаунту</p>
-          <div className="atabs">
-            <button className="atab" onClick={()=>setMode("login")}>Вход</button>
-            <button className="atab" onClick={()=>{setMode("register");setStep(0);}}>Регистрация</button>
-            <button className="atab active">Сброс</button>
+        <div className="auth-card-login">
+          <div style={{textAlign:"center",marginBottom:"32px"}}>
+            <div style={{fontSize:"28px",fontWeight:"800",color:"#1e4a36",marginBottom:"8px",letterSpacing:"-0.5px"}}>С возвращением</div>
+            <p style={{fontSize:"15px",color:"#888",margin:0,fontWeight:"400",lineHeight:"1.6"}}>Войдите в свой аккаунт</p>
           </div>
+          
+          <div className="auth-tabs-container">
+            <button className={`auth-tab ${mode==="login"?"active":""}`} onClick={()=>setMode("login")} style={{borderBottom:mode==="login"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="login"?"#1e4a36":"#999",fontWeight:mode==="login"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>Вход</button>
+            <button className={`auth-tab ${mode==="register"?"active":""}`} onClick={()=>{setMode("register");setStep(0);}} style={{borderBottom:mode==="register"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="register"?"#1e4a36":"#999",fontWeight:mode==="register"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>Регистрация</button>
+          </div>
+          
           <div className="fg-form">
-            <label className="fl">Email</label>
-            <input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/>
+            <label className="fl">{TRANSLATIONS[uiLang].email}</label>
+            <input className="fi" type="email" placeholder="nomad@almaty.kz" value={form.email} onChange={e=>upd("email",e.target.value)}/>
           </div>
-          <div className="fg-form">
-            <label className="fl">Код сброса</label>
-            <input className="fi" placeholder="6-значный код" value={resetCode} onChange={e=>setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}/>
+          
+          <div className="fg-form" style={{marginBottom:"8px"}}>
+            <label className="fl">{TRANSLATIONS[uiLang].password}</label>
+            <input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/>
           </div>
-          <div className="fg-form" style={{marginBottom:"20px"}}>
-            <label className="fl">Новый пароль</label>
-            <input className="fi" type="password" placeholder="Не менее 8 символов" value={form.password} onChange={e=>upd("password",e.target.value)}/>
+          
+          <div className="fg-form" style={{marginBottom:"24px"}}>
+            <label className="fl">{TRANSLATIONS[uiLang].prefLanguages}</label>
+            <div className="chip-row">
+              {["Казахский","Русский","Английский"].map(l=>(
+                <button key={l} className={`chip-sel ${form.languages.includes(l)?"on":""}`} onClick={()=>toggleLang(l)} style={{flex:1,fontSize:"12px",padding:"10px 12px"}}>{l==="Казахский"?"🇰🇿":l==="Русский"?"🇷🇺":"🌍"} {l}</button>
+              ))}
+            </div>
           </div>
-          {!!devResetCode && (
-            <div style={{background:"var(--accent-light)",border:"1px solid var(--accent)",padding:"10px 12px",borderRadius:"10px",fontSize:"12px",marginBottom:"14px",color:"var(--accent2)"}}>
-              Dev код: <b>{devResetCode}</b>
+          
+          <div style={{textAlign:"right",marginBottom:"24px"}}>
+            <span style={{fontSize:"13px",color:"#5a8f6f",cursor:"pointer",fontWeight:"600",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.8"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>setShowReset(true)}>{TRANSLATIONS[uiLang].forgotPassword}</span>
+          </div>
+          
+          <button className="btn-enter-sanctuary" onClick={handleLoginSubmit} disabled={loading}>
+            {loading ? "Loading..." : "Enter Sanctuary →"}
+          </button>
+          
+          <p style={{textAlign:"center",fontSize:"13px",color:"#999",marginTop:"28px"}}>
+            {TRANSLATIONS[uiLang].newToNeighborhood} <span style={{color:"#5a8f6f",cursor:"pointer",fontWeight:"700",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.7"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>{setMode("register");setStep(0);}}>{TRANSLATIONS[uiLang].joinCommunity}</span>
+          </p>
+          
+          {showReset && (
+            <div style={{marginTop:"24px",padding:"20px",background:"var(--bg2)",borderRadius:"var(--rs)",border:"1px solid var(--border)"}}>
+              <div style={{fontSize:"14px",fontWeight:"700",marginBottom:"12px"}}>Сброс пароля</div>
+              <div className="fg-form">
+                <label className="fl">Email</label>
+                <input className="fi" type="email" placeholder="soosedi@almaty.kz" value={form.email} onChange={e=>upd("email",e.target.value)}/>
+              </div>
+              <div className="fg-form">
+                <label className="fl">Код сброса</label>
+                <input className="fi" placeholder="6-значный код" value={resetCode} onChange={e=>setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}/>
+              </div>
+              <div className="fg-form" style={{marginBottom:"20px"}}>
+                <label className="fl">Новый пароль</label>
+                <input className="fi" type="password" placeholder="Минимум 8 символов" value={form.password} onChange={e=>upd("password",e.target.value)}/>
+              </div>
+              {!!devResetCode && (
+                <div style={{background:"var(--accent-light)",border:"1px solid var(--accent)",padding:"10px 12px",borderRadius:"10px",fontSize:"12px",marginBottom:"14px",color:"var(--accent2)"}}>
+                  Dev code: <b>{devResetCode}</b>
+                </div>
+              )}
+              <div style={{display:"grid",gap:"8px"}}>
+                <button className="btn-ghost" onClick={handleForgotRequest} disabled={loading}>Получить код</button>
+                <button className="btn-primary" onClick={handleResetSubmit} disabled={loading}>{loading ? "Загрузка..." : "Сбросить пароль"}</button>
+              </div>
+              <p style={{textAlign:"center",fontSize:"12px",color:"var(--muted)",marginTop:"16px"}}>
+                <span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setShowReset(false)}>Вернуться к входу</span>
+              </p>
             </div>
           )}
-          <div style={{display:"grid",gap:"8px"}}>
-            <button className="btn-ghost" onClick={handleForgotRequest} disabled={loading}>Получить код</button>
-            <button className="btn-primary" onClick={handleResetSubmit} disabled={loading}>{loading ? "Загрузка..." : "Сбросить пароль"}</button>
-          </div>
-          <p style={{textAlign:"center",fontSize:"12px",color:"var(--muted)",marginTop:"16px"}}>
-            Вспомнили пароль?&nbsp;<span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setMode("login")}>Войти</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-
-  if(mode==="login") return(
-    <div className="auth-wrap">
-      <div className="auth-left">
-        <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"Cormorant Garamond",fontSize:"52px",fontWeight:"700",color:"#fff",lineHeight:1}}>Сосед<span style={{color:"var(--warm)"}}>КЗ</span></div>
-          <div style={{color:"rgba(255,255,255,.7)",fontSize:"16px",marginTop:"12px"}}>Найдите идеального соседа в Казахстане</div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:"16px",width:"100%",maxWidth:"320px"}}>
-          {["🏠 Реальные анкеты по всему Казахстану","📍 Карта с геолокацией","💬 Одно сообщение — один шанс","♀ Фильтр только для девушек"].map(t=>(
-            <div key={t} style={{background:"rgba(255,255,255,.08)",borderRadius:"12px",padding:"14px 18px",color:"rgba(255,255,255,.85)",fontSize:"14px"}}>{t}</div>
-          ))}
-        </div>
-      </div>
-      <div className="auth-right">
-        <div className="auth-card">
-          <div className="auth-logo">Сосед<span>КЗ</span></div>
-          <p className="auth-sub">Найдите идеального соседа в Казахстане 🇰🇿</p>
-          <div className="atabs">
-            <button className={`atab ${mode==="login"?"active":""}`} onClick={()=>setMode("login")}>Вход</button>
-            <button className={`atab ${mode==="register"?"active":""}`} onClick={()=>{setMode("register");setStep(0);}}>Регистрация</button>
-            <button className={`atab ${mode==="forgot"?"active":""}`} onClick={()=>setMode("forgot")}>Сброс</button>
-          </div>
-          <div className="fg-form"><label className="fl">Email</label><input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/></div>
-          <div className="fg-form" style={{marginBottom:"24px"}}><label className="fl">Пароль</label><input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/></div>
-          <div style={{textAlign:"right",marginTop:"-12px",marginBottom:"14px"}}>
-            <span style={{fontSize:"12px",color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setMode("forgot")}>Забыли пароль?</span>
-          </div>
-          <button className="btn-primary" onClick={handleLoginSubmit} disabled={loading}>{loading ? "Загрузка..." : "Войти →"}</button>
-          <p style={{textAlign:"center",fontSize:"12px",color:"var(--muted)",marginTop:"16px"}}>
-            Нет аккаунта?&nbsp;<span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>{setMode("register");setStep(0);}}>Зарегистрироваться</span>
-          </p>
         </div>
       </div>
     </div>
@@ -2732,39 +2945,50 @@ function AuthScreen({onAuth}){
   return(
     <div className="auth-wrap">
       <div className="auth-left">
-        <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"Cormorant Garamond",fontSize:"52px",fontWeight:"700",color:"#fff",lineHeight:1}}>Сосед<span style={{color:"var(--warm)"}}>КЗ</span></div>
-          <div style={{color:"rgba(255,255,255,.7)",fontSize:"16px",marginTop:"12px"}}>Шаг {step+1} из {STEPS.length}: {STEPS[step]}</div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:"12px",width:"100%",maxWidth:"300px"}}>
-          {STEPS.map((s,i)=>(
-            <div key={s} style={{display:"flex",alignItems:"center",gap:"12px",opacity:i<=step?1:.4}}>
-              <div style={{width:"28px",height:"28px",borderRadius:"50%",background:i<step?"var(--accent)":i===step?"var(--warm)":"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:"700",color:"#fff",flexShrink:0}}>{i<step?"✓":i+1}</div>
-              <span style={{color:"rgba(255,255,255,.85)",fontSize:"14px",fontWeight:i===step?"700":"400"}}>{s}</span>
-            </div>
-          ))}
+        <div className="auth-left-content">
+          <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"28px",fontFamily:"var(--font-display)"}}>Matcha</div>
+          <div style={{fontSize:"42px",fontWeight:"700",color:"#fff",lineHeight:"1.1",marginBottom:"20px"}}>
+            Шаг {step+1} из {STEPS.length}
+          </div>
+          <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"32px",lineHeight:"1.5"}}>{STEPS[step]}</p>
+          
+          <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+            {STEPS.map((s,i)=>(
+              <div key={s} style={{display:"flex",alignItems:"center",gap:"12px",opacity:i<=step?1:.4}}>
+                <div style={{width:"28px",height:"28px",borderRadius:"50%",background:i<step?"#A8D5BA":i===step?"#fff":"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:"700",color:i<step||i===step?"#5a8f6f":"#fff",flexShrink:0}}>{i<step?"✓":i+1}</div>
+                <span style={{color:"rgba(255,255,255,.85)",fontSize:"14px",fontWeight:i===step?"700":"400"}}>{s}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <div className="auth-right">
-        <div className="auth-card">
-          <div className="auth-logo" style={{fontSize:"26px",marginBottom:"4px"}}>Сосед<span>КЗ</span></div>
-          <div className="atabs" style={{marginBottom:"20px"}}>
-            <button className="atab" onClick={()=>setMode("login")}>Вход</button>
-            <button className="atab active">Регистрация</button>
-            <button className="atab" onClick={()=>setMode("forgot")}>Сброс</button>
+        <div className="auth-card-login">
+          <div style={{textAlign:"center",marginBottom:"24px"}}>
+            <div style={{fontSize:"22px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}>Создайте профиль</div>
+            <p style={{fontSize:"13px",color:"var(--txt2)",margin:0}}>Давайте найдем вашего идеального соседа</p>
           </div>
-          <div className="reg-steps">{STEPS.map((_,i)=><div key={i} className={`reg-step ${i<step?"done":i===step?"active":""}`}/>)}</div>
-          <div style={{maxHeight:"calc(80vh - 220px)",overflowY:"auto",paddingRight:"4px"}}>{stepContent()}</div>
-          <div className="step-nav">
+          
+          <div className="auth-tabs-container">
+            <button className={`auth-tab ${mode==="login"?"active":""}`} onClick={()=>setMode("login")} style={{borderBottom:mode==="login"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="login"?"#1e4a36":"#999",fontWeight:mode==="login"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>Вход</button>
+            <button className={`auth-tab ${mode==="register"?"active":""}`} onClick={()=>{setMode("register");setStep(0);}} style={{borderBottom:mode==="register"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="register"?"#1e4a36":"#999",fontWeight:mode==="register"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>Регистрация</button>
+          </div>
+          
+          <div className="reg-steps" style={{marginBottom:"24px"}}>{STEPS.map((_,i)=><div key={i} className={`reg-step ${i<step?"done":i===step?"active":""}`}/>)}</div>
+          
+          <div style={{maxHeight:"calc(80vh - 280px)",overflowY:"auto",paddingRight:"8px"}}>{stepContent()}</div>
+          
+          <div className="step-nav" style={{marginTop:"24px"}}>
             {step>0&&<button className="btn-back" onClick={()=>setStep(s=>s-1)}>← Назад</button>}
             {step<STEPS.length-1?(
               <button className="btn-next" onClick={()=>setStep(s=>s+1)}>Далее →</button>
             ):(
-              <button className="btn-next" onClick={handleRegisterSubmit} disabled={loading}>{loading ? "Создаем..." : "Создать профиль 🎉"}</button>
+              <button className="btn-next" onClick={handleRegisterSubmit} disabled={loading}>{loading ? "Создание..." : "Создать профиль 🎉"}</button>
             )}
           </div>
-          <p style={{textAlign:"center",fontSize:"11px",color:"var(--muted)",marginTop:"12px"}}>
-            Уже есть аккаунт?&nbsp;<span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setMode("login")}>Войти</span>
+          
+          <p style={{textAlign:"center",fontSize:"12px",color:"var(--txt2)",marginTop:"16px"}}>
+            Уже есть аккаунт?&nbsp;<span style={{color:"#5a8f6f",cursor:"pointer",fontWeight:"600"}} onClick={()=>setMode("login")}>Войти</span>
           </p>
         </div>
       </div>
@@ -2826,7 +3050,12 @@ function MatchesTab({
             {p.verified && <span className="mt-verified">✓</span>}
             {p.matched && <span className="mt-match-pill">🤝 Совпадение</span>}
           </div>
-          <div className="mt-card-meta">{reg?.name || ""}{p.occupation ? ` · ${p.occupation}` : ""}{p.budget ? ` · ${(p.budget || 0).toLocaleString()} ₸` : ""}</div>
+          <div className="mt-card-meta">
+            {reg?.name || ""}
+            {p.university ? ` · ${p.university}` : ""}
+            {p.occupation ? ` · ${p.occupation}` : ""}
+            {p.budget ? ` · ${(p.budget || 0).toLocaleString()} ₸` : ""}
+          </div>
           {renderPreview(p)}
         </div>
         <span className="mt-card-arrow">›</span>
@@ -2836,11 +3065,6 @@ function MatchesTab({
 
   return (
     <div className="mt-page">
-      <div className="mt-hero">
-        <div className="mt-hero-label">Ваши связи</div>
-        <h1 className="mt-hero-title">Избранные <em>люди</em></h1>
-        <p className="mt-hero-sub">Те, кто заинтересовал вас. Напишите первыми — хорошие соседи не ждут долго.</p>
-      </div>
       <div className="mt-stats">
         {[
           { n: liked.size,     l: "Лайков",     color: "var(--female)" },

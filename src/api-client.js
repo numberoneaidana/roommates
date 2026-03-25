@@ -5,7 +5,7 @@
  * Token is stored in localStorage under "roommate_kz_token".
  */
 
-const BASE = "https://roommates-production.up.railway.app";
+const BASE = process.env.REACT_APP_API_URL || "https://roommates-production.up.railway.app";
 
 export default class ApiClient {
   constructor() {

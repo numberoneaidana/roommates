@@ -4,28 +4,28 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
 :root{
-  --bg:#f6f8f6;
-  --bg2:#ecf2ec;
+  --bg:#f7faf5;
+  --bg2:#edf5e9;
   --card:#ffffff;
-  --card2:#f0f7f0;
-  --border:#e2ebe2;
-  --border2:#c5d9c5;
+  --card2:#f2f8ef;
+  --border:#dce9d8;
+  --border2:#bdd2b8;
 
-  --txt:#0c1a0c;
-  --txt2:#3a5c3a;
-  --txt3:#7a9e7a;
+  --txt:#203025;
+  --txt2:#43624a;
+  --txt3:#75907b;
 
-  --accent:#1b7a4e;
-  --accent2:#157749;
-  --accent-glow:rgb(0, 162, 87);
-  --accent-light:rgba(27,122,78,.07);
+  --accent:#73a86f;
+  --accent2:#5f975d;
+  --accent-glow:rgba(115,168,111,.45);
+  --accent-light:rgba(115,168,111,.12);
 
   --warm:#c97a1a;
   --warm2:#a55e10;
   --warm-light:rgba(201,122,26,.09);
 
-  --dark:#0a1e0f;
-  --dark2:#132e1c;
+  --dark:#3e5a43;
+  --dark2:#57755c;
 
   --female:#c2185b;
   --female-light:rgba(194,24,91,.07);
@@ -36,9 +36,9 @@
   --red:#c62828;
   --match:#c97a1a;
 
-  --sh:0 1px 6px rgba(10,30,15,.06);
-  --sh2:0 4px 20px rgba(10,30,15,.10);
-  --sh3:0 12px 40px rgba(10,30,15,.15);
+  --sh:0 1px 6px rgba(34,56,40,.06);
+  --sh2:0 4px 20px rgba(34,56,40,.10);
+  --sh3:0 12px 40px rgba(34,56,40,.15);
 
   --r:14px;
   --rs:9px;

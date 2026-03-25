@@ -3,7 +3,8 @@
 // Static data constants used across the app.
 // ─────────────────────────────────────────────────────────────
 
-export const BASE_URL = "https://roommates-production.up.railway.app";
+// Use environment variable if available, otherwise default to production
+export const BASE_URL = process.env.REACT_APP_API_URL || "https://roommates-production.up.railway.app";
 
 /** All Kazakhstan regions with coordinates */
 export const KZ_REGIONS = [

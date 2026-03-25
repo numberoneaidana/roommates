@@ -31,7 +31,7 @@ app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:3000", "https://roommatch-weld.vercel.app"],
+  origin: process.env.CORS_ORIGIN?.split(",").map(s => s.trim()) || ["http://localhost:3000", "http://localhost:3001", "https://roommatch-weld.vercel.app"],
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
@@ -198,6 +198,21 @@ wss.on("connection", (ws, req) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;
+
+// Handle stdin issues (prevent TTY read errors when running in background)
+if (process.stdin.isTTY === false) {
+  process.stdin.pause();
+}
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  httpServer.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 roommate-kz API running on http://localhost:${PORT}`);
   console.log(`🔌 WebSocket endpoint: ws://localhost:${PORT}/ws`);

@@ -2532,35 +2532,18 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
                   if(!verificationFile) return alert("Выберите документ");
                   setUploadingVerification(true);
                   try{
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const img = new Image();
-                    img.onload = async () => {
-                      canvas.width = img.width * 0.7;
-                      canvas.height = img.height * 0.7;
-                      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                      canvas.toBlob(async (blob) => {
-                        const formData = new FormData();
-                        formData.append('file', blob, verificationFile.name);
-                        try{
-                          const response = await api.uploadVerification(formData);
-                          setAuth(prev=>({...prev,verification_status:'pending',id_document_url:response.url}));
-                          setShowVerificationModal(false);
-                          setVerificationFile(null);
-                          setVerificationPreview(null);
-                          alert("✓ Документ загружен! Проверка займет менее 24 часов.");
-                        }catch(err){
-                          console.error("Upload error:", err);
-                          alert("Ошибка загрузки: "+err.message);
-                        }finally{
-                          setUploadingVerification(false);
-                        }
-                      }, 'image/jpeg', 0.8);
-                    };
-                    img.src = verificationPreview;
+                    const formData = new FormData();
+                    formData.append('file', verificationFile);
+                    const response = await api.uploadVerification(formData);
+                    setAuth(prev=>({...prev,verification_status:'pending',id_document_url:response.url}));
+                    setShowVerificationModal(false);
+                    setVerificationFile(null);
+                    setVerificationPreview(null);
+                    alert("✓ Документ загружен! Проверка займет менее 24 часов.");
                   }catch(err){
-                    console.error("Compression error:", err);
-                    alert("Ошибка сжатия: "+err.message);
+                    console.error("Upload error:", err);
+                    alert("Ошибка загрузки: "+err.message);
+                  }finally{
                     setUploadingVerification(false);
                   }
                 }} disabled={!verificationFile||uploadingVerification} style={{flex:1,padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:!verificationFile||uploadingVerification?"not-allowed":"pointer",transition:"all 0.2s",opacity:!verificationFile||uploadingVerification?0.5:1}} onMouseEnter={e=>{if(!uploadingVerification&&verificationFile)e.target.style.background="#5a8f6f"}} onMouseLeave={e=>{e.target.style.background="#7A9E7E"}}>
@@ -3301,7 +3284,6 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
   const [filter, setFilter] = useState('pending');
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [expandedImage, setExpandedImage] = useState(null);
 
   const filteredProfiles = allProfiles.filter(p => {
     if (filter === 'pending') return p.verification_status === 'pending';
@@ -3403,7 +3385,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
               {selectedProfile.id_document_url && (
                 <div style={{marginBottom:"24px"}}>
                   <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>📸 Загруженный документ</h3>
-                  <img src={`/uploads/verifications/${selectedProfile.id_document_url}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",background:"#F2F8F1",cursor:"pointer",transition:"all 0.2s",transformOrigin:"center"}} onClick={()=>setExpandedImage(`/uploads/verifications/${selectedProfile.id_document_url}`)} onMouseEnter={(e)=>{e.target.style.transform="scale(1.05)"}} onMouseLeave={(e)=>{e.target.style.transform="scale(1)"}} loading="lazy" onError={(e)=>{console.error("Image load error:", e); e.target.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' font-size='14' fill='%23999'%3EОшибка загрузки%3C/text%3E%3C/svg%3E"}}/>
+                  <img src={`/api/verify/file/${selectedProfile.id_document_url.split('/').pop()}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",cursor:"pointer"}} title="Кликните для увеличения" loading="lazy"/>
                 </div>
               )}
               {selectedProfile.verification_status === 'pending' && (
@@ -3417,19 +3399,17 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
                   {selectedProfile.verification_status==="approved"?"✓ Верифицирован":selectedProfile.verification_status==="rejected"?"✗ Отклонен":"⏳ На проверке"}
                 </div>
               </div>
-
+              {selectedProfile.verification_status === 'pending' && (
+                <div style={{display:"flex",gap:"12px"}}>
+                  <button onClick={()=>handleVerify(selectedProfile.id, false)} style={{flex:1,padding:"12px",background:"#FEE2E2",color:"#DC2626",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.background="#FED7D7"}} onMouseLeave={e=>{e.target.style.background="#FEE2E2"}}>
+                    ✗ Отклонить
+                  </button>
+                  <button onClick={()=>handleVerify(selectedProfile.id, true)} style={{flex:1,padding:"12px",background:"#E4F0E0",color:"#7A9E7E",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.background="#D0E8C8"}} onMouseLeave={e=>{e.target.style.background="#E4F0E0"}}>
+                    ✓ Верифицировать
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Full-screen Image Viewer */}
-      {expandedImage && (
-        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:3000,padding:"20px",cursor:"pointer"}} onClick={()=>setExpandedImage(null)}>
-          <div style={{position:"relative",maxWidth:"90vw",maxHeight:"90vh"}}>
-            <img src={expandedImage} alt="Full-size document" style={{width:"100%",height:"100%",maxHeight:"90vh",objectFit:"contain",borderRadius:"12px"}} onError={(e)=>{e.target.style.display="none"; const errorMsg = e.currentTarget.nextElementSibling; if(errorMsg) errorMsg.style.display="block"}}/>
-            <div style={{display:"none",position:"absolute",top:"50%",left:"50%",transform:"translate(-50%, -50%)",color:"white",fontSize:"16px",textAlign:"center",background:"rgba(220, 38, 38, 0.3)",padding:"20px",borderRadius:"12px",width:"200px"}}>❌ Ошибка загрузки файла<br/><small>Проверьте наличие файла</small></div>
-            <button onClick={()=>setExpandedImage(null)} style={{position:"absolute",top:"16px",right:"16px",width:"44px",height:"44px",borderRadius:"50%",background:"rgba(255,255,255,0.2)",border:"2px solid white",color:"white",cursor:"pointer",fontSize:"24px",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",zIndex:1}} onMouseEnter={(e)=>{e.target.style.background="rgba(255,255,255,0.3)"}} onMouseLeave={(e)=>{e.target.style.background="rgba(255,255,255,0.2)"}}>✕</button>
           </div>
         </div>
       )}

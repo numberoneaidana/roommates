@@ -36,7 +36,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max (reduced from 10MB to prevent memory issues)
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
 });
 
 /**
@@ -60,16 +60,16 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     const userId = req.user.id;
-    const filename = req.file.filename;
+    const fileUrl = `/uploads/verifications/${req.file.filename}`;
 
-    console.log("Updating profile for user:", userId, "with filename:", filename);
+    console.log("Updating profile for user:", userId, "with URL:", fileUrl);
 
-    // Update profile in Supabase (store only filename, not full path)
+    // Update profile in Supabase
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({
         verification_status: "pending",
-        id_document_url: filename,
+        id_document_url: fileUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId)
@@ -88,7 +88,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     res.json({
       success: true,
       message: "Document uploaded successfully",
-      url: filename,
+      url: fileUrl,
       status: "pending",
       profile: data,
     });
@@ -200,41 +200,41 @@ router.patch("/:profileId", async (req, res) => {
 
 /**
  * GET /api/verify/file/:filename
- * Serve verification document file
+ * Serve verification document files with proper caching and streaming
  */
 router.get("/file/:filename", (req, res) => {
-  let filename = req.params.filename;
-  
-  // Decode URL-encoded filename
   try {
-    filename = decodeURIComponent(filename);
-  } catch (e) {
-    return res.status(400).json({ error: "Invalid filename" });
+    const filename = path.basename(req.params.filename); // Prevent directory traversal
+    const filepath = path.join(uploadsDir, filename);
+
+    // Verify the file is within the uploads directory
+    if (!filepath.startsWith(uploadsDir)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    // Set proper cache headers
+    res.set({
+      "Cache-Control": "public, max-age=86400", // Cache for 1 day
+      "Content-Type": "image/jpeg",
+    });
+
+    // Stream the file instead of loading it all at once
+    const fileStream = fs.createReadStream(filepath);
+    fileStream.on("error", (err) => {
+      console.error("File stream error:", err);
+      res.status(500).json({ error: "Error reading file" });
+    });
+
+    fileStream.pipe(res);
+  } catch (err) {
+    console.error("File serving error:", err);
+    res.status(500).json({ error: err.message });
   }
-  
-  const filepath = path.join(uploadsDir, filename);
-  
-  // Security: prevent directory traversal
-  const realPath = path.resolve(filepath);
-  const realUploadDir = path.resolve(uploadsDir);
-  if (!realPath.startsWith(realUploadDir)) {
-    console.error(`Directory traversal attempt: ${realPath}`);
-    return res.status(403).json({ error: "Access denied" });
-  }
-  
-  // Check if file exists
-  if (!fs.existsSync(filepath)) {
-    console.error(`File not found: ${filepath}`);
-    console.error(`Available files in ${uploadsDir}:`, fs.readdirSync(uploadsDir));
-    return res.status(404).json({ error: "File not found" });
-  }
-  
-  console.log(`Serving file: ${filepath}`);
-  
-  // Set proper headers for image
-  res.type('image');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-  res.sendFile(filepath);
 });
 
 export default router;

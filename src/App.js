@@ -271,7 +271,7 @@ export function useRealtimeChat(authUserId, apiClient, { onMatch } = {}) {
       startPolling();
       bootstrapConversations();  // ← PATCH: also bootstrap when WS unavailable
     }
-  }, [authUserId, apiClient, appendMsg, startPolling, stopPolling, bootstrapConversations, onMatch]);
+  }, [authUserId, apiClient, appendMsg, startPolling, stopPolling, bootstrapConversations, onMatch, setAuth, setNotification]);
 
   useEffect(() => {
     if (!authUserId) return;

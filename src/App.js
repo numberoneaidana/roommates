@@ -1910,11 +1910,13 @@ const sendChat = async (profileId, text) => {
         <AdminVerificationDashboard allProfiles={allProfiles} onVerify={async (profileId, status, reason) => {
           try {
             // Make API call to verify/reject
-            const response = await fetch(`${api.baseURL()}/api/verify/${profileId}`, {
+            const token = localStorage.getItem('roommate_kz_token');
+            const baseURL = process.env.REACT_APP_API_URL || "https://roommates-production.up.railway.app";
+            const response = await fetch(`${baseURL}/api/verify/${profileId}`, {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('roommate_kz_token')}`
+                'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({ verification_status: status, rejection_reason: reason })
             });

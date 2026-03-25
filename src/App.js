@@ -1585,7 +1585,7 @@ const sendChat = async (profileId, text) => {
 
       {/* Top Navigation Tabs */}
       <div style={{background:"#fff",borderBottom:"2px solid #e0e0e0",padding:"0",display:"flex",justifyContent:"center",gap:"0",zIndex:"40",position:"sticky",top:"60px"}}>
-        {[["browse","🔍","Обзор"],["swipe","❤️","Свайп"],["map","📍","Карта"],["matches","⭐","Избранное"],["profile","👤","Профиль"]].map(([id,icon,lb])=>(
+        {[["browse", "Обзор"],["swipe","Свайп"],["map","Карта"],["matches","Понрвилось"],["profile","Профиль"]].map(([id,icon,lb])=>(
           <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
             <span style={{fontSize:"18px"}}>{icon}</span>
             <span>{lb}</span>
@@ -1759,23 +1759,7 @@ const sendChat = async (profileId, text) => {
                       {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Коммьют до кампуса</label>
-                    <select value={filters.commuteMax} onChange={e=>setFilters(f=>({...f,commuteMax:e.target.value}))} style={{width:"100%",padding:"8px 12px",border:"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",background:"#fff",cursor:"pointer",outline:"none"}} onFocus={e=>e.target.style.borderColor="#5a8f6f"} onBlur={e=>e.target.style.borderColor="#e0e0e0"}>
-                      <option value="">Не важно</option>
-                      <option value="30">≤ 30 мин</option>
-                      <option value="45">≤ 45 мин</option>
-                      <option value="60">≤ 60 мин</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"14px",fontWeight:"600",color:"#1e4a36",marginBottom:"12px"}}>Транспорт рядом</label>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                      {[["Любой",""],["Метро","metro"],["Автобус","bus"]].map(([l,v])=>(
-                        <button key={l} onClick={()=>setFilters(f=>({...f,transit:v}))} style={{padding:"8px 14px",background:filters.transit===v?"#5a8f6f":"#f8f9fa",color:filters.transit===v?"#fff":"#666",border:filters.transit===v?"none":"1px solid #e0e0e0",borderRadius:"6px",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{if(filters.transit!==v) {e.target.style.background="#e8f5f0"; e.target.style.borderColor="#d4e8e0";}}} onMouseLeave={e=>{if(filters.transit!==v) {e.target.style.background="#f8f9fa"; e.target.style.borderColor="#e0e0e0";}}}>{l}</button>
-                      ))}
-                    </div>
-                  </div>
+                  
                 </div>
                 <button onClick={()=>setFilters({search:"",region:"",budget:200000,gender:"",schedule:"",pets:"",remote:"",smoking:"",religion:"",alcohol:"",university:"",commuteMax:"",transit:""})} style={{marginTop:"20px",padding:"10px 20px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"13px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#ff6b6b"; e.target.style.color="#ff6b6b";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}}>
                   Сбросить все фильтры

@@ -1589,6 +1589,12 @@ const MapScreenAdvanced = ({
                 {(selectedPerson.tags || []).slice(0, 3).map((tag, i) => (
                   <span key={i} className="map-adv-panel-tag">{tag}</span>
                 ))}
+                {selectedPerson.verification_status === 'approved' && (
+                  <span className="map-adv-panel-tag" style={{background: '#E4F0E0', color: '#7A9E7E', border: '1px solid #C8DEC4'}}>✓ Верифицирован</span>
+                )}
+                {selectedPerson.verification_status === 'pending' && (
+                  <span className="map-adv-panel-tag" style={{background: '#FEF3C7', color: '#92400E', border: '1px solid rgba(146,64,14,0.2)'}}>⏳ На проверке</span>
+                )}
               </div>
 
               <div className="map-adv-panel-actions">

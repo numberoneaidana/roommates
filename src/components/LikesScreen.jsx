@@ -1171,6 +1171,12 @@ const LikesScreen = ({
                       {(person.tags || []).slice(0, 3).map((tag, i) => (
                         <span key={i} className="lp-tag">{tag}</span>
                       ))}
+                      {person.verification_status === 'approved' && (
+                        <span className="lp-tag" style={{background: '#E4F0E0', color: '#7A9E7E', border: '1px solid #C8DEC4'}}>✓ Верифицирован</span>
+                      )}
+                      {person.verification_status === 'pending' && (
+                        <span className="lp-tag" style={{background: '#FEF3C7', color: '#92400E', border: '1px solid rgba(146,64,14,0.2)'}}>⏳ На проверке</span>
+                      )}
                     </div>
                     <div className="lp-card-actions">
                       <button 

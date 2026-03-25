@@ -2413,6 +2413,38 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS }) {
             <option value="Другое">Другое</option>
           </select></div>
       </div>
+      <div style={{marginTop:32,marginBottom:24}}>
+        <h2 style={{fontSize:18,fontWeight:600,marginBottom:16,color:"#1C2B1E"}}>🔐 Проверка профиля</h2>
+        <div style={{background:"#FAFDF9",border:"1px solid #C8DEC4",borderRadius:"16px",padding:"20px",marginBottom:16}}>
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:600,color:"#1C2B1E",marginBottom:8}}>Статус верификации</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:"12px",background:auth.verification_status==="approved"?"#E4F0E0":auth.verification_status==="pending"?"#FEF3C7":"#FFFFFF",border:`1px solid ${auth.verification_status==="approved"?"#C8DEC4":auth.verification_status==="pending"?"rgba(146,64,14,0.2)":"#C8DEC4"}`}}>
+              <span style={{fontSize:16}}>{auth.verification_status==="approved"?"✓":auth.verification_status==="pending"?"⏳":"⚠️"}</span>
+              <span style={{fontSize:13,fontWeight:600,color:auth.verification_status==="approved"?"#7A9E7E":auth.verification_status==="pending"?"#92400E":"#7A9E7E"}}>
+                {auth.verification_status==="approved"?"Верифицирован":auth.verification_status==="pending"?"На проверке":"Не проверен"}
+              </span>
+            </div>
+          </div>
+          {auth.verification_status!=="approved"&&(
+            <div>
+              <p style={{fontSize:13,color:"rgba(28,43,30,0.6)",marginBottom:12,lineHeight:1.6}}>
+                Загрузите фото вашего удостоверения личности (паспорт или ИИН) для быстрой верификации вашего профиля. Проверка занимает менее 24 часов.
+              </p>
+              <button style={{width:"100%",padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>
+                📤 Загрузить документ для проверки
+              </button>
+              <div style={{fontSize:12,color:"rgba(28,43,30,0.6)",marginTop:8,textAlign:"center"}}>
+                Ваши документы безопасны и никогда не будут переданы третьим лицам
+              </div>
+            </div>
+          )}
+          {auth.verification_status==="approved"&&(
+            <div style={{padding:"12px 14px",background:"#E4F0E0",borderRadius:"12px",fontSize:13,color:"#7A9E7E"}}>
+              <strong>✓ Спасибо за верификацию!</strong> Ваш профиль теперь проверен и вы получите больше совпадений.
+            </div>
+          )}
+        </div>
+      </div>
       <button className="btn-primary" style={{marginTop:20,width:"100%",padding:"15px",fontSize:15}} onClick={handleSave} disabled={saving}>
         {saving?"⏳ Сохранение...":saved?"✅ Сохранено!":"Сохранить профиль"}
       </button>

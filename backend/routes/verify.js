@@ -48,12 +48,21 @@ const upload = multer({
  */
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
+    console.log("Verify upload request - User:", req.user?.id);
+    console.log("File received:", req.file?.filename);
+
+    if (!req.user?.id) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: "No file provided" });
     }
 
     const userId = req.user.id;
     const fileUrl = `/uploads/verifications/${req.file.filename}`;
+
+    console.log("Updating profile for user:", userId, "with URL:", fileUrl);
 
     // Update profile in Supabase
     const { data, error } = await supabaseAdmin
@@ -68,10 +77,13 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       .single();
 
     if (error) {
+      console.error("Database error:", error);
       // Clean up uploaded file if DB update fails
       fs.unlink(req.file.path, () => {});
       return res.status(500).json({ error: `Database update failed: ${error.message}` });
     }
+
+    console.log("Verification upload successful:", data);
 
     res.json({
       success: true,
@@ -81,11 +93,11 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       profile: data,
     });
   } catch (err) {
+    console.error("Verification upload error:", err);
     // Clean up file on error
     if (req.file) {
       fs.unlink(req.file.path, () => {});
     }
-    console.error("Verification upload error:", err);
     res.status(500).json({ error: err.message || "Upload failed" });
   }
 });

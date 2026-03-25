@@ -2476,9 +2476,9 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
       {showVerificationModal && (
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:2000,padding:"20px"}} onClick={e=>e.target===e.currentTarget&&setShowVerificationModal(false)}>
           <div style={{background:"#FFFFFF",borderRadius:"28px",width:"100%",maxWidth:"500px",maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 80px rgba(122,158,126,0.25)"}}>
-            <div style={{padding:"24px",borderBottom:"1px solid #C8DEC4",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.6rem",fontWeight:600,color:"#1C2B1E",margin:0}}>📤 Верификация профиля</h2>
-              <button onClick={()=>setShowVerificationModal(false)} style={{width:"36px",height:"36px",borderRadius:"50%",background:"#F2F8F1",border:"none",cursor:"pointer",fontSize:"18px"}}>✕</button>
+            <div style={{padding:"24px",borderBottom:"2px solid #7A9E7E",display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg, #F2F8F1 0%, #E4F0E0 100%)"}}>
+              <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.6rem",fontWeight:600,color:"#7A9E7E",margin:0}}>📤 Верификация профиля</h2>
+              <button onClick={()=>setShowVerificationModal(false)} style={{width:"36px",height:"36px",borderRadius:"50%",background:"#E4F0E0",border:"none",cursor:"pointer",fontSize:"18px",color:"#7A9E7E",fontWeight:600,transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.background="#C8DEC4"}} onMouseLeave={e=>{e.target.style.background="#E4F0E0"}}>✕</button>
             </div>
             <div style={{padding:"24px"}}>
               <p style={{fontSize:"14px",color:"rgba(28,43,30,0.6)",marginBottom:"20px",lineHeight:1.6}}>
@@ -2487,7 +2487,10 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
 
               {/* FILE INPUT */}
               <div style={{marginBottom:"20px"}}>
-                <label style={{display:"block",fontSize:"13px",fontWeight:600,color:"#1C2B1E",marginBottom:"10px"}}>Выберите документ</label>
+                <label style={{display:"block",fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
+                  <span style={{fontSize:"16px"}}>📋</span>
+                  Выберите документ
+                </label>
                 <input 
                   type="file" 
                   accept="image/*"
@@ -2502,25 +2505,28 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
                   style={{display:"none"}}
                   id="verification-file-input"
                 />
-                <label htmlFor="verification-file-input" style={{display:"block",padding:"20px",border:"2px dashed #C8DEC4",borderRadius:"14px",textAlign:"center",cursor:"pointer",transition:"all 0.2s",background:verificationFile?"#E4F0E0":"#F2F8F1"}}>
+                <label htmlFor="verification-file-input" style={{display:"block",padding:"20px",border:"2px dashed #7A9E7E",borderRadius:"14px",textAlign:"center",cursor:"pointer",transition:"all 0.3s",background:verificationFile?"#E4F0E0":"#F2F8F1"}}>
                   <div style={{fontSize:"28px",marginBottom:"8px"}}>📸</div>
-                  <div style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"4px"}}>{verificationFile?"Документ выбран":"Кликните или перетащите файл"}</div>
-                  <div style={{fontSize:"12px",color:"rgba(28,43,30,0.6)"}}>{verificationFile?verificationFile.name:"JPG, PNG (макс 10MB)"}</div>
+                  <div style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"4px"}}>{verificationFile?"✓ Документ выбран":"Кликните или перетащите файл"}</div>
+                  <div style={{fontSize:"12px",color:"rgba(122,158,126,0.7)"}}>{verificationFile?verificationFile.name:"JPG, PNG (макс 10MB)"}</div>
                 </label>
               </div>
 
               {/* PREVIEW */}
               {verificationPreview && (
                 <div style={{marginBottom:"20px"}}>
-                  <div style={{fontSize:"13px",fontWeight:600,color:"#1C2B1E",marginBottom:"10px"}}>Предпросмотр</div>
-                  <img src={verificationPreview} alt="preview" style={{width:"100%",borderRadius:"12px",maxHeight:"200px",objectFit:"contain"}}/>
+                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"block",display:"flex",alignItems:"center",gap:"6px"}}>
+                    <span style={{fontSize:"16px"}}>👁️</span>
+                    Предпросмотр
+                  </label>
+                  <img src={verificationPreview} alt="preview" style={{width:"100%",borderRadius:"12px",border:"2px solid #C8DEC4",maxHeight:"200px",objectFit:"contain"}}/>
                 </div>
               )}
 
               {/* ACTION BUTTONS */}
               <div style={{display:"flex",gap:"12px"}}>
-                <button onClick={()=>{setShowVerificationModal(false);setVerificationFile(null);setVerificationPreview(null);}} style={{flex:1,padding:"12px",background:"#F2F8F1",color:"#7A9E7E",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer"}}>
-                  Отмена
+                <button onClick={()=>{setShowVerificationModal(false);setVerificationFile(null);setVerificationPreview(null);}} style={{flex:1,padding:"12px",background:"#F2F8F1",color:"#7A9E7E",border:"2px solid #C8DEC4",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.background="#E4F0E0"}} onMouseLeave={e=>{e.target.style.background="#F2F8F1"}}>
+                  ✕ Отмена
                 </button>
                 <button onClick={async()=>{
                   if(!verificationFile) return alert("Выберите документ");
@@ -2535,11 +2541,12 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
                     setVerificationPreview(null);
                     alert("✓ Документ загружен! Проверка займет менее 24 часов.");
                   }catch(err){
+                    console.error("Upload error:", err);
                     alert("Ошибка загрузки: "+err.message);
                   }finally{
                     setUploadingVerification(false);
                   }
-                }} disabled={!verificationFile||uploadingVerification} style={{flex:1,padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",opacity:!verificationFile||uploadingVerification?0.5:1}}>
+                }} disabled={!verificationFile||uploadingVerification} style={{flex:1,padding:"12px",background:"#7A9E7E",color:"white",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:!verificationFile||uploadingVerification?"not-allowed":"pointer",transition:"all 0.2s",opacity:!verificationFile||uploadingVerification?0.5:1}} onMouseEnter={e=>{if(!uploadingVerification&&verificationFile)e.target.style.background="#5a8f6f"}} onMouseLeave={e=>{e.target.style.background="#7A9E7E"}}>
                   {uploadingVerification?"⏳ Загрузка...":"✓ Отправить"}
                 </button>
               </div>
@@ -3378,7 +3385,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
               {selectedProfile.id_document_url && (
                 <div style={{marginBottom:"24px"}}>
                   <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>📸 Загруженный документ</h3>
-                  <img src={selectedProfile.id_document_url} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain"}}/>
+                  <img src={`/uploads/verifications/${selectedProfile.id_document_url.split('/').pop()}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain"}} onError={(e)=>{e.target.src=selectedProfile.id_document_url;}}/>
                 </div>
               )}
               {selectedProfile.verification_status === 'pending' && (
@@ -3392,16 +3399,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
                   {selectedProfile.verification_status==="approved"?"✓ Верифицирован":selectedProfile.verification_status==="rejected"?"✗ Отклонен":"⏳ На проверке"}
                 </div>
               </div>
-              {selectedProfile.verification_status === 'pending' && (
-                <div style={{display:"flex",gap:"12px"}}>
-                  <button onClick={()=>handleVerify(selectedProfile.id, false)} style={{flex:1,padding:"12px",background:"#FEE2E2",color:"#DC2626",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer"}}>
-                    ✗ Отклонить
-                  </button>
-                  <button onClick={()=>handleVerify(selectedProfile.id, true)} style={{flex:1,padding:"12px",background:"#E4F0E0",color:"#7A9E7E",border:"none",borderRadius:"12px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer"}}>
-                    ✓ Верифицировать
-                  </button>
-                </div>
-              )}
+
             </div>
           </div>
         </div>

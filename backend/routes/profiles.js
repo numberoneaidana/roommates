@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
   ]);
 
   let query = supabaseAdmin
-    .from("profiles").select("*").neq("id", me)
+    .from("profiles").select("*").neq("id", me).eq("is_admin", false)
     .order("created_at", { ascending: false })
     .limit(Number(limit))
     .range(Number(offset), Number(offset) + Number(limit) - 1);

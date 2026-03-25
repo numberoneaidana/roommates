@@ -3301,6 +3301,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
   const [filter, setFilter] = useState('pending');
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [expandedImage, setExpandedImage] = useState(null);
 
   const filteredProfiles = allProfiles.filter(p => {
     if (filter === 'pending') return p.verification_status === 'pending';
@@ -3402,7 +3403,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
               {selectedProfile.id_document_url && (
                 <div style={{marginBottom:"24px"}}>
                   <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"12px"}}>📸 Загруженный документ</h3>
-                  <img src={`/uploads/verifications/${selectedProfile.id_document_url}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",background:"#F2F8F1"}} loading="lazy"/>
+                  <img src={`/uploads/verifications/${selectedProfile.id_document_url}`} alt="ID Document" style={{width:"100%",borderRadius:"12px",border:"1px solid #C8DEC4",maxHeight:"300px",objectFit:"contain",background:"#F2F8F1",cursor:"pointer",transition:"all 0.2s",transformOrigin:"center"}} onClick={()=>setExpandedImage(`/uploads/verifications/${selectedProfile.id_document_url}`)} onMouseEnter={(e)=>{e.target.style.transform="scale(1.05)"}} onMouseLeave={(e)=>{e.target.style.transform="scale(1)"}} loading="lazy"/>
                 </div>
               )}
               {selectedProfile.verification_status === 'pending' && (
@@ -3418,6 +3419,16 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
               </div>
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen Image Viewer */}
+      {expandedImage && (
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(28,43,30,0.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:3000,padding:"20px",cursor:"pointer"}} onClick={()=>setExpandedImage(null)}>
+          <div style={{position:"relative",maxWidth:"90vw",maxHeight:"90vh"}}>
+            <img src={expandedImage} alt="Full-size document" style={{width:"100%",height:"100%",maxHeight:"90vh",objectFit:"contain",borderRadius:"12px"}}/>
+            <button onClick={()=>setExpandedImage(null)} style={{position:"absolute",top:"16px",right:"16px",width:"44px",height:"44px",borderRadius:"50%",background:"rgba(255,255,255,0.2)",border:"2px solid white",color:"white",cursor:"pointer",fontSize:"24px",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}} onMouseEnter={(e)=>{e.target.style.background="rgba(255,255,255,0.3)"}} onMouseLeave={(e)=>{e.target.style.background="rgba(255,255,255,0.2)"}}>✕</button>
           </div>
         </div>
       )}

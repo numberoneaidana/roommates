@@ -232,6 +232,26 @@ export function useRealtimeChat(authUserId, apiClient, { onMatch } = {}) {
               created_at: data.created_at ?? new Date().toISOString(),
             });
           }
+
+          // Handle verification status updates
+          if (data.type === "verification_updated") {
+            setAuth(prev => ({
+              ...prev,
+              verification_status: data.verification_status,
+            }));
+            // Show notification
+            const message = data.verification_status === 'approved' 
+              ? '✓ Ваш профиль верифицирован!'
+              : '✗ Ваш профиль отклонен';
+            setNotification({
+              type: data.verification_status === 'approved' ? 'success' : 'error',
+              message: message,
+              reason: data.rejection_reason || null,
+              timestamp: Date.now()
+            });
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => setNotification(null), 5000);
+          }
         } catch (_) {}
       };
 
@@ -1351,6 +1371,7 @@ export default function App() {
     return token ? "loading" : null;
   });
   const [showAuthFlow, setShowAuthFlow] = useState(false);
+  const [notification, setNotification] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
   // matchedProfiles holds users fetched directly from /api/matches — independent
   // of allProfiles so the passive side (who was liked) always sees their matches
@@ -1565,6 +1586,18 @@ const sendChat = async (profileId, text) => {
 
   return (
     <div style={{minHeight:"100vh",background:"#f8f9fa",fontFamily:"var(--font-body)"}}>
+      {/* Notification */}
+      {notification && (
+        <div style={{position:"fixed",top:"80px",right:"20px",background:notification.type==='success'?"#E4F0E0":"#FEE2E2",border:`2px solid ${notification.type==='success'?"#7A9E7E":"#DC2626"}`,color:notification.type==='success'?"#7A9E7E":"#DC2626",padding:"16px 20px",borderRadius:"12px",boxShadow:"0 4px 12px rgba(0,0,0,0.15)",maxWidth:"400px",zIndex:1000,animation:"slideInRight 0.3s ease"}}>
+          <div style={{fontWeight:600,marginBottom:notification.reason?"8px":"0",fontSize:"14px"}}>{notification.message}</div>
+          {notification.reason && (
+            <div style={{fontSize:"13px",opacity:0.8,marginTop:"8px",fontStyle:"italic"}}>Причина: {notification.reason}</div>
+          )}
+        </div>
+      )}
+      
+      <style>{notification ? `@keyframes slideInRight { from { opacity: 0; transform: translateX(400px); } to { opacity: 1; transform: translateX(0); } }` : ''}</style>
+
       {/* Header */}
       <div style={{background:"#fff",borderBottom:"1px solid #e0e0e0",padding:"16px 40px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:"50",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
         <div style={{fontSize:"20px",fontWeight:"700",color:"#2c5f47",fontFamily:"var(--font-display)"}}>Matcha</div>

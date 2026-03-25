@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { supabase, supabaseAdmin } from "../supabase.js";
+import { broadcast } from "../server.js";
 
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -186,6 +187,17 @@ router.patch("/:profileId", async (req, res) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
+
+    // Send real-time notification to user (WITHOUT photo)
+    broadcast(profileId, {
+      type: "verification_updated",
+      verification_status: verification_status,
+      rejection_reason: rejection_reason || null,
+      timestamp: new Date().toISOString(),
+      message: verification_status === "approved" 
+        ? "✓ Ваш профиль верифицирован!"
+        : "✗ Ваш профиль отклонен"
+    });
 
     res.json({
       success: true,

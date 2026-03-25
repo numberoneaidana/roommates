@@ -51,7 +51,7 @@ const distKm = (la1, lo1, la2, lo2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-export function useRealtimeChat(authUserId, apiClient, { onMatch } = {}) {  
+export function useRealtimeChat(authUserId, apiClient, { onMatch, onVerificationUpdate } = {}) {  
   const [conversations, setConversations] = useState({});
   const [connected, setConnected] = useState(false);
   const [typingFor, setTypingFor] = useState(null);
@@ -235,22 +235,14 @@ export function useRealtimeChat(authUserId, apiClient, { onMatch } = {}) {
 
           // Handle verification status updates
           if (data.type === "verification_updated") {
-            setAuth(prev => ({
-              ...prev,
+            const verificationData = {
               verification_status: data.verification_status,
-            }));
-            // Show notification
-            const message = data.verification_status === 'approved' 
-              ? '✓ Ваш профиль верифицирован!'
-              : '✗ Ваш профиль отклонен';
-            setNotification({
-              type: data.verification_status === 'approved' ? 'success' : 'error',
-              message: message,
-              reason: data.rejection_reason || null,
+              rejection_reason: data.rejection_reason || null,
               timestamp: Date.now()
-            });
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => setNotification(null), 5000);
+            };
+            if (onVerificationUpdate) {
+              onVerificationUpdate(verificationData);
+            }
           }
         } catch (_) {}
       };
@@ -271,7 +263,7 @@ export function useRealtimeChat(authUserId, apiClient, { onMatch } = {}) {
       startPolling();
       bootstrapConversations();  // ← PATCH: also bootstrap when WS unavailable
     }
-  }, [authUserId, apiClient, appendMsg, startPolling, stopPolling, bootstrapConversations, onMatch, setAuth, setNotification]);
+  }, [authUserId, apiClient, appendMsg, startPolling, stopPolling, bootstrapConversations, onMatch, onVerificationUpdate]);
 
   useEffect(() => {
     if (!authUserId) return;
@@ -1484,13 +1476,31 @@ const handleMatch = useCallback(async (withUserId) => {
     fetchMatches().catch(()=>{}); fetchProfiles().catch(()=>{});
   }, [fetchMatches, fetchProfiles, allProfiles]);
 
+  const handleVerificationUpdate = useCallback((data) => {
+    setAuth(prev => ({
+      ...prev,
+      verification_status: data.verification_status,
+    }));
+    const message = data.verification_status === 'approved' 
+      ? '✓ Ваш профиль верифицирован!'
+      : '✗ Ваш профиль отклонен';
+    setNotification({
+      type: data.verification_status === 'approved' ? 'success' : 'error',
+      message: message,
+      reason: data.rejection_reason || null,
+      timestamp: data.timestamp
+    });
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
   const {
     conversations,
     sendMessage:    wsSendMessage,
     sendTyping,
     connected,
     typingFor,
-  } = useRealtimeChat(auth?.id, api, { onMatch: handleMatch });
+  } = useRealtimeChat(auth?.id, api, { onMatch: handleMatch, onVerificationUpdate: handleVerificationUpdate });
 
 const sendFirst = async (profileId) => {
   if (!msgText.trim() || msgText.trim().length < 10) return;

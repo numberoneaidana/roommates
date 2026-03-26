@@ -566,6 +566,7 @@ const MapScreenAdvanced = ({
       background: ${colors.white};
       border-right: 1px solid ${colors.matchaLight};
       display: flex; flex-direction: column; overflow: hidden;
+      grid-row: 2; grid-column: 1;
     }
     .map-adv-sidebar-header { padding: 16px 20px; border-bottom: 1px solid ${colors.matchaLight}; }
     .map-adv-sidebar-title {
@@ -616,7 +617,7 @@ const MapScreenAdvanced = ({
       font-size: 0.7rem; color: ${colors.ink30}; padding: 0 0 8px; font-family: 'Geologica', sans-serif;
     }
     .map-adv-empty { padding: 32px 24px; text-align: center; color: ${colors.ink60}; font-size: 0.8rem; }
-    .map-adv-canvas { position: relative; background: #E8F2E8; cursor: grab; }
+    .map-adv-canvas { position: relative; background: #E8F2E8; cursor: grab; grid-row: 2; grid-column: 2; }
     .map-adv-canvas:active { cursor: grabbing; }
     .leaflet-container { background: #E8F2E8; cursor: inherit; }
     .map-adv-detail-panel {

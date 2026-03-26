@@ -417,7 +417,7 @@ function HomePage({onGetStarted}) {
               </h5>
               <ul style={{listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px'}}>
                 {col.links.map((link, j) => (
-                  <li key={j}><a href="#" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.83rem', fontWeight: 300, transition: 'color 0.2s'}}>{link}</a></li>
+                  <li key={j}><button onClick={() => {}} style={{background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.83rem', fontWeight: 300, transition: 'color 0.2s', font: 'inherit'}}>{link}</button></li>
                 ))}
               </ul>
             </div>

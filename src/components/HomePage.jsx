@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 function HomePage({onGetStarted}) {
-  const [scrolled, setScrolled] = useState(false);
-  const [visibleElements, setVisibleElements] = useState(new Set());
+  const [setScrolled] = useState(false);
+  const [setVisibleElements] = useState(new Set());
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,7 +16,7 @@ function HomePage({onGetStarted}) {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [setScrolled, setVisibleElements]);
 
   const colors = {
     matcha: '#7A9E7E',
@@ -61,7 +61,7 @@ function HomePage({onGetStarted}) {
         
         {/* NAV */}
         <nav style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 52px', height: '68px', background: 'rgba(250,253,249,0.88)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${colors.matchaLight}`}}>
-          <a href="#" style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: colors.ink, textDecoration: 'none', letterSpacing: '0.2px'}}>
+          <a href="#!" role = 'button' onClick={(e) => e.preventDefault()}  style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: colors.ink, textDecoration: 'none', letterSpacing: '0.2px'}}>
             <div style={{width: '32px', height: '32px', borderRadius: '10px', background: colors.matcha, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
               <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
                 <path d="M8.5 2L14 6.8V15H10.5V11H6.5V15H3V6.8L8.5 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
@@ -72,10 +72,10 @@ function HomePage({onGetStarted}) {
           </a>
 
           <ul style={{display: 'flex', gap: '36px', listStyle: 'none'}}>
-            <li><a href="#" style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Карта</a></li>
-            <li><a href="#" style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Понравилось</a></li>
-            <li><a href="#" style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Профиль</a></li>
-            <li><a href="#" style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Главная</a></li>
+            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Карта</a></li>
+            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Понравилось</a></li>
+            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Профиль</a></li>
+            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Главная</a></li>
           </ul>
 
           <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
@@ -389,7 +389,7 @@ function HomePage({onGetStarted}) {
         {/* FOOTER */}
         <footer style={{background: colors.ink, padding: '64px 72px 0', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '48px'}}>
           <div>
-            <a href="#" style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', fontWeight: 600, color: 'white', textDecoration: 'none', marginBottom: '14px'}}>
+            <a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', fontWeight: 600, color: 'white', textDecoration: 'none', marginBottom: '14px'}}>
               <div style={{background: colors.matcha, width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                 🏠
               </div>
@@ -417,7 +417,7 @@ function HomePage({onGetStarted}) {
               </h5>
               <ul style={{listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px'}}>
                 {col.links.map((link, j) => (
-                  <li key={j}><a href="#" style={{textDecoration: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.83rem', fontWeight: 300, transition: 'color 0.2s'}}>{link}</a></li>
+                  <li key={j}><a href="#" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.83rem', fontWeight: 300, transition: 'color 0.2s'}}>{link}</a></li>
                 ))}
               </ul>
             </div>

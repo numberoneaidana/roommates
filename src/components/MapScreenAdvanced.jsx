@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   MapContainer, TileLayer, CircleMarker, Circle,
   Polygon, useMapEvents, Popup, useMap
@@ -140,6 +140,17 @@ const DrawHandler = ({ drawMode, drawnShapes, setDrawnShapes, onDrawModeChange }
     map._container.style.cursor = drawMode ? 'crosshair' : 'grab';
   }, [drawMode, map]);
 
+  const cleanup = useCallback(() => {
+    if (!map) return;
+    if (previewPolyRef.current) { map.removeLayer(previewPolyRef.current); previewPolyRef.current = null; }
+    previewDotsRef.current.forEach(d => map.removeLayer(d));
+    previewDotsRef.current = [];
+    if (circleLayerRef.current) { map.removeLayer(circleLayerRef.current); circleLayerRef.current = null; }
+    pointsRef.current = [];
+    isDrawingRef.current = false;
+    circleStartRef.current = null;
+    map._container.style.cursor = 'grab';
+  }, [map]);
   // Escape to cancel
   useEffect(() => {
     if (!map) return;
@@ -150,19 +161,7 @@ const DrawHandler = ({ drawMode, drawnShapes, setDrawnShapes, onDrawModeChange }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [map]);
-
-  const cleanup = () => {
-    if (previewPolyRef.current) { map.removeLayer(previewPolyRef.current); previewPolyRef.current = null; }
-    previewDotsRef.current.forEach(d => map.removeLayer(d));
-    previewDotsRef.current = [];
-    if (circleLayerRef.current) { map.removeLayer(circleLayerRef.current); circleLayerRef.current = null; }
-    pointsRef.current = [];
-    isDrawingRef.current = false;
-    circleStartRef.current = null;
-    map._container.style.cursor = 'grab';
-  };
-
+  }, [map, onDrawModeChange, cleanup]);
   useMapEvents({
     // ── Polygon: click adds vertex, dblclick closes ──────────────────────────
     click(e) {
@@ -290,7 +289,7 @@ const MapScreenAdvanced = ({
   const [searchText, setSearchText]           = useState('');
   const [msgText, setMsgText]                 = useState('');
   const [isSending, setIsSending]             = useState(false);
-  const [nearestRegion, setNearestRegion]     = useState('');
+  const [setNearestRegion]     = useState('');
   const [zoomLevel, setZoomLevel]             = useState(12);
   const [housingFilter, setHousingFilter]     = useState(null);
   const [genderFilter, setGenderFilter]       = useState(null);
@@ -329,7 +328,7 @@ const MapScreenAdvanced = ({
       return d < bd ? r : best;
     }, KZ_REGIONS[0]);
     setNearestRegion(nearest.name);
-  }, [selectedCenter]);
+  }, [selectedCenter, setNearestRegion ]);
 
   // ── Profile filtering ─────────────────────────────────────────────────────────
   // Re-runs whenever filters or drawn shapes change.

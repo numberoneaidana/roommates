@@ -2,9 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 //import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import './design/components.css';
 import { KZ_REGIONS, BASE_URL } from './logic/constants';
-import { Ic } from './components/Icons';
 import HomePage from './components/HomePage';
-import DashboardLayout from './components/DashboardLayout';
+//import DashboardLayout from './components/DashboardLayout';
 import MapScreenAdvanced from './components/MapScreenAdvanced';
 import LikesScreen from './components/LikesScreen';
 import SwipeScreen from './components/SwipeScreen';
@@ -315,20 +314,6 @@ export function useRealtimeChat(authUserId, apiClient, { onMatch, onVerification
   };
 }
 
-// ── MODAL ICON COMPONENT (PascalCase to satisfy react/jsx-pascal-case) ────────
-const ModalIc = ({ n, size = 18, c = "currentColor" }) => {
-  const icons = {
-    check: <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
-    send:  <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2"   viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-    msg:   <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2"   viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-    x:     <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2"   viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-    heart: <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2"   viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-    heartFill: <svg width={size} height={size} fill={c} stroke={c} strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-    pin:   <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2"   viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-    user:  <svg width={size} height={size} fill="none" stroke={c} strokeWidth="2"   viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  };
-  return icons[n] || null;
-};
 
 // Normalise a DB profile so the UI always gets consistent fields
 const normaliseProfile = (p) => ({
@@ -460,342 +445,6 @@ function PhotoUpload({ photos, onChange, onSaved, label = "Фото профил
     </div>
   );
 }
-// ── SWIPE TAB (TINDER STYLE) ─────────────────────────────────────────────────
-function SwipeTab({ profiles, onLike, onPass, onViewProfile, onSuperLike, userGender }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isDragging, setIsDragging]     = useState(false);
-  const [dragX, setDragX]               = useState(0);
-  const [dragY, setDragY]               = useState(0);
-  const [isAnimatingOut, setIsAnimatingOut] = useState(null); // 'left' | 'right' | null
-  const [mode, setMode] = useState("people");
-  const cardRef   = useRef(null);
-  const startPos  = useRef({ x: 0, y: 0 });
-  const animFrame = useRef(null);
-
-  // ── helpers ────────────────────────────────────────────────────────────────
-  const THRESHOLD = 100; // px needed to trigger like/pass
-  const swipeProfiles = (profiles || []).filter((p) => (mode === "places" ? p.renterType === "has_place" : true) && p.gender === userGender);
-
-  const dismissCard = useCallback((direction) => {
-    setIsAnimatingOut(direction);
-    setTimeout(() => {
-      if (direction === 'right') onLike(swipeProfiles[currentIndex]);
-      else                       onPass(swipeProfiles[currentIndex]);
-      setCurrentIndex(i => i + 1);
-      setDragX(0);
-      setDragY(0);
-      setIsAnimatingOut(null);
-    }, 380);
-  }, [currentIndex, swipeProfiles, onLike, onPass]);
-
-  // ── pointer events (works for both mouse and touch) ────────────────────────
-  const onPointerDown = useCallback((e) => {
-    if (isAnimatingOut) return;
-    // Only react to primary button / single touch
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    startPos.current = { x: e.clientX, y: e.clientY };
-    setIsDragging(true);
-    setDragX(0);
-    setDragY(0);
-  }, [isAnimatingOut]);
-
-  const onPointerMove = useCallback((e) => {
-    if (!isDragging) return;
-    cancelAnimationFrame(animFrame.current);
-    animFrame.current = requestAnimationFrame(() => {
-      setDragX(e.clientX - startPos.current.x);
-      setDragY(e.clientY - startPos.current.y);
-    });
-  }, [isDragging]);
-
-  const onPointerUp = useCallback(() => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (Math.abs(dragX) > THRESHOLD) {
-      dismissCard(dragX > 0 ? 'right' : 'left');
-    } else {
-      // Snap back
-      setDragX(0);
-      setDragY(0);
-    }
-  }, [isDragging, dragX, dismissCard]);
-
-  // cleanup animation frame on unmount
-  useEffect(() => () => cancelAnimationFrame(animFrame.current), []);
-
-  // ── derived values ─────────────────────────────────────────────────────────
-  const rotation   = dragX / 18;
-  const likeOpacity  = Math.min(Math.max(dragX / THRESHOLD, 0), 1);
-  const passOpacity  = Math.min(Math.max(-dragX / THRESHOLD, 0), 1);
-
-  // ── empty states (all hooks already called above) ─────────────────────────
-  if (!swipeProfiles || swipeProfiles.length === 0 || currentIndex >= swipeProfiles.length) {
-    return (
-      <div className="page" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"calc(100vh - 64px)" }}>
-        <div className="empty" style={{ paddingTop:"80px", textAlign:"center" }}>
-          <div className="empty-ic" style={{ fontSize:"64px" }}>🎉</div>
-          <div className="empty-t">Вы просмотрели всех!</div>
-          <p>Попробуйте изменить фильтры или вернитесь позже</p>
-          {currentIndex > 0 && (
-            <button className="btn-primary" style={{ marginTop:"20px", maxWidth:"220px" }} onClick={() => setCurrentIndex(0)}>
-              Начать сначала
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const currentProfile = swipeProfiles[currentIndex];
-  const nextProfile    = swipeProfiles[currentIndex + 1];
-  const reg = KZ_REGIONS.find(r => r.id === currentProfile.region);
-
-  // ── card transform ─────────────────────────────────────────────────────────
-  let cardTransform = `translateX(${dragX}px) translateY(${dragY * 0.3}px) rotate(${rotation}deg)`;
-  let cardTransition = isDragging ? 'none' : 'transform .35s cubic-bezier(.25,.46,.45,.94)';
-  if (isAnimatingOut === 'right') {
-    cardTransform = 'translateX(150%) rotate(30deg)';
-    cardTransition = 'transform .38s cubic-bezier(.55,0,1,.45)';
-  } else if (isAnimatingOut === 'left') {
-    cardTransform = 'translateX(-150%) rotate(-30deg)';
-    cardTransition = 'transform .38s cubic-bezier(.55,0,1,.45)';
-  }
-
-  const handleLikeBtn = () => { if (!isAnimatingOut) dismissCard('right'); };
-  const handlePassBtn = () => { if (!isAnimatingOut) dismissCard('left');  };
-
-  return (
-    <div style={{
-      display:"flex", flexDirection:"column", alignItems:"center",
-      minHeight:"calc(100vh - 64px)",
-      background:"linear-gradient(135deg, #fafaf9 0%, #f0ebe3 100%)",
-      padding:"28px 16px 40px",
-      userSelect:"none",
-    }}>
-      {/* Progress */}
-      <div style={{
-        width:"100%", maxWidth:"460px", marginBottom:"20px",
-        background:"rgba(255,255,255,.7)", borderRadius:"16px",
-        padding:"14px 20px", backdropFilter:"blur(10px)",
-        boxShadow:"0 4px 20px rgba(0,0,0,.06)"
-      }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"8px" }}>
-          <span style={{ fontSize:"13px", fontWeight:"700", color:"var(--dark)" }}>
-            Анкета {currentIndex + 1} из {swipeProfiles.length}
-          </span>
-          <span style={{ fontSize:"12px", color:"var(--muted)" }}>
-            {Math.round(((currentIndex + 1) / swipeProfiles.length) * 100)}%
-          </span>
-        </div>
-        <div style={{ width:"100%", height:"5px", background:"var(--bg2)", borderRadius:"10px", overflow:"hidden" }}>
-          <div style={{
-            width:`${((currentIndex + 1) / swipeProfiles.length) * 100}%`,
-            height:"100%",
-            background:"linear-gradient(90deg, var(--accent), var(--accent2))",
-            borderRadius:"10px", transition:"width .3s ease"
-          }}/>
-        </div>
-      </div>
-
-      <div style={{ display:"flex", gap:"8px", marginBottom:"14px" }}>
-        <button className={`chip ${mode==="people"?"chip-on":"chip-off"}`} onClick={() => { setMode("people"); setCurrentIndex(0); }}>
-          People
-        </button>
-        <button className={`chip ${mode==="places"?"chip-on":"chip-off"}`} onClick={() => { setMode("places"); setCurrentIndex(0); }}>
-          Places
-        </button>
-      </div>
-
-      {/* Card stack */}
-      <div style={{ width:"100%", maxWidth:"460px", position:"relative", height:"660px" }}>
-
-        {/* Background (next) card */}
-        {nextProfile && (
-          <div style={{
-            position:"absolute", inset:0, zIndex:1,
-            background:"#fff", borderRadius:"24px",
-            boxShadow:"0 8px 32px rgba(0,0,0,.10)",
-            transform:`scale(${0.95 + Math.min(Math.abs(dragX) / THRESHOLD, 1) * 0.05})`,
-            transition: isDragging ? 'none' : 'transform .35s ease',
-            overflow:"hidden",
-            backgroundImage: nextProfile.photos[0]?.startsWith('http')
-              ? `url(${nextProfile.photos[0]})`
-              : `linear-gradient(160deg,${nextProfile.photos[0]||'#d4b5a0'},${nextProfile.photos[2]||'#e8a598'})`,
-            backgroundSize:"cover", backgroundPosition:"center",
-          }}>
-            <div style={{
-              position:"absolute", inset:0,
-              background:"linear-gradient(to top, rgba(0,0,0,.65) 0%, transparent 55%)",
-            }}/>
-            <div style={{ position:"absolute", bottom:"24px", left:"24px", color:"#fff" }}>
-              <div style={{ fontFamily:"Cormorant Garamond,serif", fontSize:"32px", fontWeight:"700", textShadow:"0 2px 10px rgba(0,0,0,.5)" }}>
-                {nextProfile.name}
-              </div>
-              <div style={{ fontSize:"18px", fontWeight:"600", opacity:".9", textShadow:"0 1px 6px rgba(0,0,0,.5)" }}>
-                {nextProfile.age} лет
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Front (current) card */}
-        <div
-          ref={cardRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          style={{
-            position:"absolute", inset:0, zIndex:10,
-            borderRadius:"24px", overflow:"hidden",
-            boxShadow:"0 20px 60px rgba(0,0,0,.18)",
-            transform: cardTransform,
-            transition: cardTransition,
-            cursor: isDragging ? "grabbing" : "grab",
-            touchAction:"none",
-          }}
-        >
-          {/* Photo */}
-          <div style={{
-            height:"100%", position:"relative",
-            backgroundImage: currentProfile.photos[0]?.startsWith('http')
-              ? `url(${currentProfile.photos[0]})`
-              : `linear-gradient(160deg,${currentProfile.photos[0]||'#c9a89a'},${currentProfile.photos[2]||'#e8a598'})`,
-            backgroundSize:"cover", backgroundPosition:"center",
-          }}>
-            {/* Gradient overlay */}
-            <div style={{
-              position:"absolute", inset:0,
-              background:"linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 55%)",
-              pointerEvents:"none",
-            }}/>
-
-            {/* LIKE stamp */}
-            <div style={{
-              position:"absolute", top:"40px", left:"30px",
-              border:"5px solid #22c55e", borderRadius:"12px",
-              padding:"8px 20px", color:"#22c55e",
-              fontFamily:"Nunito,sans-serif", fontSize:"32px", fontWeight:"900",
-              letterSpacing:"2px", transform:"rotate(-20deg)",
-              opacity: likeOpacity, pointerEvents:"none",
-              textShadow:"0 0 20px rgba(34,197,94,.4)",
-              boxShadow:"0 0 20px rgba(34,197,94,.15)",
-            }}>ЛАЙК</div>
-
-            {/* NOPE stamp */}
-            <div style={{
-              position:"absolute", top:"40px", right:"30px",
-              border:"5px solid #ef4444", borderRadius:"12px",
-              padding:"8px 20px", color:"#ef4444",
-              fontFamily:"Nunito,sans-serif", fontSize:"32px", fontWeight:"900",
-              letterSpacing:"2px", transform:"rotate(20deg)",
-              opacity: passOpacity, pointerEvents:"none",
-              textShadow:"0 0 20px rgba(239,68,68,.4)",
-              boxShadow:"0 0 20px rgba(239,68,68,.15)",
-            }}>НЕТ</div>
-
-            {/* Top badges */}
-            <div style={{ position:"absolute", top:"20px", left:"20px", display:"flex", gap:"8px", flexWrap:"wrap" }}>
-              {currentProfile.online && (
-                <div style={{ background:"rgba(76,175,80,.95)", backdropFilter:"blur(10px)", color:"#fff", padding:"5px 11px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", gap:"5px" }}>
-                  <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#fff" }}/>Онлайн
-                </div>
-              )}
-              {currentProfile.verified && (
-                <div style={{ background:"rgba(61,122,92,.95)", backdropFilter:"blur(10px)", color:"#fff", padding:"5px 11px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", gap:"5px" }}>
-                  <Ic n="check" size={12} c="#fff"/>Верифицирован
-                </div>
-              )}
-              {currentProfile.renterType && (
-                <div style={{ background: currentProfile.renterType==="has_place" ? "rgba(251,191,36,.95)" : "rgba(14,165,233,.95)", backdropFilter:"blur(10px)", color:"#fff", padding:"5px 11px", borderRadius:"20px", fontSize:"12px", fontWeight:"700" }}>
-                  {currentProfile.renterType==="has_place" ? "🏠 Есть жильё" : "🔍 Ищет"}
-                </div>
-              )}
-            </div>
-
-            {/* Bottom info overlay */}
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"24px", color:"#fff", pointerEvents:"none" }}>
-              <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:"10px" }}>
-                <div>
-                  <div style={{ fontFamily:"Cormorant Garamond,serif", fontSize:"38px", fontWeight:"700", margin:0, textShadow:"0 2px 12px rgba(0,0,0,.6)", lineHeight:"1.05" }}>
-                    {currentProfile.name}
-                  </div>
-                  <div style={{ fontSize:"22px", fontWeight:"600", marginTop:"3px", opacity:".95", textShadow:"0 1px 8px rgba(0,0,0,.5)" }}>
-                    {currentProfile.age} лет
-                  </div>
-                </div>
-                <div style={{ background:"rgba(255,255,255,.22)", backdropFilter:"blur(10px)", padding:"10px 16px", borderRadius:"16px", fontWeight:"700", fontSize:"17px", textShadow:"0 1px 4px rgba(0,0,0,.3)" }}>
-                  {(currentProfile.budget || 0).toLocaleString()} ₸
-                </div>
-              </div>
-              <div style={{ fontSize:"14px", opacity:".9", textShadow:"0 1px 6px rgba(0,0,0,.5)", display:"flex", alignItems:"center", gap:"5px", marginBottom:"8px" }}>
-                <Ic n="pin" size={14} c="#fff"/>{reg?.name || currentProfile.region}
-              </div>
-              {currentProfile.bio && (
-                <div style={{ fontSize:"14px", opacity:".82", textShadow:"0 1px 4px rgba(0,0,0,.5)", lineHeight:"1.5", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>
-                  {currentProfile.bio}
-                </div>
-              )}
-              {(currentProfile.idealRoommate || currentProfile.quietHours) && (
-                <div style={{ marginTop:"8px", background:"rgba(0,0,0,.28)", borderRadius:"10px", padding:"8px 10px", fontSize:"12px", lineHeight:"1.5" }}>
-                  {currentProfile.idealRoommate && <div><b>Ideal roommate:</b> {currentProfile.idealRoommate}</div>}
-                  {currentProfile.quietHours && <div><b>Quiet hours:</b> {currentProfile.quietHours}</div>}
-                </div>
-              )}
-              {currentProfile.tags?.length > 0 && (
-                <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginTop:"10px", pointerEvents:"none" }}>
-                  {currentProfile.tags.slice(0,4).map(t => (
-                    <span key={t} style={{ background:"rgba(255,255,255,.18)", backdropFilter:"blur(6px)", color:"#fff", padding:"4px 10px", borderRadius:"10px", fontSize:"12px", fontWeight:"600", border:"1px solid rgba(255,255,255,.25)" }}>{t}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div style={{ display:"flex", justifyContent:"center", gap:"16px", alignItems:"center", marginTop:"28px", flexWrap:"wrap" }}>
-        {/* Pass */}
-        <button
-          onClick={handlePassBtn}
-          style={{ width:"72px", height:"72px", fontSize:"28px", background:"#fff", border:"3px solid #ef4444", color:"#ef4444", borderRadius:"50%", cursor:"pointer", transition:"all .2s cubic-bezier(.34,1.56,.64,1)", boxShadow:"0 6px 24px rgba(239,68,68,.2)", display:"flex", alignItems:"center", justifyContent:"center" }}
-          onMouseEnter={e => { e.currentTarget.style.background="#ef4444"; e.currentTarget.style.color="#fff"; e.currentTarget.style.transform="scale(1.1)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background="#fff"; e.currentTarget.style.color="#ef4444"; e.currentTarget.style.transform="scale(1)"; }}
-        >✕</button>
-
-        {/* View profile */}
-        <button
-          onClick={() => onViewProfile(currentProfile)}
-          style={{ width:"56px", height:"56px", background:"linear-gradient(135deg, var(--accent), var(--accent2))", border:"none", borderRadius:"50%", cursor:"pointer", transition:"all .2s cubic-bezier(.34,1.56,.64,1)", boxShadow:"0 6px 20px rgba(61,122,92,.28)", display:"flex", alignItems:"center", justifyContent:"center" }}
-          onMouseEnter={e => e.currentTarget.style.transform="scale(1.1)"}
-          onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}
-        ><Ic n="user" size={22} c="#fff"/></button>
-
-        {/* Like */}
-        <button
-          onClick={handleLikeBtn}
-          style={{ width:"72px", height:"72px", background:"linear-gradient(135deg, #f472b6, #ec4899)", border:"none", borderRadius:"50%", cursor:"pointer", transition:"all .2s cubic-bezier(.34,1.56,.64,1)", boxShadow:"0 6px 24px rgba(236,72,153,.3)", display:"flex", alignItems:"center", justifyContent:"center" }}
-          onMouseEnter={e => e.currentTarget.style.transform="scale(1.1)"}
-          onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}
-        ><Ic n="heart" size={30} c="#fff"/></button>
-        <button
-          onClick={() => onSuperLike?.(currentProfile)}
-          style={{ width:"58px", height:"58px", background:"linear-gradient(135deg,#fde047,#f59e0b)", border:"none", borderRadius:"50%", cursor:"pointer", boxShadow:"0 6px 24px rgba(245,158,11,.28)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:"24px", fontWeight:"800" }}
-          title="Super like / priority boost"
-        >★</button>
-      </div>
-
-      {/* Hint */}
-      <div style={{ marginTop:"16px", fontSize:"12px", color:"var(--muted)", display:"flex", gap:"18px", justifyContent:"center" }}>
-        <span>← Пропустить</span>
-        <span>↑ Профиль</span>
-        <span>→ Лайк</span><span>★ Super Like</span>
-      </div>
-    </div>
-  );
-}
 
 // ── ADDRESS MAP SELECTOR ──────────────────────────────────────────────────────
 function AddressMapSelector({ address, lat, lng, region, onAddressChange, onLocationChange }) {
@@ -895,464 +544,8 @@ function AddressMapSelector({ address, lat, lng, region, onAddressChange, onLoca
 }
 
 // ── LEAFLET MAP ───────────────────────────────────────────────────────────────
-function LeafletMap({ profiles, onView, onRadiusFilterChange, authUser, focusRegion }) {
-  const mapRef      = useRef(null);
-  const instanceRef = useRef(null);
-  const markersRef  = useRef([]);
 
-  const onRadiusFilterChangeRef = useRef(onRadiusFilterChange);
-  useEffect(() => { onRadiusFilterChangeRef.current = onRadiusFilterChange; }, [onRadiusFilterChange]);
 
-  // ── 1. Init map once ──────────────────────────────────────────
-  useEffect(() => {
-    if (instanceRef.current) return;
-
-    if (!document.getElementById("leaflet-css")) {
-      const lnk = document.createElement("link");
-      lnk.id   = "leaflet-css";
-      lnk.rel  = "stylesheet";
-      lnk.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
-      document.head.appendChild(lnk);
-    }
-
-    const boot = () => {
-      if (!mapRef.current || instanceRef.current) return;
-      const L   = window.L;
-      const map = L.map(mapRef.current, { center: [48.0, 68.0], zoom: 5 });
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap", maxZoom: 18,
-      }).addTo(map);
-
-      instanceRef.current = map;
-
-      let circle = null, center = null, drawing = false;
-
-      map.on("mousedown", (e) => {
-        if (e.originalEvent.button !== 2) return;
-        e.originalEvent.preventDefault();
-        drawing = true;
-        center  = e.latlng;
-        if (circle) { map.removeLayer(circle); circle = null; }
-        circle = L.circle(center, { radius: 1000, color: "#3d7a5c", fillColor: "#d4ead9", fillOpacity: 0.25, weight: 3, dashArray: "10,10" }).addTo(map);
-      });
-
-      map.on("mousemove", (e) => {
-        if (drawing && circle && center) circle.setRadius(map.distance(center, e.latlng));
-      });
-
-      map.on("mouseup", () => {
-        if (!drawing) return;
-        drawing = false;
-        if (!circle || !center) return;
-        const km = +(circle.getRadius() / 1000).toFixed(1);
-        onRadiusFilterChangeRef.current?.({ lat: center.lat, lng: center.lng, radius: km });
-        circle.bindPopup(
-          `<div style="padding:10px;text-align:center;font-family:Nunito,sans-serif;">
-             <b>🎯 Зона поиска</b><br/>
-             <span style="font-size:12px;">Радиус: ${km} км</span><br/>
-             <button id="clr-rc" style="margin-top:8px;padding:4px 12px;background:#c94a3a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">Очистить ✕</button>
-           </div>`
-        ).openPopup();
-        setTimeout(() => {
-          const btn = document.getElementById("clr-rc");
-          if (btn) btn.onclick = () => {
-            onRadiusFilterChangeRef.current?.(null);
-            if (circle) { map.removeLayer(circle); circle = null; }
-            map.closePopup();
-          };
-        }, 80);
-      });
-
-      mapRef.current?.addEventListener("contextmenu", (e) => e.preventDefault());
-    };
-
-    if (window.L) boot();
-    else {
-      const sc = document.createElement("script");
-      sc.src    = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-      sc.onload = boot;
-      document.body.appendChild(sc);
-    }
-
-    return () => { instanceRef.current?.remove(); instanceRef.current = null; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── 2. Fly to region ──────────────────────────────────────────
-  useEffect(() => {
-    if (!instanceRef.current || !window.L) return;
-    const map = instanceRef.current;
-    try {
-      if (!focusRegion || focusRegion === "all") {
-        map.flyTo([48.0, 68.0], 5, { duration: 1.2 });
-        return;
-      }
-      const region = KZ_REGIONS.find(r => r.id === focusRegion);
-      if (!region) return;
-      map.flyTo([region.lat, region.lng], 11, { duration: 1.4 });
-    } catch (_) {}
-  }, [focusRegion]);
-
-  // ── 3. Re-draw markers ────────────────────────────────────────
-  useEffect(() => {
-    if (!instanceRef.current || !window.L) return;
-    const L   = window.L;
-    const map = instanceRef.current;
-
-    markersRef.current.forEach(m => { try { m.remove(); } catch (_) {} });
-    markersRef.current = [];
-
-    const pin = (bg, sym, sz = 36) =>
-      `<div style="background:${bg};color:#fff;border-radius:50% 50% 50% 0;width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz * 0.36)}px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.28);transform:rotate(-45deg);border:2.5px solid rgba(255,255,255,.85);"><span style="transform:rotate(45deg)">${sym}</span></div>`;
-
-    const mkIcon = (html, sz) => L.divIcon({ className: "", html, iconSize: [sz, sz], iconAnchor: [sz / 2, sz], popupAnchor: [0, -(sz + 4)] });
-
-    const ICONS = {
-      f_looking: mkIcon(pin("#d4587a", "♀"),      36),
-      m_looking: mkIcon(pin("#4a7abf", "♂"),      36),
-      f_has:     mkIcon(pin("#f59e0b", "🏠", 40), 40),
-      m_has:     mkIcon(pin("#f59e0b", "🏠", 40), 40),
-    };
-
-    [...new Set(profiles.map(p => p.region))].forEach(rid => {
-      const r = KZ_REGIONS.find(x => x.id === rid);
-      if (!r) return;
-      try {
-        markersRef.current.push(L.circle([r.lat, r.lng], { color: "#3d7a5c", fillColor: "#d4ead9", fillOpacity: 0.10, weight: 1.5, opacity: 0.35, radius: 40000, dashArray: "8,14", interactive: false }).addTo(map));
-      } catch (_) {}
-    });
-
-    if (authUser?.lat && authUser?.lng && authUser?.renterType === "has_place") {
-      const myIcon = L.divIcon({ className: "", html: `<div style="background:#10b981;color:#fff;border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 6px 24px rgba(16,185,129,.45);border:4px solid #d1fae5;position:relative;"><span style="position:absolute;top:-8px;right:-8px;background:#ef4444;width:15px;height:15px;border-radius:50%;border:2px solid #fff;"></span>🏠</div>`, iconSize: [46, 46], iconAnchor: [23, 46], popupAnchor: [0, -50] });
-      try {
-        const m = L.marker([authUser.lat, authUser.lng], { icon: myIcon }).addTo(map);
-        m.bindPopup(`<div class="map-popup" style="border-top:4px solid #10b981;"><div class="map-popup-name">${authUser.name} <span style="color:#10b981;">(Вы)</span></div><div class="map-popup-info">${authUser.budget ? authUser.budget.toLocaleString() + " ₸/мес" : ""}</div>${authUser.address ? `<div style="margin-top:6px;padding:6px;background:#f0fdf4;border-radius:6px;font-size:11px;color:#166534;">📍 ${authUser.address}</div>` : ""}<div style="margin-top:8px;padding:6px;background:#fef3c7;border-radius:6px;font-size:10px;color:#92400e;text-align:center;">💡 Только вы видите точный адрес</div></div>`);
-        markersRef.current.push(m);
-      } catch (_) {}
-    }
-
-    profiles.forEach(p => {
-      const region = KZ_REGIONS.find(r => r.id === p.region);
-      let markerLat, markerLng;
-      if (p.renterType === "has_place" && p.lat && p.lng) {
-        markerLat = p.lat; markerLng = p.lng;
-      } else if (region) {
-        const seed = ((p.id ?? 0) * 2654435761) >>> 0;
-        markerLat = region.lat + ((seed % 1000) / 1000 - 0.5) * 0.5;
-        markerLng = region.lng + (((seed >> 8) % 1000) / 1000 - 0.5) * 0.7;
-      } else return;
-
-      const key  = `${p.gender === "female" ? "f" : "m"}_${p.renterType === "has_place" ? "has" : "looking"}`;
-      const icon = ICONS[key] ?? ICONS.m_looking;
-
-      try {
-        const marker = L.marker([markerLat, markerLng], { icon }).addTo(map);
-        marker.bindPopup(L.popup({ maxWidth: 260, closeButton: false }).setContent(`
-          <div class="map-popup">
-            <div class="map-popup-name">${p.name}, ${p.age}</div>
-            <div class="map-popup-info">${region?.name ?? ""} · ${(p.budget || 0).toLocaleString()} ₸/мес</div>
-            <div style="margin:8px 0;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:${p.renterType==="has_place"?"#fef3c7":"#e0f2fe"};color:${p.renterType==="has_place"?"#92400e":"#075985"};">
-              ${p.renterType==="has_place"?"🏠 Есть жильё":"🔍 Ищет жильё"}
-            </div>
-            ${p.address && p.renterType==="has_place" ? `<div style="margin-bottom:8px;font-size:11px;color:#555;">📍 ${p.address}</div>` : ""}
-            <button class="map-popup-btn" id="mp-${p.id}">Открыть профиль</button>
-          </div>`));
-        marker.on("popupopen", () => {
-          setTimeout(() => {
-            const btn = document.getElementById(`mp-${p.id}`);
-            if (btn) btn.onclick = () => { map.closePopup(); onView(p); };
-          }, 50);
-        });
-        markersRef.current.push(marker);
-      } catch (_) {}
-    });
-
-    if (!focusRegion || focusRegion === "all") {
-      const pts = markersRef.current.filter(m => typeof m.getLatLng === "function");
-      if (pts.length > 0) {
-        try {
-          map.fitBounds(L.latLngBounds(pts.map(m => m.getLatLng())), { padding: [50, 50], maxZoom: 12 });
-        } catch (_) {}
-      }
-    }
-  }, [profiles, authUser, focusRegion, onView]);
-
-  return (
-    <div className="map-wrap">
-      <div ref={mapRef} id="kz-map" style={{ height: "520px", width: "100%" }} />
-    </div>
-  );
-}
-
-function MapTabContent({ allProfiles, onViewProfile, authUser, filters, setFilters }) {
-  const [cityFilter,   setCityFilter]   = useState("all");
-  const [radiusFilter, setRadiusFilter] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const profilesPerPage = 10;
-
-  useEffect(() => {
-    if (allProfiles.length === 0) return;
-    const ids = [...new Set(allProfiles.map(p => p.region))];
-    console.log("[MapTab] Unique region IDs in profiles:", ids);
-  }, [allProfiles]);
-
-  const ALIASES = {
-    "nur_sultan": "astana", "nur-sultan": "astana", "nursultan": "astana",
-    "akmola": "astana", "Astana": "astana", "almaty": "almaty_city",
-    "alma-ata": "almaty_city", "Almaty": "almaty_city", "south_kaz": "shymkent",
-    "Shymkent": "shymkent", "karagandy": "karaganda", "qaraghandy": "karaganda",
-    "Karaganda": "karaganda", "east_kazakhstan": "east_kaz",
-    "north_kazakhstan": "north_kaz", "west_kazakhstan": "west_kaz",
-  };
-
-  const norm = (id) => (id ? (ALIASES[id] ?? id) : id);
-
-  const distKm = (la1, lo1, la2, lo2) => {
-    if (!la1 || !lo1 || !la2 || !lo2) return Infinity;
-    const R = 6371, dL = (la2-la1)*Math.PI/180, dN = (lo2-lo1)*Math.PI/180;
-    const a = Math.sin(dL/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dN/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  };
-
-  const CITY_DEFS = [
-    { id: "all",           short: "Весь КЗ",      emoji: "🇰🇿", major: true  },
-    { id: "astana",        short: "Астана",        emoji: "🏛️",  major: true  },
-    { id: "almaty_city",   short: "Алматы",        emoji: "🏔️",  major: true  },
-    { id: "shymkent",      short: "Шымкент",       emoji: "🌆",  major: true  },
-    { id: "karaganda",     short: "Караганда",     emoji: "🏭",  major: true  },
-    { id: "aktobe",        short: "Актобе",        emoji: "🌿",  major: false },
-    { id: "atyrau",        short: "Атырау",        emoji: "🛢️",  major: false },
-    { id: "pavlodar",      short: "Павлодар",      emoji: "⚙️",  major: false },
-    { id: "kostanay",      short: "Костанай",      emoji: "🌾",  major: false },
-    { id: "east_kaz",      short: "УКК",           emoji: "⛰️",  major: false },
-    { id: "turkestan",     short: "Туркестан",     emoji: "🕌",  major: false },
-    { id: "mangystau",     short: "Актау",         emoji: "🌊",  major: false },
-    { id: "west_kaz",      short: "Уральск",       emoji: "🏞️",  major: false },
-    { id: "north_kaz",     short: "Петропавл.",    emoji: "❄️",  major: false },
-    { id: "almaty_region", short: "Алм. обл.",     emoji: "🌄",  major: false },
-    { id: "zhambyl",       short: "Тараз",         emoji: "🏛️",  major: false },
-    { id: "kyzylorda",     short: "Кызылорда",     emoji: "🌵",  major: false },
-  ];
-
-  const countFor = (id) => {
-    if (id === "all") return allProfiles.length;
-    return allProfiles.filter(p => norm(p.region) === id).length;
-  };
-
-  const visibleCities = CITY_DEFS.filter(c => c.major || countFor(c.id) > 0);
-
-  const displayedProfiles = allProfiles.filter((p) => {
-    const pRegion = norm(p.region);
-    if (cityFilter !== "all" && pRegion !== cityFilter)      return false;
-    if (filters.gender && p.gender !== filters.gender)       return false;
-    if ((filters.renterType ?? "") && p.renterType !== filters.renterType) return false;
-    if (filters.university && p.university !== filters.university) return false;
-    if (filters.commuteMax && (Number(p.commuteMax) || 999) > Number(filters.commuteMax)) return false;
-    if (filters.transit === "metro" && !p.nearMetro) return false;
-    if (filters.transit === "bus" && !p.nearBus) return false;
-    if (radiusFilter) {
-      const r  = KZ_REGIONS.find(r => r.id === pRegion || r.id === p.region);
-      const pL = (p.renterType === "has_place" && p.lat) ? p.lat : r?.lat;
-      const pN = (p.renterType === "has_place" && p.lng) ? p.lng : r?.lng;
-      if (distKm(radiusFilter.lat, radiusFilter.lng, pL, pN) > radiusFilter.radius) return false;
-    }
-    return true;
-  });
-
-  const genderCount = (g) =>
-    (cityFilter === "all" ? allProfiles : allProfiles.filter(p => norm(p.region) === cityFilter))
-      .filter(p => !g || p.gender === g).length;
-
-  const pillBase = {
-    display: "flex", alignItems: "center", gap: "5px",
-    padding: "8px 14px", borderRadius: "var(--rs)",
-    border: "2px solid", fontFamily: "Nunito,sans-serif",
-    fontSize: "13px", fontWeight: "700", cursor: "pointer",
-    transition: "all .18s", whiteSpace: "nowrap", flexShrink: 0, background: "none",
-  };
-  const pillActive   = { background: "var(--accent)", color: "#fff",       borderColor: "var(--accent)" };
-  const pillInactive = { background: "var(--bg)",     color: "var(--mid)", borderColor: "var(--bg2)"   };
-  const pillEmpty    = { ...pillInactive, opacity: 0.5, cursor: "not-allowed" };
-  // Pagination logic
-  const totalPages = Math.ceil(displayedProfiles.length / profilesPerPage);
-  const startIndex = (currentPage - 1) * profilesPerPage;
-  const endIndex = startIndex + profilesPerPage;
-  const currentProfiles = displayedProfiles.slice(startIndex, endIndex);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  return (
-    <div className="page">
-      <div className="ph">
-        <h1 className="pt">Карта соседей 📍</h1>
-        <p className="ps">
-          {cityFilter === "all"
-            ? `${displayedProfiles.length} из ${allProfiles.length} пользователей по всему Казахстану`
-            : `${displayedProfiles.length} чел. · ${visibleCities.find(c => c.id === cityFilter)?.short ?? cityFilter}`}
-        </p>
-      </div>
-
-      <div style={{ background: "var(--card)", borderRadius: "var(--r)", padding: "18px 20px", marginBottom: "16px", boxShadow: "var(--sh)" }}>
-        <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".7px", marginBottom: "12px" }}>🏙️ Город</div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {visibleCities.map((city) => {
-            const active  = cityFilter === city.id;
-            const cnt     = countFor(city.id);
-            const isEmpty = cnt === 0 && city.id !== "all";
-            return (
-              <button key={city.id} onClick={() => { if (!isEmpty) setCityFilter(city.id); }}
-                style={{ ...pillBase, ...(active ? pillActive : isEmpty ? pillEmpty : pillInactive) }}
-                onMouseEnter={(e) => { if (!active && !isEmpty) { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent2)"; }}}
-                onMouseLeave={(e) => { if (!active && !isEmpty) { e.currentTarget.style.borderColor="var(--bg2)";    e.currentTarget.style.color="var(--mid)"; }}}
-                title={isEmpty ? "Нет анкет в этом городе" : city.short}
-              >
-                <span>{city.emoji}</span><span>{city.short}</span>
-                <span style={{ background: active ? "rgba(255,255,255,.25)" : "var(--bg2)", color: active ? "#fff" : isEmpty ? "#bbb" : "var(--mid)", borderRadius: "10px", padding: "1px 7px", fontSize: "11px" }}>{cnt}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="fbar" style={{ marginBottom: "16px" }}>
-        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>👤 Пол</div>
-            <div style={{ display: "flex", gap: "6px" }}>
-              {[
-                { val: "",       label: `Все (${genderCount("")})`,              female: false },
-                { val: "female", label: `♀ Девушки (${genderCount("female")})`, female: true  },
-                { val: "male",   label: `♂ Парни (${genderCount("male")})`,      female: false },
-              ].map(({ val, label, female }) => {
-                const on = filters.gender === val;
-                const activeStyle = female ? { background:"var(--female)", color:"#fff", borderColor:"var(--female)" } : pillActive;
-                return (
-                  <button key={val} onClick={() => setFilters(f => ({ ...f, gender: val }))}
-                    style={{ ...pillBase, ...(on ? activeStyle : pillInactive) }}
-                    onMouseEnter={(e) => { if (!on) { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}}
-                    onMouseLeave={(e) => { if (!on) { e.currentTarget.style.borderColor="var(--bg2)";    e.currentTarget.style.color="var(--mid)"; }}}
-                  >{label}</button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🏠 Тип</div>
-            <div style={{ display: "flex", gap: "6px" }}>
-              {[{ val: "", label: "Все" },{ val: "has_place", label: "🏠 Есть жильё" },{ val: "looking", label: "🔍 Ищут" }].map(({ val, label }) => {
-                const on = (filters.renterType ?? "") === val;
-                return (
-                  <button key={val} onClick={() => setFilters(f => ({ ...f, renterType: val }))}
-                    style={{ ...pillBase, ...(on ? pillActive : pillInactive) }}
-                    onMouseEnter={(e) => { if (!on) { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}}
-                    onMouseLeave={(e) => { if (!on) { e.currentTarget.style.borderColor="var(--bg2)";    e.currentTarget.style.color="var(--mid)"; }}}
-                  >{label}</button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize:"11px", fontWeight:"700", color:"var(--muted)", textTransform:"uppercase", letterSpacing:".7px", marginBottom:"8px" }}>🎓 Университет</div>
-            <select className="fsel" value={filters.university || ""} onChange={e=>setFilters(f=>({...f,university:e.target.value}))}>
-              <option value="">Любой</option>
-              {UNIVERSITY_OPTIONS.map((u) => <option key={u} value={u}>{u}</option>)}
-            </select>
-          </div>
-          <div style={{ flex:1, minWidth:"220px", alignSelf:"flex-end", background:"linear-gradient(135deg,var(--accent-light),#e8f5ea)", borderRadius:"var(--rs)", padding:"10px 14px", border:"2px solid var(--accent)", display:"flex", alignItems:"center", gap:"8px" }}>
-            <span style={{ fontSize:"20px" }}>🖍️</span>
-            <div>
-              <div style={{ fontSize:"12px", fontWeight:"700", color:"var(--accent2)" }}>Нарисуйте зону поиска</div>
-              <div style={{ fontSize:"11px", color:"var(--mid)" }}>Зажмите <b>правую кнопку</b> на карте и тяните</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {radiusFilter && (
-        <div style={{ background:"linear-gradient(135deg,#dcfce7,#bbf7d0)", borderRadius:"var(--r)", padding:"12px 18px", marginBottom:"16px", border:"2px solid #22c55e", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-            <span style={{ fontSize:"22px" }}>🎯</span>
-            <div>
-              <div style={{ fontSize:"13px", fontWeight:"700", color:"#166534" }}>Фильтр по радиусу активен</div>
-              <div style={{ fontSize:"11px", color:"#15803d" }}>Радиус: <b>{radiusFilter.radius} км</b> · Найдено: <b>{displayedProfiles.length}</b></div>
-            </div>
-          </div>
-          <button onClick={() => setRadiusFilter(null)} style={{ background:"#dc2626", color:"#fff", border:"none", borderRadius:"8px", padding:"7px 14px", fontSize:"12px", fontWeight:"700", cursor:"pointer" }}>Очистить ✕</button>
-        </div>
-      )}
-
-      <div style={{ display:"flex", gap:"16px", flexWrap:"wrap", padding:"12px 16px", marginBottom:"16px", background:"var(--card)", borderRadius:"var(--rs)", boxShadow:"var(--sh)" }}>
-        {[{ color:"#d4587a", label:"♀ Ищет жильё" },{ color:"#4a7abf", label:"♂ Ищет жильё" },{ color:"#f59e0b", label:"🏠 Есть жильё" },{ color:"#10b981", label:"📍 Вы" }].map(({ color, label }) => (
-          <div key={label} style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"var(--mid)" }}>
-            <span style={{ width:"11px", height:"11px", borderRadius:"50%", background:color, flexShrink:0, display:"inline-block" }} />{label}
-          </div>
-        ))}
-      </div>
-
-      {/* Map + people sidebar */}
-      <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:"16px",alignItems:"start"}}>
-
-        {/* LEFT SIDEBAR — scrollable person list */}
-        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"var(--r)",overflow:"hidden",boxShadow:"var(--sh)"}}>
-          <div style={{padding:"13px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <span style={{fontFamily:"var(--font-display)",fontSize:"15px",color:"var(--txt)"}}>
-              {cityFilter==="all"?"Все":visibleCities.find(c=>c.id===cityFilter)?.short??cityFilter}
-            </span>
-            <span style={{fontSize:"11px",fontWeight:"600",background:"var(--accent-light)",color:"var(--accent)",borderRadius:"20px",padding:"2px 9px"}}>{displayedProfiles.length}</span>
-          </div>
-          <div style={{maxHeight:"500px",overflowY:"auto",padding:"6px"}}>
-            {displayedProfiles.length===0 ? (
-              <div style={{textAlign:"center",padding:"32px 12px",color:"var(--txt3)"}}>
-                <div style={{fontSize:"28px",marginBottom:"8px"}}>🗺️</div>
-                <div style={{fontSize:"12.5px"}}>Никого не найдено</div>
-              </div>
-            ) : displayedProfiles.map(p=>(
-              <div key={p.id} onClick={()=>onViewProfile(p)}
-                style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"var(--rs)",cursor:"pointer",transition:"all .18s",marginBottom:"1px"}}
-                onMouseEnter={e=>{e.currentTarget.style.background="var(--bg2)";}}
-                onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}
-              >
-                {/* avatar */}
-                <div style={{
-                  width:"42px",height:"42px",borderRadius:"50%",flexShrink:0,
-                  border:"1.5px solid var(--border2)",overflow:"hidden",
-                  backgroundImage:p.photos?.[0]?.startsWith("http")?`url(${p.photos[0]})`:"url(/hero-astana.jpg)",
-                  backgroundSize:"cover",backgroundPosition:"center",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  fontFamily:"var(--font-display)",fontSize:"14px",color:"var(--txt2)",
-                  background:p.photos?.[0]?.startsWith("http")?"transparent":"var(--bg2)",
-                }}>
-                  {p.photos?.[0]?.startsWith("http")?"":p.avatar}
-                </div>
-                {/* info */}
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"4px",marginBottom:"1px"}}>
-                    <span style={{fontFamily:"var(--font-display)",fontSize:"13.5px",color:"var(--txt)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}{p.age?`, ${p.age}`:""}</span>
-                    {p.online&&<span style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--green)",flexShrink:0,display:"inline-block"}}/>}
-                  </div>
-                  <div style={{fontSize:"10.5px",color:"var(--txt3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    {(p.budget||0).toLocaleString()} ₸{p.occupation?` · ${p.occupation}`:""}
-                  </div>
-                </div>
-                {/* gender */}
-                <span style={{fontSize:"9.5px",padding:"2px 6px",borderRadius:"20px",flexShrink:0,fontWeight:"600",
-                  background:p.gender==="female"?"var(--female-light)":"var(--male-light)",
-                  color:p.gender==="female"?"var(--female)":"var(--male)"}}>
-                  {p.gender==="female"?"♀":"♂"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT — map */}
-        <LeafletMap profiles={displayedProfiles} onView={onViewProfile} onRadiusFilterChange={setRadiusFilter} authUser={authUser} focusRegion={cityFilter} />
-      </div>
-    </div>
-  );
-}
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
@@ -1373,17 +566,15 @@ export default function App() {
   const [tab, setTab] = useState("browse");
   const [liked, setLiked] = useState(new Set());
   const [sent, setSent] = useState(new Set());
-  const [sentMessages, setSentMessages] = useState({});
+  const [setSentMessages] = useState({});
 
   const [activeChat, setActiveChat] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [view, setView] = useState("grid");
-  const [showF, setShowF] = useState(false);
   const [msgText, setMsgText] = useState("");
-  const [passed, setPassed] = useState(new Set());
+  const [passed] = useState(new Set());
   const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [superLiked, setSuperLiked] = useState(new Set());
-  const [filters, setFilters] = useState({
+  const [superLiked] = useState(new Set());
+  const [filters] = useState({
     search: "", region: "", budget: 200000, gender: "",
     schedule: "", pets: "", remote: "", smoking: "", religion: "", alcohol: "",
     university: "", commuteMax: "", transit: "",
@@ -1497,9 +688,9 @@ const handleMatch = useCallback(async (withUserId) => {
   const {
     conversations,
     sendMessage:    wsSendMessage,
-    sendTyping,
+//    sendTyping,
     connected,
-    typingFor,
+//    typingFor,
   } = useRealtimeChat(auth?.id, api, { onMatch: handleMatch, onVerificationUpdate: handleVerificationUpdate });
 
 const sendFirst = async (profileId) => {
@@ -1589,7 +780,6 @@ const sendChat = async (profileId, text) => {
     }
   });
   const likedProfiles = Array.from(likedProfilesMap.values());
-  const genderColor = (g) => g === "female" ? "var(--female)" : "var(--male)";
 
   if (!auth && !showAuthFlow) return <HomePage onGetStarted={() => setShowAuthFlow(true)} />;
   if (!auth) return <AuthScreen onAuth={setAuth} />;
@@ -1681,7 +871,7 @@ const sendChat = async (profileId, text) => {
                   </div>
                 </div>
                 <button onClick={()=>setTab("profile")} style={{background:"#92400E",color:"white",border:"none",borderRadius:"12px",padding:"10px 20px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s",whiteSpace:"nowrap",flexShrink:0}}>
-                  📤 Верифицировать сейчас
+                   Верифицировать сейчас
                 </button>
               </div>
             </div>
@@ -1812,7 +1002,7 @@ const sendChat = async (profileId, text) => {
                             ⏳ На проверке
                           </span>
                         )}
-                        {!profile.verification_status || profile.verification_status === 'rejected' && (
+                        {((!profile.verification_status )||(profile.verification_status === 'rejected')) && (
                           <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#FEE2E2",color:"#DC2626",border:"1px solid rgba(220,38,38,0.2)",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
                             ⚠️ Не верифицирован
                           </span>
@@ -2134,55 +1324,6 @@ export function ChatPanel({ profile, messages, typing, userInitials, onSend, onT
     </div>
   );
 }
-// ── PROFILE CARD ──────────────────────────────────────────────────────────────
-function ProfileCard({p, liked, sent, onLike, onView}){
-  const reg=KZ_REGIONS.find(r=>r.id===p.region);
-  return(
-    <div className="card">
-      <div className="card-hero" style={{background:p.photos[0]?.startsWith("http")?`url(${p.photos[0]}) center/cover`:`linear-gradient(160deg,${p.photos[0]||"#e8a598"},${p.photos[2]||"#c9a89a"})`}} onClick={onView}>
-        {p.online&&<div className="online-dot"/>}
-        {p.verified&&<div className="verified-badge"><Ic n="check" size={10} c="var(--accent)"/>Верифицирован</div>}
-        <div className="card-av">{p.avatar}</div>
-        <div className={`gender-badge ${p.gender==="female"?"gender-f":"gender-m"}`}>
-          {p.gender==="female"?"♀ Девушка":"♂ Парень"}
-        </div>
-        {p.renterType && (
-          <div style={{position:"absolute",top:"12px",right:"12px",background:p.renterType==="has_place"?"#fef3c7":"#e0f2fe",borderRadius:"20px",padding:"4px 10px",fontSize:"11px",fontWeight:"700",color:p.renterType==="has_place"?"#92400e":"#075985",display:"flex",alignItems:"center",gap:"4px",boxShadow:"0 2px 8px rgba(0,0,0,.1)"}}>
-            {p.renterType==="has_place"?"🏠 Есть жильё":"🔍 Ищет"}
-          </div>
-        )}
-      </div>
-      <div className="cb">
-        <div className="cn"><span className="cname">{p.name}, {p.age}</span><span className="cprice">{(p.budget || 0).toLocaleString()} ₸</span></div>
-        <div className="cloc"><Ic n="pin" size={11}/>{reg?.name||p.region}</div>
-        <p className="cbio">{p.bio}</p>
-        {(p.idealRoommate || p.quietHours) && (
-          <div style={{fontSize:"11px",color:"var(--mid)",marginBottom:"10px",lineHeight:"1.5",background:"var(--bg2)",padding:"7px 9px",borderRadius:"8px"}}>
-            {p.idealRoommate && <div><b>Ideal:</b> {p.idealRoommate}</div>}
-            {p.quietHours && <div><b>Quiet:</b> {p.quietHours}</div>}
-          </div>
-        )}
-        <div className="tags">
-          {p.tags.map(t=><span key={t} className="tag">{t}</span>)}
-          {p.pets&&<span className="tag">🐾 Питомец</span>}
-          {p.remote&&<span className="tag">💻 Удалёнка</span>}
-          {!p.smoking&&<span className="tag">🚭</span>}
-          {p.university&&<span className="tag">🎓 {p.university}</span>}
-        </div>
-        {typeof p.recScore === "number" && <div style={{fontSize:"11px",fontWeight:"700",color:"var(--accent)",marginBottom:"8px"}}>Smart match: {p.recScore}%</div>}
-        <div className="cact">
-          <button className={`btn-like ${liked?"liked":""}`} onClick={onLike}>
-            <Ic n={liked?"heartFill":"heart"} size={17} c={liked?"var(--female)":"var(--muted)"}/>
-          </button>
-          <button className="btn-msg" onClick={onView} disabled={sent}>
-            {sent?<><Ic n="check" size={14}/>Отправлено</>:<><Ic n="msg" size={14}/>Написать</>}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── PROFILE MODAL ─────────────────────────────────────────────────────────────
 export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: regionsFromProp, onLike, onSend, onClose }) {
 
@@ -2248,7 +1389,7 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
                       ⏳ На проверке
                     </div>
                   )}
-                  {!p.verification_status || p.verification_status === 'rejected' && (
+                  {((!p.verification_status )||(p.verification_status === 'rejected')) && (
                     <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"#FEE2E2",color:"#DC2626",padding:"4px 10px",borderRadius:"12px",fontSize:"12px",fontWeight:600}}>
                       ⚠️ Не верифицирован
                     </div>
@@ -2561,7 +1702,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
 
               {/* FILE INPUT */}
               <div style={{marginBottom:"20px"}}>
-                <label style={{display:"block",fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
+                <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
                   <span style={{fontSize:"16px"}}>📋</span>
                   Выберите документ
                 </label>
@@ -2589,7 +1730,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
               {/* PREVIEW */}
               {verificationPreview && (
                 <div style={{marginBottom:"20px"}}>
-                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"block",display:"flex",alignItems:"center",gap:"6px"}}>
+                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
                     <span style={{fontSize:"16px"}}>👁️</span>
                     Предпросмотр
                   </label>
@@ -3047,7 +2188,7 @@ function AuthScreen({onAuth}){
     );
   };
 
-  if(mode=="login") return(
+  if(mode==="login") return(
     <div className="auth-wrap">
       <div className="auth-left">
         <div className="auth-left-content">
@@ -3220,135 +2361,6 @@ function AuthScreen({onAuth}){
           </p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function MatchesTab({
-  likedProfiles, matchedProfiles = [], liked, sent, sentMessages, conversations,
-  typingFor, activeChat, setActiveChat, setSelected, setMsgText,
-  auth, sendChat, sendTyping, setTab, onRefresh
-}) {
-
-  // Refresh on every mount so the user who was liked (passive side) sees their matches
-  useEffect(() => { onRefresh?.(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const matched  = likedProfiles.filter(p => p.matched);
-  const pending  = likedProfiles.filter(p => !p.matched);
-
-  const handleCardClick = (p) => {
-    if (p.matched) { setActiveChat(p.id); }
-    else { setSelected(p); setMsgText(""); }
-  };
-
-  const renderPreview = (p) => {
-    const conv    = conversations[p.id];
-    const lastMsg = conv && conv.length > 0 ? conv[conv.length - 1] : null;
-    const sentMsg = sentMessages[p.id];
-    if (lastMsg) {
-      return (
-        <div className={`mt-preview ${lastMsg.mine ? "sent" : "received"}`}>
-          <span className="mt-preview-who">{lastMsg.mine ? "Вы" : p.name.split(" ")[0]}</span>
-          {lastMsg.text.length > 72 ? lastMsg.text.slice(0, 72) + "…" : lastMsg.text}
-        </div>
-      );
-    }
-    if (sentMsg) {
-      return (
-        <div className="mt-preview sent">
-          <span className="mt-preview-who">Вы</span>
-          {sentMsg.length > 72 ? sentMsg.slice(0, 72) + "…" : sentMsg}
-        </div>
-      );
-    }
-    if (sent.has(p.id) && !p.matched) return <div className="mt-preview waiting">⏳ Ожидание ответа…</div>;
-    return <div className="mt-preview waiting">Нажмите, чтобы написать</div>;
-  };
-
-  const PersonCard = ({ p, delay = 0 }) => {
-    const reg = KZ_REGIONS.find(r => r.id === p.region);
-    return (
-      <div className={`mt-card ${activeChat === p.id ? "active-chat" : ""}`} style={{ animationDelay: `${delay}s` }} onClick={() => handleCardClick(p)}>
-        <div className="mt-av" style={{backgroundImage:p.photos?.[0]?.startsWith("http")?`url(${p.photos[0]})`:"none",background:p.photos?.[0]?.startsWith("http")?"transparent":(p.photos?.[0]??"var(--bg2)"),backgroundSize:"cover",backgroundPosition:"center"}}>
-          {p.photos?.[0]?.startsWith("http")?"":p.avatar}{p.online&&<div className="mt-av-online"/>}
-        </div>
-        <div className="mt-card-body">
-          <div className="mt-card-top">
-            <span className="mt-card-name">{p.name}, {p.age}</span>
-            {p.verified && <span className="mt-verified">✓</span>}
-            {p.matched && <span className="mt-match-pill">🤝 Совпадение</span>}
-          </div>
-          <div className="mt-card-meta">
-            {reg?.name || ""}
-            {p.university ? ` · ${p.university}` : ""}
-            {p.occupation ? ` · ${p.occupation}` : ""}
-            {p.budget ? ` · ${(p.budget || 0).toLocaleString()} ₸` : ""}
-          </div>
-          {renderPreview(p)}
-        </div>
-        <span className="mt-card-arrow">›</span>
-      </div>
-    );
-  };
-
-  return (
-    <div className="mt-page">
-      <div className="mt-stats">
-        {[
-          { n: liked.size,     l: "Лайков",     color: "var(--female)" },
-          { n: matched.length, l: "Совпадений", color: "var(--accent)" },
-          { n: sent.size,      l: "Переписок",  color: "var(--male)"   },
-        ].map(({ n, l, color }) => (
-          <div className="mt-stat" key={l}>
-            <div className="mt-stat-n" style={{color}}>{n}</div>
-            <div className="mt-stat-l">{l}</div>
-            <div style={{marginTop:10,height:3,background:"var(--border)",borderRadius:3,overflow:"hidden"}}>
-              <div style={{width:`${Math.min(n*20,100)}%`,height:"100%",background:color,borderRadius:3,transition:"width .6s ease"}}/>
-            </div>
-          </div>
-        ))}
-      </div>
-      {likedProfiles.length === 0 ? (
-        <div className="mt-empty">
-          <div className="mt-empty-art">💛</div>
-          <div className="mt-empty-title">Пока пусто</div>
-          <p className="mt-empty-sub">Листайте анкеты и нажимайте ❤️ — здесь появятся люди, которые вам понравились.</p>
-          <button className="mt-empty-btn" onClick={() => setTab("swipe")}>Смотреть анкеты →</button>
-        </div>
-      ) : (
-        <div className="mt-layout">
-          <div className="mt-list-col">
-            {matched.length > 0 && (
-              <>
-                <div className="mt-section-label">🤝 Совпадения — пишите прямо сейчас</div>
-                {matched.map((p, i) => <PersonCard key={p.id} p={p} delay={i * 0.06} />)}
-              </>
-            )}
-            {pending.length > 0 && (
-              <>
-                <div className="mt-section-label" style={{ marginTop: matched.length ? 28 : 0 }}>⏳ Ожидают ответа</div>
-                {pending.map((p, i) => <PersonCard key={p.id} p={p} delay={(matched.length + i) * 0.06} />)}
-              </>
-            )}
-          </div>
-          {activeChat && (() => {
-            const profile = likedProfiles.find(p => p.id === activeChat) || matchedProfiles?.find(p => p.id === activeChat);
-            if (!profile) return null;
-            return (
-              <ChatPanel
-                profile={profile}
-                messages={conversations[profile.id] || []}
-                typing={typingFor === profile.id}
-                userInitials={auth.initials}
-                onSend={(text) => sendChat(profile.id, text)}
-                onTyping={() => sendTyping(profile.id)}   // ← add this
-
-                onClose={() => setActiveChat(null)}
-              />
-            );
-          })()}
-        </div>
-      )}
     </div>
   );
 }

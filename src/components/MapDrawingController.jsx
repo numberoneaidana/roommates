@@ -4,7 +4,11 @@ import L from 'leaflet';
 
 /**
  * MapDrawingController - Manages all drawing interactions for the map
- * Integrates with MapScreenAdvanced to filter profiles by drawn areas
+ * Implements:
+ * - Douglas-Peucker algorithm for path simplification
+ * - Ray Casting algorithm for point-in-polygon detection
+ * - Bounding box filtering for spatial indexing
+ * - Circle distance calculations for radius-based filtering
  */
 const MapDrawingController = ({ 
   allProfiles = [],
@@ -35,7 +39,88 @@ const MapDrawingController = ({
     };
   }, [map]);
 
-  // Ray casting algorithm to check if point is inside polygon
+  /**
+   * Douglas-Peucker Algorithm
+   * Reduces the number of points in a path while preserving its shape
+   * @param {Array} points - Array of {lat, lng} points
+   * @param {Number} epsilon - Maximum distance from point to line
+   * @returns {Array} Simplified points
+   */
+  const douglasPeucker = (points, epsilon = 0.0005) => {
+    if (points.length < 3) return points;
+
+    let dmax = 0;
+    let index = 0;
+
+    // Find the point with the maximum distance
+    for (let i = 1; i < points.length - 1; i++) {
+      const d = perpendicularDistance(points[i], points[0], points[points.length - 1]);
+      if (d > dmax) {
+        index = i;
+        dmax = d;
+      }
+    }
+
+    // If max distance is greater than epsilon, recursively simplify
+    if (dmax > epsilon) {
+      const rec1 = douglasPeucker(points.slice(0, index + 1), epsilon);
+      const rec2 = douglasPeucker(points.slice(index), epsilon);
+      return rec1.slice(0, rec1.length - 1).concat(rec2);
+    } else {
+      return [points[0], points[points.length - 1]];
+    }
+  };
+
+  /**
+   * Calculate perpendicular distance from point to line
+   */
+  const perpendicularDistance = (point, lineStart, lineEnd) => {
+    let px = lineEnd.lat - lineStart.lat;
+    let py = lineEnd.lng - lineStart.lng;
+    let magnitude = Math.sqrt(px * px + py * py);
+    if (magnitude === 0) return 0;
+    px /= magnitude;
+    py /= magnitude;
+    let dx = point.lat - lineStart.lat;
+    let dy = point.lng - lineStart.lng;
+    let distance = Math.abs(px * dy - py * dx);
+    return distance;
+  };
+
+  /**
+   * Calculate bounding box for a set of points
+   * Returns {minLat, maxLat, minLng, maxLng}
+   */
+  const calculateBoundingBox = (points) => {
+    if (!points || points.length === 0) return null;
+    const lats = points.map(p => p.lat);
+    const lngs = points.map(p => p.lng);
+    return {
+      minLat: Math.min(...lats),
+      maxLat: Math.max(...lats),
+      minLng: Math.min(...lngs),
+      maxLng: Math.max(...lngs)
+    };
+  };
+
+  /**
+   * Check if point is within bounding box
+   * Fast spatial indexing filter
+   */
+  const isPointInBoundingBox = (point, bbox) => {
+    if (!bbox) return false;
+    return (
+      point.latitude >= bbox.minLat &&
+      point.latitude <= bbox.maxLat &&
+      point.longitude >= bbox.minLng &&
+      point.longitude <= bbox.maxLng
+    );
+  };
+
+  /**
+   * Ray casting algorithm to check if point is inside polygon
+   * Industry standard for point-in-polygon detection
+   */
   const isPointInPolygon = (point, polygonPoints) => {
     const lat = point.latitude;
     const lng = point.longitude;
@@ -54,7 +139,9 @@ const MapDrawingController = ({
     return inside;
   };
 
-  // Check if point is inside circle
+  /**
+   * Check if point is inside circle using Haversine distance formula
+   */
   const isPointInCircle = (point, center, radiusKm) => {
     const R = 6371; // Earth radius in km
     const dLat = ((point.latitude - center.lat) * Math.PI) / 180;
@@ -68,7 +155,10 @@ const MapDrawingController = ({
     return distance <= radiusKm;
   };
 
-  // Filter profiles by all drawn areas
+  /**
+   * Filter profiles by all drawn areas
+   * Uses bounding box for first-pass filtering (fast), then detailed checks
+   */
   const filterProfilesByAreas = (areas) => {
     if (!areas || areas.length === 0) {
       onProfilesFiltered([]);
@@ -90,6 +180,12 @@ const MapDrawingController = ({
               if (!Array.isArray(area.latlngs) || area.latlngs.length < 3) return false;
               // Extra safety check for each point
               if (!area.latlngs.every(p => p && typeof p.lat === 'number' && typeof p.lng === 'number')) return false;
+              
+              // OPTIMIZATION: First pass - bounding box filter (fast)
+              const bbox = calculateBoundingBox(area.latlngs);
+              if (!isPointInBoundingBox(profile, bbox)) return false;
+              
+              // Second pass - exact ray casting check (accurate)
               return isPointInPolygon(profile, area.latlngs);
             } else if (area.type === 'circle' && area.center && typeof area.radius === 'number') {
               // Validate circle data thoroughly
@@ -174,7 +270,19 @@ const MapDrawingController = ({
         }
 
         try {
-          const polygonShape = L.polygon(pathPointsRef.current, {
+          // OPTIMIZATION: Apply Douglas-Peucker simplification
+          // Reduces jagged hand-drawn lines to clean polygons
+          const simplifiedPoints = douglasPeucker(pathPointsRef.current, 0.0005);
+          
+          if (simplifiedPoints.length < 3) {
+            alert('Simplified path needs at least 3 points. Please draw a larger area.');
+            map.removeLayer(pathPolylineRef.current);
+            return;
+          }
+
+          console.log(`Path simplification: ${pathPointsRef.current.length} points → ${simplifiedPoints.length} points`);
+
+          const polygonShape = L.polygon(simplifiedPoints, {
             color: '#7A9E7E',
             weight: 2,
             opacity: 0.7,
@@ -187,8 +295,10 @@ const MapDrawingController = ({
           const newArea = {
             id: `freehand-${Date.now()}`,
             type: 'freehand',
-            latlngs: [...pathPointsRef.current], // Create copy to prevent mutations
-            layer: polygonShape
+            latlngs: [...simplifiedPoints], // Use simplified points
+            layer: polygonShape,
+            originalPointCount: pathPointsRef.current.length,
+            simplifiedPointCount: simplifiedPoints.length
           };
           const updatedAreas = [...drawnAreas, newArea];
           onAreasChange(updatedAreas);

@@ -2382,7 +2382,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
         <div style={{marginBottom:"40px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"8px"}}>
             <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"2.4rem",fontWeight:600,color:"#1C2B1E",margin:0}}>
-              🔍 Панель верификации
+              Панель верификации
             </h1>
           </div>
           <p style={{fontSize:"15px",color:"rgba(28,43,30,0.6)",margin:0}}>Проверьте и верифицируйте профили</p>
@@ -2391,7 +2391,7 @@ export function AdminVerificationDashboard({ allProfiles, onVerify }) {
         {/* Filter Tabs */}
         <div style={{display:"flex",gap:"12px",marginBottom:"32px",borderBottom:"2px solid #C8DEC4",paddingBottom:"16px"}}>
           {[
-            {id:'pending',label:`⏳ На проверке (${allProfiles.filter(p=>p.verification_status==='pending').length})`},
+            {id:'pending',label:`На проверке (${allProfiles.filter(p=>p.verification_status==='pending').length})`},
             {id:'approved',label:`✓ Верифицированы (${allProfiles.filter(p=>p.verification_status==='approved').length})`},
             {id:'rejected',label:`✗ Отклонены (${allProfiles.filter(p=>p.verification_status==='rejected').length})`}
           ].map(tab=>(

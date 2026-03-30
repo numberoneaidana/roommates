@@ -50,7 +50,7 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
         }
       `}</style>
 
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: '40px' }}>
           <h1 style={{
@@ -63,10 +63,10 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
             alignItems: 'center',
             gap: '12px'
           }}>
-            🔍 Verification Dashboard
+            🔐 Admin Verification
           </h1>
           <p style={{ fontSize: '15px', color: 'rgba(28, 43, 30, 0.6)', margin: '8px 0 0' }}>
-            Review and verify user profiles
+            Approve or reject profile verifications
           </p>
         </div>
 
@@ -101,107 +101,110 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
           ))}
         </div>
 
-        {/* Profiles Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '20px',
-          marginBottom: '40px'
-        }}>
-          {filteredProfiles.map(profile => (
-            <div
-              key={profile.id}
-              className="admin-card"
-              style={{
-                background: colors.white,
-                border: `1px solid ${colors.matchaLight}`,
-                borderRadius: '20px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                transition: 'all 0.2s',
-                cursor: 'pointer'
-              }}
-            >
-              {/* Profile Header with Status Badge */}
-              <div style={{
-                height: '180px',
-                background: profile.photos?.[0]?.startsWith('http')
-                  ? `url(${profile.photos[0]}) center/cover`
-                  : `linear-gradient(135deg, ${colors.matcha} 0%, #5a8f6f 100%)`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                position: 'relative'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  background:
-                    profile.verification_status === 'approved'
-                      ? colors.matchaPale
-                      : profile.verification_status === 'rejected'
-                      ? '#FEE2E2'
-                      : '#FEF3C7',
-                  color:
-                    profile.verification_status === 'approved'
-                      ? colors.matcha
-                      : profile.verification_status === 'rejected'
-                      ? '#DC2626'
-                      : '#92400E',
-                  padding: '6px 12px',
-                  borderRadius: '100px',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}>
-                  {profile.verification_status === 'approved'
-                    ? '✓'
-                    : profile.verification_status === 'rejected'
-                    ? '✗'
-                    : '⏳'}
-                </div>
-              </div>
-
-              {/* Profile Info */}
-              <div style={{ padding: '16px' }}>
-                <h3 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: colors.ink,
-                  margin: '0 0 4px 0'
-                }}>
-                  {profile.full_name}
-                </h3>
-                <div style={{ fontSize: '13px', color: 'rgba(28, 43, 30, 0.6)', marginBottom: '12px' }}>
-                  📍 {(profile.region || '—').split(',')[0]}
-                </div>
-                <button
-                  onClick={() => setSelectedProfile(profile)}
+        {/* Profiles Table */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${colors.matchaLight}` }}>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: colors.ink, fontSize: '14px' }}>Name</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: colors.ink, fontSize: '14px' }}>Region</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: colors.ink, fontSize: '14px' }}>Status</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600, color: colors.ink, fontSize: '14px' }}>Document</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600, color: colors.ink, fontSize: '14px' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProfiles.map((profile, idx) => (
+                <tr
+                  key={profile.id}
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    background:
-                      profile.verification_status === 'pending'
-                        ? `linear-gradient(135deg, ${colors.matcha} 0%, #5a8f6f 100%)`
-                        : colors.matchaPale,
-                    color:
-                      profile.verification_status === 'pending'
-                        ? colors.white
-                        : colors.matcha,
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontFamily: "'Geologica', sans-serif",
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    borderBottom: `1px solid ${colors.matchaLight}`,
+                    background: idx % 2 === 0 ? colors.white : colors.cream,
+                    transition: 'background 0.2s'
                   }}
+                  onMouseEnter={e => e.currentTarget.style.background = colors.matchaMist}
+                  onMouseLeave={e => e.currentTarget.style.background = (idx % 2 === 0 ? colors.white : colors.cream)}
                 >
-                  {profile.verification_status === 'pending' ? '🔍 Review' : '👁️ View'}
-                </button>
-              </div>
-            </div>
-          ))}
+                  <td style={{ padding: '16px 12px', fontWeight: 500, color: colors.ink }}>{profile.full_name}</td>
+                  <td style={{ padding: '16px 12px', color: 'rgba(28, 43, 30, 0.7)', fontSize: '14px' }}>
+                    {(profile.region || '—').split(',')[0]}
+                  </td>
+                  <td style={{ padding: '16px 12px' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '4px 10px',
+                      borderRadius: '100px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background:
+                        profile.verification_status === 'approved'
+                          ? colors.matchaPale
+                          : profile.verification_status === 'rejected'
+                          ? '#FEE2E2'
+                          : '#FEF3C7',
+                      color:
+                        profile.verification_status === 'approved'
+                          ? colors.matcha
+                          : profile.verification_status === 'rejected'
+                          ? '#DC2626'
+                          : '#92400E'
+                    }}>
+                      {profile.verification_status === 'approved'
+                        ? '✓ Approved'
+                        : profile.verification_status === 'rejected'
+                        ? '✗ Rejected'
+                        : '⏳ Pending'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                    {profile.id_document_url ? (
+                      <a
+                        href={`/api/verify/file/${profile.id_document_url.split('/').pop()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: colors.matcha,
+                          textDecoration: 'none',
+                          fontWeight: 600,
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        📸 View
+                      </a>
+                    ) : (
+                      <span style={{ color: 'rgba(28, 43, 30, 0.3)', fontSize: '14px' }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                    {profile.verification_status === 'pending' ? (
+                      <button
+                        onClick={() => setSelectedProfile(profile)}
+                        style={{
+                          padding: '8px 16px',
+                          background: colors.matcha,
+                          color: colors.white,
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontFamily: "'Geologica', sans-serif",
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => e.target.style.background = '#5a8f6f'}
+                        onMouseLeave={e => e.target.style.background = colors.matcha}
+                      >
+                        Review
+                      </button>
+                    ) : (
+                      <span style={{ color: 'rgba(28, 43, 30, 0.3)', fontSize: '12px' }}>—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {filteredProfiles.length === 0 && (
@@ -219,7 +222,7 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal - Simple Approval/Rejection */}
       {selectedProfile && (
         <div
           style={{
@@ -239,24 +242,17 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
         >
           <div style={{
             background: colors.white,
-            borderRadius: '28px',
+            borderRadius: '20px',
             width: '100%',
-            maxWidth: '600px',
-            maxHeight: '90vh',
-            overflow: 'auto',
+            maxWidth: '400px',
+            padding: '32px',
             boxShadow: '0 25px 80px rgba(122, 158, 126, 0.25)'
           }}>
-            {/* Modal Header */}
-            <div style={{
-              padding: '24px',
-              borderBottom: `1px solid ${colors.matchaLight}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: '1.6rem',
+                fontSize: '1.4rem',
                 fontWeight: 600,
                 color: colors.ink,
                 margin: 0
@@ -266,13 +262,13 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
               <button
                 onClick={() => setSelectedProfile(null)}
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   background: colors.matchaPale,
                   border: 'none',
                   cursor: 'pointer',
-                  fontSize: '18px',
+                  fontSize: '16px',
                   fontWeight: 'bold'
                 }}
               >
@@ -280,170 +276,99 @@ const AdminPanel = ({ allProfiles, onVerify }) => {
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: '24px' }}>
-              {/* Profile Info */}
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  color: colors.ink,
-                  marginBottom: '12px'
-                }}>
-                  ℹ️ Information
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {[
-                    { label: 'Age', value: selectedProfile.age },
-                    { label: 'Gender', value: selectedProfile.gender },
-                    { label: 'Region', value: (selectedProfile.region || '—').split(',')[0] },
-                    { label: 'Budget', value: selectedProfile.budget ? `₸${selectedProfile.budget}` : '-' }
-                  ].map((item, i) => (
-                    <div key={i} style={{ background: colors.matchaMist, borderRadius: '12px', padding: '12px' }}>
-                      <div style={{ fontSize: '12px', color: 'rgba(28, 43, 30, 0.6)', marginBottom: '4px' }}>
-                        {item.label}
-                      </div>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: colors.ink }}>
-                        {item.value}
-                      </div>
-                    </div>
-                  ))}
+            {/* Info */}
+            <div style={{ marginBottom: '24px', padding: '16px', background: colors.matchaMist, borderRadius: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(28, 43, 30, 0.6)', textTransform: 'uppercase' }}>Age</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: colors.ink }}>{selectedProfile.age}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(28, 43, 30, 0.6)', textTransform: 'uppercase' }}>Gender</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: colors.ink }}>{selectedProfile.gender}</div>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(28, 43, 30, 0.6)', textTransform: 'uppercase' }}>Region</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: colors.ink }}>{(selectedProfile.region || '—').split(',')[0]}</div>
                 </div>
               </div>
+            </div>
 
-              {/* ID Document */}
-              {selectedProfile.id_document_url && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    color: colors.ink,
-                    marginBottom: '12px'
-                  }}>
-                    📸 Uploaded Document
-                  </h3>
-                  <img
-                    src={`/api/verify/file/${selectedProfile.id_document_url.split('/').pop()}`}
-                    alt="ID Document"
-                    style={{
-                      width: '100%',
-                      borderRadius: '12px',
-                      border: `1px solid ${colors.matchaLight}`,
-                      maxHeight: '300px',
-                      objectFit: 'contain',
-                      cursor: 'pointer'
-                    }}
-                    loading="lazy"
-                  />
-                </div>
-              )}
+            {/* Rejection Reason Input */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: colors.ink,
+                marginBottom: '8px',
+                textTransform: 'uppercase'
+              }}>
+                Rejection Reason (if rejecting)
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={e => setRejectionReason(e.target.value)}
+                placeholder="Optional: explain why..."
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: `1px solid ${colors.matchaLight}`,
+                  borderRadius: '8px',
+                  fontFamily: "'Geologica', sans-serif",
+                  fontSize: '13px',
+                  color: colors.ink,
+                  background: colors.matchaMist,
+                  outline: 'none',
+                  resize: 'vertical',
+                  minHeight: '60px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
 
-              {/* Rejection Reason (for pending) */}
-              {selectedProfile.verification_status === 'pending' && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    color: colors.ink,
-                    marginBottom: '12px'
-                  }}>
-                    💬 Rejection Reason (if rejecting)
-                  </h3>
-                  <textarea
-                    value={rejectionReason}
-                    onChange={e => setRejectionReason(e.target.value)}
-                    placeholder="Enter reason..."
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      border: `1px solid ${colors.matchaLight}`,
-                      borderRadius: '12px',
-                      fontFamily: "'Geologica', sans-serif",
-                      fontSize: '13px',
-                      color: colors.ink,
-                      background: colors.matchaMist,
-                      outline: 'none',
-                      resize: 'vertical',
-                      minHeight: '70px',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Rejection Reason Display (for already rejected) */}
-              {selectedProfile.verification_status === 'rejected' && selectedProfile.rejection_reason && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    color: colors.ink,
-                    marginBottom: '12px'
-                  }}>
-                    💬 Rejection Reason
-                  </h3>
-                  <div style={{
-                    background: '#FEE2E2',
-                    border: '1px solid #FECACA',
-                    borderRadius: '12px',
-                    padding: '12px 14px',
-                    fontSize: '13px',
-                    color: '#DC2626'
-                  }}>
-                    {selectedProfile.rejection_reason}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons (for pending) */}
-              {selectedProfile.verification_status === 'pending' && (
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => handleVerify(selectedProfile.id, true)}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      background: colors.matchaPale,
-                      color: colors.matcha,
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontFamily: "'Geologica', sans-serif",
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => e.target.style.background = '#D0E8C8'}
-                    onMouseLeave={e => e.target.style.background = colors.matchaPale}
-                  >
-                    ✓ Approve
-                  </button>
-                  <button
-                    onClick={() => handleVerify(selectedProfile.id, false)}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      background: '#FEE2E2',
-                      color: '#DC2626',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontFamily: "'Geologica', sans-serif",
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => e.target.style.background = '#FED7D7'}
-                    onMouseLeave={e => e.target.style.background = '#FEE2E2'}
-                  >
-                    ✗ Reject
-                  </button>
-                </div>
-              )}
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => handleVerify(selectedProfile.id, true)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: colors.matchaPale,
+                  color: colors.matcha,
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontFamily: "'Geologica', sans-serif",
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.target.style.background = '#D0E8C8'}
+                onMouseLeave={e => e.target.style.background = colors.matchaPale}
+              >
+                ✓ Approve
+              </button>
+              <button
+                onClick={() => handleVerify(selectedProfile.id, false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#FEE2E2',
+                  color: '#DC2626',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontFamily: "'Geologica', sans-serif",
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.target.style.background = '#FED7D7'}
+                onMouseLeave={e => e.target.style.background = '#FEE2E2'}
+              >
+                ✗ Reject
+              </button>
             </div>
           </div>
         </div>

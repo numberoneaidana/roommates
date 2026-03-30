@@ -7,6 +7,7 @@ import HomePage from './components/HomePage';
 import MapScreenAdvanced from './components/MapScreenAdvanced';
 import LikesScreen from './components/LikesScreen';
 import SwipeScreen from './components/SwipeScreen';
+import AdminPanel from './components/AdminPanel';
 // usePollingChat is exported from ./logic/hooks for external/backend use;
 // internally useRealtimeChat handles all polling via its own fallback.
 import 'leaflet/dist/leaflet.css';
@@ -937,7 +938,6 @@ const sendChat = async (profileId, text) => {
 
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:"24px",marginBottom:"60px"}}>
                 {[
-                  {icon:"🤖",title:"Умный алгоритм",desc:"Анализирует 40+ параметров образа жизни для точных совпадений"},
                   {icon:"🛡️",title:"Проверка ИИН",desc:"Каждый профиль проверен и верифицирован для вашей безопасности"},
                   {icon:"🗺️",title:"17 городов",desc:"От Алматы до Актау — охватываем весь Казахстан"},
                   {icon:"💬",title:"3 языка",desc:"Общайтесь на казахском, русском или английском"},
@@ -1097,9 +1097,8 @@ const sendChat = async (profileId, text) => {
       )}
 
       {tab==="admin" && auth?.is_admin && (
-        <AdminVerificationDashboard allProfiles={allProfiles} onVerify={async (profileId, status, reason) => {
+        <AdminPanel allProfiles={allProfiles} onVerify={async (profileId, status, reason) => {
           try {
-            // Make API call to verify/reject
             const token = localStorage.getItem('roommate_kz_token');
             const baseURL = process.env.REACT_APP_API_URL || "https://roommates-production.up.railway.app";
             const response = await fetch(`${baseURL}/api/verify/${profileId}`, {
@@ -1600,12 +1599,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
             </select>
           </div>
         </div>
-        <div className="fg-form"><label className="fl">Транспорт рядом</label>
-          <div className="chip-row">
-            <button className={`chip-sel ${form.nearMetro?"on":""}`} onClick={()=>upd("nearMetro",!form.nearMetro)}>🚇 Метро</button>
-            <button className={`chip-sel ${form.nearBus?"on":""}`} onClick={()=>upd("nearBus",!form.nearBus)}>🚌 Автобус</button>
-          </div>
-        </div>
+
         <div className="fg-form"><label className="fl">Регион</label>
           <select className="fi" value={form.region} onChange={e=>upd("region",e.target.value)}>
             <option value="">— Выберите —</option>

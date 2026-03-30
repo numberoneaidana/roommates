@@ -800,7 +800,7 @@ const sendChat = async (profileId, text) => {
 
       {/* Header */}
       <div style={{background:"#fff",borderBottom:"1px solid #e0e0e0",padding:"16px 40px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:"50",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-        <div style={{fontSize:"20px",fontWeight:"700",color:"#2c5f47",fontFamily:"var(--font-display)"}}>Matcha</div>
+        <div style={{fontSize:"20px",fontWeight:"700",color:"#2c5f47",fontFamily:"var(--font-display)"}}>RoommatchKAZ</div>
         <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
           <div title={connected ? "Подключено" : "Переподключение…"}
             style={{
@@ -1730,7 +1730,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
               {/* PREVIEW */}
               {verificationPreview && (
                 <div style={{marginBottom:"20px"}}>
-                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
+                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"block",display:"flex",alignItems:"center",gap:"6px"}}>
                     <span style={{fontSize:"16px"}}>👁️</span>
                     Предпросмотр
                   </label>
@@ -1776,7 +1776,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
 
 const TRANSLATIONS = {
   ru: {
-    appName: "Matcha",
+    appName: "RoommatchKAZ",
     findRoommate: "Найдите идеального соседа сегодня",
     connectRoommates: "Свяжитесь с соседями по всему Казахстану",
     verifiedRoommates: "Проверенные соседи",
@@ -1793,7 +1793,7 @@ const TRANSLATIONS = {
     password: "Пароль",
     rememberMe: "Запомнить меня",
     forgotPassword: "Забыли пароль?",
-    enterSanctuary: "Войти в Matcha",
+    enterSanctuary: "Войти в RoommatchKAZ",
     prefLanguages: "Предпочтительные языки",
     next: "Далее →",
     back: "← Назад",
@@ -1801,7 +1801,7 @@ const TRANSLATIONS = {
     creating: "Создание...",
     welcomeBack: "С возвращением",
     signInMessage: "Войдите, чтобы найти идеального соседа",
-    newToNeighborhood: "Новичок в округе?",
+    newToNeighborhood: "Еще не использовали RoommatchKAZ?",
     joinCommunity: "Присоединяйтесь к сообществу",
     alreadyHaveAccount: "Уже есть аккаунт?",
     basicInfo: "Основная информация",
@@ -1817,13 +1817,12 @@ const TRANSLATIONS = {
     havePlace: "Есть квартира",
     lookingForRoommate2: "Ищу соседа",
     housing: "Жилье и работа",
-    yourConditions: "Ваши условия и требования",
     moveInDate: "Дата заезда",
     remoteWork: "Удаленная работа",
     schedule: "График",
     languages: "Языки",
     lifestyle: "Образ жизни",
-    finalStep: "Финальный шаг для лучших рекомендаций",
+    finalStep: "Последний шаг",
     profession: "Профессия / Учеба",
     cleanliness: "Чистоплотность",
     sociability: "Общительность",
@@ -1846,7 +1845,6 @@ const TRANSLATIONS = {
     sometimes: "Иногда",
     often: "Часто",
     university: "Университет",
-    commute: "Коммьют до кампуса",
     aboutYourself: "О себе",
     saveProfile: "Сохранить профиль",
     saved: "Сохранено!",
@@ -2041,7 +2039,7 @@ function AuthScreen({onAuth}){
         </div>
         {form.renterType === "has_place" && (
           <div className="fg-form" style={{background:"linear-gradient(135deg,#f0fdf4,var(--accent-light))",padding:"16px",borderRadius:"var(--rs)",border:"2px solid var(--accent)"}}>
-            <label className="fl" style={{color:"var(--accent2)"}}>📍 Адрес вашего жилья *</label>
+            <label className="fl" style={{color:"var(--accent2)"}}> Адрес вашего жилья *</label>
             <input className="fi" placeholder="ул. Абая 150, кв. 45" value={form.address} onChange={e=>upd("address",e.target.value)}/>
             <AddressMapSelector address={form.address} lat={form.lat} lng={form.lng} region={form.region} onAddressChange={(addr) => upd("address", addr)} onLocationChange={(lat, lng) => { setForm(f => ({ ...f, lat, lng })); }}/>
             <div style={{fontSize:"11px",color:"var(--mid)",marginTop:"6px",lineHeight:"1.5"}}>💡 Вы можете ввести адрес вручную или кликнуть на карту.</div>
@@ -2174,11 +2172,11 @@ function AuthScreen({onAuth}){
         <div style={{background:"var(--bg2)",borderRadius:"var(--rs)",padding:"16px",marginBottom:"16px"}}>
           <div style={{fontSize:"13px",fontWeight:"700",color:"var(--mid)",marginBottom:"10px"}}>📋 Ваша анкета:</div>
           <div style={{fontSize:"13px",color:"var(--mid)",lineHeight:"1.8"}}>
-            <div>👤 {form.name}, {form.age} лет · {form.gender==="female"?"♀ Девушка":"♂ Парень"}</div>
-            <div>📍 {KZ_REGIONS.find(r=>r.id===form.region)?.name||"Не указан"}</div>
-            <div>💰 {(+form.budget||0).toLocaleString()} ₸/мес · 📅 {form.move_in||"Не указано"}</div>
-            <div>🕐 {form.schedule||"Не указан"} · {form.remote?"💻 Удалёнка":"🏢 Офис"}</div>
-            <div>🎓 {form.studyWork === "Учёба" ? (form.university || "Университет не указан") : (form.occupation || "Профессия не указана")}</div>
+            <div>{form.name}, {form.age} лет · {form.gender==="female"?"♀ Девушка":"♂ Парень"}</div>
+            <div>{KZ_REGIONS.find(r=>r.id===form.region)?.name||"Не указан"}</div>
+            <div>{(+form.budget||0).toLocaleString()} ₸/мес · 📅 {form.move_in||"Не указано"}</div>
+            <div>{form.schedule||"Не указан"} · {form.remote?"💻 Удалёнка":"🏢 Офис"}</div>
+            <div>{form.studyWork === "Учёба" ? (form.university || "Университет не указан") : (form.occupation || "Профессия не указана")}</div>
             {form.smoking&&<div>🚬 Курю</div>}
             {form.alcohol&&<div>🍷 Пью алкоголь</div>}
             {form.pets&&<div>🐾 Есть питомец</div>}
@@ -2193,15 +2191,9 @@ function AuthScreen({onAuth}){
       <div className="auth-left">
         <div className="auth-left-content">
           <div style={{marginBottom:"48px"}}>
-            <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"32px",fontFamily:"var(--font-display)",letterSpacing:"0.5px",opacity:"0.95"}}>Matcha</div>
+            <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"32px",fontFamily:"var(--font-display)",letterSpacing:"0.5px",opacity:"0.95"}}>RoommatchKAZ</div>
             <div style={{fontSize:"56px",fontWeight:"800",color:"#fff",lineHeight:"1.1",marginBottom:"28px",letterSpacing:"-1px"}}>
-              {uiLang === "en" ? (
-                <>Find Your<br/><span style={{color:"#A8D5BA"}}>Sanctuary</span><br/>in Kazakhstan</>
-              ) : uiLang === "kk" ? (
-                <>Өзіңіздің<br/><span style={{color:"#A8D5BA"}}>Орасын</span><br/>Табыңыз</>
-              ) : (
-                <>Найдите Ваше<br/><span style={{color:"#A8D5BA"}}>Убежище</span><br/>в Казахстане</>
-              )}
+                <>Найдите Идеального <br/><span style={{color:"#A8D5BA"}}>Соседа</span><br/>в Казахстане</>
             </div>
             <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"0",lineHeight:"1.7",fontWeight:"400"}}>{TRANSLATIONS[uiLang].connectRoommates}</p>
           </div>
@@ -2211,20 +2203,20 @@ function AuthScreen({onAuth}){
               <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
               <div style={{paddingTop:"4px"}}>
                 <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Настоящие профили</div>
-                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Проверенные люди в поиске жилья и соседей</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Проверенные люди в поиске соседей</div>
               </div>
             </div>
             
             <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
-              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>🗺️</div>
+              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
               <div style={{paddingTop:"4px"}}>
                 <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Интерактивные карты</div>
-                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Исследуйте районы Алматы и Астаны с местными подсказками</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Исследуйте районы от Алматы до Астаны</div>
               </div>
             </div>
             
             <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
-              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✨</div>
+              <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
               <div style={{paddingTop:"4px"}}>
                 <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Идеальная совместимость</div>
                 <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Подбор по образу жизни, не только по бюджету и площади</div>
@@ -2270,7 +2262,7 @@ function AuthScreen({onAuth}){
           </div>
           
           <button className="btn-enter-sanctuary" onClick={handleLoginSubmit} disabled={loading}>
-            {loading ? "Loading..." : "Enter Sanctuary →"}
+            {loading ? "Загрузка..." : "Присоединиться →"}
           </button>
           
           <p style={{textAlign:"center",fontSize:"13px",color:"#999",marginTop:"28px"}}>
@@ -2315,7 +2307,7 @@ function AuthScreen({onAuth}){
     <div className="auth-wrap">
       <div className="auth-left">
         <div className="auth-left-content">
-          <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"28px",fontFamily:"var(--font-display)"}}>Matcha</div>
+          <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"28px",fontFamily:"var(--font-display)"}}>RoommatchKAZ</div>
           <div style={{fontSize:"42px",fontWeight:"700",color:"#fff",lineHeight:"1.1",marginBottom:"20px"}}>
             Шаг {step+1} из {STEPS.length}
           </div>

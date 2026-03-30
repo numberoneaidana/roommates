@@ -133,11 +133,16 @@ const DrawHandler = ({ drawMode, drawnShapes, setDrawnShapes, onDrawModeChange }
 
   useEffect(() => { drawnRef.current = drawnShapes; }, [drawnShapes]);
 
-  // Cursor + dragging
+  // Cursor + dragging — enable native pan when not in a draw mode
   useEffect(() => {
     if (!map) return;
-    map.dragging.disable();
-    map._container.style.cursor = drawMode ? 'crosshair' : 'grab';
+    if (drawMode) {
+      map.dragging.disable();
+      map._container.style.cursor = 'crosshair';
+    } else {
+      map.dragging.enable();
+      map._container.style.cursor = 'grab';
+    }
   }, [drawMode, map]);
 
   const cleanup = useCallback(() => {
@@ -151,6 +156,7 @@ const DrawHandler = ({ drawMode, drawnShapes, setDrawnShapes, onDrawModeChange }
     circleStartRef.current = null;
     map._container.style.cursor = 'grab';
   }, [map]);
+
   // Escape to cancel
   useEffect(() => {
     if (!map) return;
@@ -161,7 +167,8 @@ const DrawHandler = ({ drawMode, drawnShapes, setDrawnShapes, onDrawModeChange }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [map, onDrawModeChange, cleanup]);
+  }, [map, cleanup, onDrawModeChange]);
+
   useMapEvents({
     // ── Polygon: click adds vertex, dblclick closes ──────────────────────────
     click(e) {
@@ -289,7 +296,7 @@ const MapScreenAdvanced = ({
   const [searchText, setSearchText]           = useState('');
   const [msgText, setMsgText]                 = useState('');
   const [isSending, setIsSending]             = useState(false);
-  const [setNearestRegion]     = useState('');
+
   const [zoomLevel, setZoomLevel]             = useState(12);
   const [housingFilter, setHousingFilter]     = useState(null);
   const [genderFilter, setGenderFilter]       = useState(null);
@@ -319,16 +326,6 @@ const MapScreenAdvanced = ({
 
   const popularRegions = KZ_REGIONS.slice(0, 8);
 
-  // ── Nearest region label ─────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const nearest = KZ_REGIONS.reduce((best, r) => {
-      const d = haversine(selectedCenter[0], selectedCenter[1], r.lat, r.lng);
-      const bd = haversine(selectedCenter[0], selectedCenter[1], best.lat, best.lng);
-      return d < bd ? r : best;
-    }, KZ_REGIONS[0]);
-    setNearestRegion(nearest.name);
-  }, [selectedCenter, setNearestRegion ]);
 
   // ── Profile filtering ─────────────────────────────────────────────────────────
   // Re-runs whenever filters or drawn shapes change.
@@ -377,80 +374,9 @@ const MapScreenAdvanced = ({
 
   const toggleDraw = (mode) => setDrawMode(prev => (prev === mode ? null : mode));
   const clearShapes = () => { setDrawnShapes([]); setDrawMode(null); };
+  const handleDrawModeChange = useCallback((mode) => setDrawMode(mode), []);
 
-  // ── Inner map ─────────────────────────────────────────────────────────────────
 
-  const InnerMapContent = () => (
-    <>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={19}
-        crossOrigin
-      />
-
-      {selectedRegion && (
-        <AutoZoomHandler
-          selectedCenter={selectedCenter}
-          zoomLevel={zoomLevel}
-          selectedRegion={selectedRegion}
-        />
-      )}
-
-      {/* Drawing logic lives here (needs map context) */}
-      <DrawHandler
-        drawMode={drawMode}
-        drawnShapes={drawnShapes}
-        setDrawnShapes={setDrawnShapes}
-        onDrawModeChange={setDrawMode}
-      />
-
-      {/* Render drawn shapes as Leaflet React components */}
-      {drawnShapes.map((shape, i) => {
-        if ((shape.type === 'polygon' || shape.type === 'freehand') && shape.coordinates?.length >= 3) {
-          return (
-            <Polygon
-              key={i}
-              positions={shape.coordinates}
-              pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }}
-            />
-          );
-        }
-        if (shape.type === 'circle' && shape.center) {
-          return (
-            <Circle
-              key={i}
-              center={shape.center}
-              radius={shape.radius * 1000}
-              pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }}
-            />
-          );
-        }
-        return null;
-      })}
-
-      {/* Profile markers */}
-      {filteredPeople.map(person => (
-        <CircleMarker
-          key={person.id}
-          center={[person.latitude, person.longitude]}
-          radius={12}
-          weight={2.5}
-          opacity={selectedPerson?.id === person.id ? 1 : 0.8}
-          fillOpacity={selectedPerson?.id === person.id ? 0.95 : 0.8}
-          color={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
-          fillColor={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
-          eventHandlers={{ click: () => setSelectedPerson(person) }}
-        >
-          <Popup>
-            <div style={{ fontSize: 11, fontWeight: 600 }}>
-              {person.name}, {person.age}
-            </div>
-          </Popup>
-        </CircleMarker>
-      ))}
-    </>
-  );
 
   // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -566,7 +492,6 @@ const MapScreenAdvanced = ({
       background: ${colors.white};
       border-right: 1px solid ${colors.matchaLight};
       display: flex; flex-direction: column; overflow: hidden;
-      grid-row: 2; grid-column: 1;
     }
     .map-adv-sidebar-header { padding: 16px 20px; border-bottom: 1px solid ${colors.matchaLight}; }
     .map-adv-sidebar-title {
@@ -617,9 +542,12 @@ const MapScreenAdvanced = ({
       font-size: 0.7rem; color: ${colors.ink30}; padding: 0 0 8px; font-family: 'Geologica', sans-serif;
     }
     .map-adv-empty { padding: 32px 24px; text-align: center; color: ${colors.ink60}; font-size: 0.8rem; }
-    .map-adv-canvas { position: relative; background: #E8F2E8; cursor: grab; grid-row: 2; grid-column: 2; }
-    .map-adv-canvas:active { cursor: grabbing; }
-    .leaflet-container { background: #E8F2E8; cursor: inherit; }
+    .map-adv-canvas { position: relative; background: #E8F2E8; }
+    .leaflet-container { background: #E8F2E8; }
+    .leaflet-grab { cursor: grab; }
+    .leaflet-dragging .leaflet-grab,
+    .leaflet-dragging .leaflet-grab .leaflet-interactive,
+    .leaflet-dragging .leaflet-marker-draggable { cursor: grabbing; }
     .map-adv-detail-panel {
       position: absolute; bottom: 20px; right: 20px; width: 360px;
       background: ${colors.white}; border: 1.5px solid ${colors.matchaLight};
@@ -789,11 +717,15 @@ const MapScreenAdvanced = ({
           )}
 
           {/* Active drawing hint */}
-          {drawMode && (
+          {drawMode ? (
             <div className="draw-hint">
-              {drawMode === 'polygon' && '📍 Click to add points · double-click to finish · Esc to cancel'}
-              {drawMode === 'circle'  && '⭕ Click & drag on the map · Esc to cancel'}
+              {drawMode === 'polygon'  && '📍 Click points · double-click to finish · Esc to cancel'}
+              {drawMode === 'circle'   && '⭕ Click & drag to set radius · Esc to cancel'}
               {drawMode === 'freehand' && '✏️ Hold & drag to draw · release to finish · Esc to cancel'}
+            </div>
+          ) : (
+            <div className="draw-hint" style={{ opacity: 0.6, animation: 'none' }}>
+              🖐 Drag map to pan · scroll to zoom
             </div>
           )}
 
@@ -869,14 +801,82 @@ const MapScreenAdvanced = ({
             center={DEFAULT_CENTER}
             zoom={12}
             style={{ width: '100%', height: '100%' }}
-            dragging={false}
+            dragging={true}
             touchZoom
             scrollWheelZoom
             keyboard={false}
             doubleClickZoom={false}
             zoomControl
           >
-            <InnerMapContent />
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
+              crossOrigin
+            />
+
+            {selectedRegion && (
+              <AutoZoomHandler
+                selectedCenter={selectedCenter}
+                zoomLevel={zoomLevel}
+                selectedRegion={selectedRegion}
+              />
+            )}
+
+            <DrawHandler
+              drawMode={drawMode}
+              drawnShapes={drawnShapes}
+              setDrawnShapes={setDrawnShapes}
+              onDrawModeChange={handleDrawModeChange}
+            />
+
+            {/* Drawn shapes */}
+            {drawnShapes.map((shape, i) => {
+              if ((shape.type === 'polygon' || shape.type === 'freehand') && shape.coordinates?.length >= 3) {
+                return (
+                  <Polygon
+                    key={i}
+                    positions={shape.coordinates}
+                    pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }}
+                  />
+                );
+              }
+              if (shape.type === 'circle' && shape.center) {
+                return (
+                  <Circle
+                    key={i}
+                    center={shape.center}
+                    radius={shape.radius * 1000}
+                    pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }}
+                  />
+                );
+              }
+              return null;
+            })}
+
+            {/* Profile markers — rendered directly so they always reflect latest filteredPeople */}
+            {filteredPeople.map(person => (
+              <CircleMarker
+                key={person.id}
+                center={[person.latitude, person.longitude]}
+                radius={selectedPerson?.id === person.id ? 14 : 10}
+                weight={2}
+                opacity={0.9}
+                fillOpacity={selectedPerson?.id === person.id ? 0.95 : 0.75}
+                color={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
+                fillColor={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
+                eventHandlers={{ click: () => setSelectedPerson(person) }}
+              >
+                <Popup>
+                  <div style={{ fontFamily: "'Geologica', sans-serif", fontSize: 12, fontWeight: 600, color: '#1C2B1E' }}>
+                    {person.name}{person.age ? `, ${person.age}` : ''}<br />
+                    <span style={{ fontWeight: 400, color: '#7A9E7E', fontSize: 11 }}>
+                      📍 {KZ_REGIONS.find(r => r.id === person.region)?.name || person.region || ''}
+                    </span>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
           </MapContainer>
 
           {/* Detail panel */}

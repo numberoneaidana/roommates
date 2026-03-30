@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 function HomePage({onGetStarted}) {
-  const [setScrolled] = useState(false);
-  const [setVisibleElements] = useState(new Set());
+  const [scrolled, setScrolled] = useState(false);
+  const [visibleElements, setVisibleElements] = useState(new Set());
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,7 +16,7 @@ function HomePage({onGetStarted}) {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setScrolled, setVisibleElements]);
+  }, []);
 
   const colors = {
     matcha: '#7A9E7E',

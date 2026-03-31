@@ -1195,7 +1195,7 @@ const sendChat = async (profileId, text) => {
       )}
 
       {tab==="profile"&&(
-        <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} showVerificationModal={showVerificationModal} setShowVerificationModal={setShowVerificationModal} />
+        <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} showVerificationModal={showVerificationModal} setShowVerificationModal={setShowVerificationModal} uiLang={uiLang} />
       )}
 
       {tab==="admin" && auth?.is_admin && (
@@ -1628,7 +1628,7 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
 
 // ── REGISTRATION (MULTI-STEP) ─────────────────────────────────────────────────
 
-function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal, setShowVerificationModal }) {
+function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal, setShowVerificationModal, uiLang }) {
   const [form, setForm] = useState({
     name:auth.name||"",age:auth.age||"",bio:auth.bio||"",occupation:auth.occupation||"",
     region:auth.region||"",budget:auth.budget||"",renter_type:auth.renter_type||"looking",
@@ -1826,7 +1826,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
               {/* PREVIEW */}
               {verificationPreview && (
                 <div style={{marginBottom:"20px"}}>
-                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"block",display:"flex",alignItems:"center",gap:"6px"}}>
+                  <label style={{fontSize:"13px",fontWeight:600,color:"#7A9E7E",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
                     <span style={{fontSize:"16px"}}>👁️</span>
                     Предпросмотр
                   </label>
@@ -2115,9 +2115,6 @@ const TRANSLATIONS = {
     verified: "✓ Верифицирован",
     pending: "⏳ На проверке",
     notVerified2: "⚠️ Не верифицирован",
-    saveProfile: "Сохранить профиль",
-    saved: "Сохранено!",
-    saving: "Сохранение...",
     myProfileTitle: "Мой профиль",
     verificationTitle: "🔐 Проверка профиля",
     uploadIdDoc: "Загрузить документ для проверки",
@@ -2241,9 +2238,6 @@ const TRANSLATIONS = {
     verified: "✓ Растамалы",
     pending: "⏳ Қараңыз",
     notVerified2: "⚠️ Растамалы емес",
-    saveProfile: "Профильді сақтау",
-    saved: "Сақталды!",
-    saving: "Сақталуда...",
     myProfileTitle: "Менің профилім",
     verificationTitle: "🔐 Профиль растау",
     uploadIdDoc: "Растауға құжат салыңыз",

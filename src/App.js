@@ -785,6 +785,98 @@ const sendChat = async (profileId, text) => {
   if (!auth && !showAuthFlow) return <HomePage onGetStarted={() => setShowAuthFlow(true)} />;
   if (!auth) return <AuthScreen onAuth={setAuth} />;
 
+  // Admin only sees verification interface
+  if (auth?.is_admin) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#FAFDF9', fontFamily: "var(--font-body)" }}>
+        {/* Admin Header */}
+        <div style={{
+          background: '#fff',
+          borderBottom: '1px solid #e0e0e0',
+          padding: '16px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'sticky',
+          top: 0,
+          zIndex: '50',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+        }}>
+          <div style={{ fontSize: '20px', fontWeight: '700', color: '#2c5f47', fontFamily: "var(--font-display)" }}>
+            🔐 RoommatchKAZ Admin
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <button
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                color: '#666',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => { e.target.style.borderColor = '#2c5f47'; e.target.style.color = '#2c5f47'; }}
+              onMouseLeave={e => { e.target.style.borderColor = '#e0e0e0'; e.target.style.color = '#666'; }}
+              onClick={() => setAuth(null)}
+              title="Logout"
+            >
+              Logout
+            </button>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: '#5a8f6f',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: '700',
+              fontSize: '14px'
+            }}>
+              {auth.initials}
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Content */}
+        <AdminPanel
+          allProfiles={allProfiles}
+          onVerify={async (profileId, status, reason) => {
+            try {
+              const token = localStorage.getItem('roommate_kz_token');
+              const baseURL = process.env.REACT_APP_API_URL || "https://roommates-production.up.railway.app";
+              const response = await fetch(`${baseURL}/api/verify/${profileId}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ verification_status: status, rejection_reason: reason })
+              });
+              if (response.ok) {
+                setAllProfiles(prev => prev.map(p => p.id === profileId ? { ...p, verification_status: status, rejection_reason: reason } : p));
+                setNotification({
+                  type: 'success',
+                  message: `Profile ${status === 'approved' ? 'approved' : 'rejected'}`,
+                  reason: reason || ''
+                });
+              } else {
+                alert('Failed to update verification status');
+              }
+            } catch (err) {
+              console.error('Verification error:', err);
+              alert('Error: ' + err.message);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{minHeight:"100vh",background:"#f8f9fa",fontFamily:"var(--font-body)"}}>
       {/* Notification */}

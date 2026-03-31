@@ -558,6 +558,7 @@ export default function App() {
     const token = localStorage.getItem("roommate_kz_token");
     return token ? "loading" : null;
   });
+  const [uiLang, setUiLang] = useState("en"); // Language state for UI translations
   const [showAuthFlow, setShowAuthFlow] = useState(false);
   const [notification, setNotification] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
@@ -915,12 +916,12 @@ const sendChat = async (profileId, text) => {
       {/* Top Navigation Tabs */}
       <div style={{background:"#fff",borderBottom:"2px solid #e0e0e0",padding:"0",display:"flex",justifyContent:"center",gap:"0",zIndex:"40",position:"sticky",top:"60px"}}>
         {[
-          ["browse", TRANSLATIONS[uiLang]?.browse || "Обзор"],
-          ["swipe", TRANSLATIONS[uiLang]?.swipe || "Свайп"],
-          ["map", TRANSLATIONS[uiLang]?.map || "Карта"],
-          ["matches", TRANSLATIONS[uiLang]?.matches || "Понравилось"],
-          ["profile", TRANSLATIONS[uiLang]?.profile || "Профиль"],
-          ...(auth?.is_admin ? [["admin", TRANSLATIONS[uiLang]?.admin || "Админ"]] : [])
+          ["browse", TRANSLATIONS[uiLang]?.browse || "Browse"],
+          ["swipe", TRANSLATIONS[uiLang]?.swipe || "Swipe"],
+          ["map", TRANSLATIONS[uiLang]?.map || "Map"],
+          ["matches", TRANSLATIONS[uiLang]?.matches || "Liked"],
+          ["profile", TRANSLATIONS[uiLang]?.profile || "Profile"],
+          ...(auth?.is_admin ? [["admin", TRANSLATIONS[uiLang]?.admin || "Admin"]] : [])
         ].map(([id,lb])=>(
             <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
               <span style={{fontSize:"18px"}}>{id==="browse"?"🏠":id==="swipe"?"💬":id==="map"?"🗺️":id==="matches"?"❤️":id==="profile"?"👤":"🔐"}</span>

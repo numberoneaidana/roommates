@@ -12,6 +12,22 @@ import AdminPanel from './components/AdminPanel';
 // internally useRealtimeChat handles all polling via its own fallback.
 import 'leaflet/dist/leaflet.css';
 import ApiClient from './api-client';
+import { useLanguage } from '../i18n';
+
+function MyComponent() {
+  const { t } = useLanguage();
+
+  return (
+    <div>
+      <h1>{t('home.heroTitle')}</h1>
+      <p>{t('profile.perMonth')}</p>
+      {/* With variable substitution: */}
+      <p>{t('matches.writeFirst', { name: 'Айгерим' })}</p>
+    </div>
+  );
+}
+
+
 const api = new ApiClient();
 
 
@@ -1861,6 +1877,84 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
 
 
 const TRANSLATIONS = {
+  en: {
+    appName: "RoommatchKAZ",
+    findRoommate: "Find Your Perfect Roommate Today",
+    connectRoommates: "Connect with roommates across Kazakhstan",
+    verifiedRoommates: "Verified Roommates",
+    verifiedDesc: "Find trustworthy people looking for apartments across Kazakhstan",
+    languagePreferences: "Language Preferences",
+    languageDesc: "Chat in Kazakh, Russian or English",
+    smartMatching: "Smart Matching",
+    smartDesc: "Get matched by lifestyle and preferences, not just budget",
+    createProfile: "Create Profile",
+    findPerfectMatch: "Let's find your perfect roommate",
+    logIn: "Login",
+    signUp: "Register",
+    email: "Email",
+    password: "Password",
+    rememberMe: "Remember me",
+    forgotPassword: "Forgot password?",
+    enterSanctuary: "Enter RoommatchKAZ",
+    prefLanguages: "Preferred Languages",
+    next: "Next →",
+    back: "← Back",
+    createBtn: "Create Profile 🎉",
+    creating: "Creating...",
+    welcomeBack: "Welcome Back",
+    signInMessage: "Sign in to find your perfect roommate",
+    newToNeighborhood: "New to RoommatchKAZ?",
+    joinCommunity: "Join the community",
+    alreadyHaveAccount: "Already have an account?",
+    basicInfo: "Basic Information",
+    tellAboutYourself: "Tell us about yourself",
+    name: "Name",
+    age: "Age",
+    gender: "Gender",
+    region: "Region",
+    budget: "Budget (₸/month)",
+    yourSituation: "Your Situation",
+    lookingForPlace: "Looking for apartment",
+    lookingForRoommate: "Looking for roommate",
+    havePlace: "Have apartment",
+    lookingForRoommate2: "Looking for roommate",
+    housing: "Housing & Work",
+    moveInDate: "Move-in Date",
+    remoteWork: "Remote Work",
+    schedule: "Schedule",
+    languages: "Languages",
+    lifestyle: "Lifestyle",
+    finalStep: "Final Step",
+    profession: "Profession / Study",
+    cleanliness: "Cleanliness",
+    sociability: "Sociability",
+    badHabits: "Bad Habits",
+    smoking: "Smoking",
+    alcohol: "Alcohol",
+    pets: "Pets",
+    hasPet: "Have pet",
+    noPet: "No pet",
+    guests: "Guests",
+    noiseLevel: "Noise Level",
+    religion: "Religion",
+    quiet: "Quiet",
+    moderate: "Moderate",
+    loud: "Loud",
+    yes: "Yes",
+    no: "No",
+    never: "Never",
+    rarely: "Rarely",
+    sometimes: "Sometimes",
+    often: "Often",
+    university: "University",
+    aboutYourself: "About Yourself",
+    saveProfile: "Save Profile",
+    saved: "Saved!",
+    saving: "Saving...",
+    resetPassword: "Reset Password",
+    resetCode: "Reset Code",
+    newPassword: "New Password",
+  },
   ru: {
     appName: "RoommatchKAZ",
     findRoommate: "Найдите идеального соседа сегодня",
@@ -1938,12 +2032,90 @@ const TRANSLATIONS = {
     resetPassword: "Сброс пароля",
     resetCode: "Код сброса",
     newPassword: "Новый пароль",
+  },
+  kk: {
+    appName: "RoommatchKAZ",
+    findRoommate: "Өз ынамдарыңыз бүгін табыңыз",
+    connectRoommates: "Қазақстан бойынша құрдастарға қосылыңыз",
+    verifiedRoommates: "Тексерілген құрдастар",
+    verifiedDesc: "Қазақстан бойынша пәтер іздеп жүрген сенімді адамдарды табыңыз",
+    languagePreferences: "Тіл сайламалары",
+    languageDesc: "Қазақ, орыс немесе ағылшын тілінде сөйлесіңіз",
+    smartMatching: "Ақылды сәйкестендіру",
+    smartDesc: "Бюджет ғана емес, өмір салтына сәйкес сәйкестендіру",
+    createProfile: "Профиль құру",
+    findPerfectMatch: "Өзіңіздің ынамдарыңыз табайық",
+    logIn: "Кіру",
+    signUp: "Тіркелу",
+    email: "Email",
+    password: "Құпия сөз",
+    rememberMe: "Мені есте сақта",
+    forgotPassword: "Құпия сөзді ұмыт пысыңыз бе?",
+    enterSanctuary: "RoommatchKAZ-ға кіріңіз",
+    prefLanguages: "Ұсынылған тілдер",
+    next: "Келесі →",
+    back: "← Артқа",
+    createBtn: "Профиль құру 🎉",
+    creating: "Құрудағы...",
+    welcomeBack: "Қайта оралған сіз",
+    signInMessage: "Өз ынамдарыңыз табу үшін кіріңіз",
+    newToNeighborhood: "RoommatchKAZ-ға жаңалығыңыз?",
+    joinCommunity: "Қауымдастыққа қосылыңыз",
+    alreadyHaveAccount: "Аккаунтыңыз бар ма?",
+    basicInfo: "Негіздеме ақпарат",
+    tellAboutYourself: "Өзіңіз туралы айтыңыз",
+    name: "Атыңыз",
+    age: "Жасы",
+    gender: "Жынысы",
+    region: "Облысы",
+    budget: "Бюджет (₸/ай)",
+    yourSituation: "Өзіңіздің жағдайы",
+    lookingForPlace: "Пәтер іздеп жүрмін",
+    lookingForRoommate: "Құрдас іздеп жүрмін",
+    havePlace: "Пәтер бар",
+    lookingForRoommate2: "Құрдас іздеп жүрмін",
+    housing: "Тынығу орны және жұмысы",
+    moveInDate: "Ауысу күні",
+    remoteWork: "Қашықтан жұмыс",
+    schedule: "Кестесі",
+    languages: "Тілдер",
+    lifestyle: "Өмір салты",
+    finalStep: "Соңғы қадам",
+    profession: "Мамандығы / Оқуы",
+    cleanliness: "Тазалығы",
+    sociability: "Қоршылығы",
+    badHabits: "Ауыр әдеттері",
+    smoking: "Түтін",
+    alcohol: "Спирт",
+    pets: "Үй жануарлары",
+    hasPet: "Үй жануары бар",
+    noPet: "Үй жануары жоқ",
+    guests: "Қонақтар",
+    noiseLevel: "Шу деңгейі",
+    religion: "Дінінің",
+    quiet: "Тыныш",
+    moderate: "Орташа",
+    loud: "Шумды",
+    yes: "Иә",
+    no: "Жоқ",
+    never: "Ешқашан",
+    rarely: "Сирек",
+    sometimes: "Кейде",
+    often: "Құйын",
+    university: "Университеті",
+    aboutYourself: "Өзіңіз туралы",
+    saveProfile: "Профильді сақтау",
+    saved: "Сақталды!",
+    saving: "Сақталуда...",
+    resetPassword: "Құпия сөзді қалпына келтіру",
+    resetCode: "Қалпына келтіру коды",
+    newPassword: "Жаңа құпия сөз",
   }
 };
 
 function AuthScreen({onAuth}){
   const [mode, setMode]=useState("login");
-  const uiLang = "ru";
+  const [uiLang, setUiLang] = useState(null); // null = language selection, "ru", "en", "kk"
   const [showReset, setShowReset] = useState(false);
   const [step, setStep]=useState(0);
   const [photos, setPhotos] = useState([null, null, null]);
@@ -1960,6 +2132,38 @@ function AuthScreen({onAuth}){
     idealRoommate:"", quietHours:"",
   });
   const [loading, setLoading] = useState(false);
+
+  // Language selection screen
+  if (!uiLang) {
+    return (
+      <div style={{minHeight:"100vh",background:"linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
+        <div style={{textAlign:"center",maxWidth:"500px"}}>
+          <div style={{fontSize:"48px",marginBottom:"24px"}}>🌍</div>
+          <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"42px",fontWeight:700,color:"#fff",marginBottom:"16px",letterSpacing:"-1px"}}>RoommatchKAZ</h1>
+          <p style={{fontSize:"18px",color:"rgba(255,255,255,0.9)",marginBottom:"48px",lineHeight:1.6}}>Выберите язык / Тілді таңдаңыз / Выберите язык</p>
+          
+          <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+            <button onClick={()=>{setUiLang("en");setMode("login");}} style={{padding:"18px 32px",background:"rgba(255,255,255,0.95)",color:"#5a8f6f",border:"none",borderRadius:"16px",fontFamily:"'Geologica', sans-serif",fontSize:"18px",fontWeight:700,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}} onMouseEnter={e=>{e.target.style.transform="translateY(-4px)";e.target.style.boxShadow="0 12px 32px rgba(0,0,0,0.2)";}} onMouseLeave={e=>{e.target.style.transform="translateY(0)";e.target.style.boxShadow="0 8px 24px rgba(0,0,0,0.15)";}}>
+              <span style={{fontSize:"32px"}}>🇬🇧</span>
+              <span>English</span>
+            </button>
+
+            <button onClick={()=>{setUiLang("ru");setMode("login");}} style={{padding:"18px 32px",background:"rgba(255,255,255,0.95)",color:"#5a8f6f",border:"none",borderRadius:"16px",fontFamily:"'Geologica', sans-serif",fontSize:"18px",fontWeight:700,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}} onMouseEnter={e=>{e.target.style.transform="translateY(-4px)";e.target.style.boxShadow="0 12px 32px rgba(0,0,0,0.2)";}} onMouseLeave={e=>{e.target.style.transform="translateY(0)";e.target.style.boxShadow="0 8px 24px rgba(0,0,0,0.15)";}}>
+              <span style={{fontSize:"32px"}}>🇷🇺</span>
+              <span>Русский</span>
+            </button>
+
+            <button onClick={()=>{setUiLang("kk");setMode("login");}} style={{padding:"18px 32px",background:"rgba(255,255,255,0.95)",color:"#5a8f6f",border:"none",borderRadius:"16px",fontFamily:"'Geologica', sans-serif",fontSize:"18px",fontWeight:700,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}} onMouseEnter={e=>{e.target.style.transform="translateY(-4px)";e.target.style.boxShadow="0 12px 32px rgba(0,0,0,0.2)";}} onMouseLeave={e=>{e.target.style.transform="translateY(0)";e.target.style.boxShadow="0 8px 24px rgba(0,0,0,0.15)";}}>
+              <span style={{fontSize:"32px"}}>🇰🇿</span>
+              <span>Қазақша</span>
+            </button>
+          </div>
+
+          <p style={{fontSize:"14px",color:"rgba(255,255,255,0.7)",marginTop:"48px"}}>Вы можете изменить язык позже в настройках</p>
+        </div>
+      </div>
+    );
+  }
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

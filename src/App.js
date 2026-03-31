@@ -905,8 +905,8 @@ const sendChat = async (profileId, text) => {
               transition: "all .4s",
             }}
           />
-          <button style={{padding:"8px 16px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"14px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#2c5f47"; e.target.style.color="#2c5f47";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}} onClick={()=>setAuth(null)} title="Выйти">
-            Выход
+          <button style={{padding:"8px 16px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"14px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#2c5f47"; e.target.style.color="#2c5f47";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}} onClick={()=>setAuth(null)} title={TRANSLATIONS[uiLang]?.logout || "Logout"}>
+            {TRANSLATIONS[uiLang]?.logout || "Logout"}
           </button>
           <div style={{width:"40px",height:"40px",borderRadius:"50%",background:"#5a8f6f",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"14px"}}>{auth.initials}</div>
         </div>
@@ -914,12 +914,19 @@ const sendChat = async (profileId, text) => {
 
       {/* Top Navigation Tabs */}
       <div style={{background:"#fff",borderBottom:"2px solid #e0e0e0",padding:"0",display:"flex",justifyContent:"center",gap:"0",zIndex:"40",position:"sticky",top:"60px"}}>
-        {[["browse", "Обзор"],["swipe","Свайп"],["map","Карта"],["matches","Понрaвилось"],["profile","Профиль"],...(auth?.is_admin ? [["admin","Админ"]] : [])].map(([id,lb])=>(
-          <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
-            <span style={{fontSize:"18px"}}>{id==="browse"?"🏠":id==="swipe"?"💬":id==="map"?"🗺️":id==="matches"?"❤️":id==="profile"?"👤":"🔐"}</span>
-            <span>{lb}</span>
-            {id==="matches"&&liked.size>0&&<span style={{background:"#ff6b6b",color:"#fff",borderRadius:"10px",padding:"2px 6px",fontSize:"11px",fontWeight:"700",marginLeft:"4px"}}>{liked.size}</span>}
-          </button>
+        {[
+          ["browse", TRANSLATIONS[uiLang]?.browse || "Обзор"],
+          ["swipe", TRANSLATIONS[uiLang]?.swipe || "Свайп"],
+          ["map", TRANSLATIONS[uiLang]?.map || "Карта"],
+          ["matches", TRANSLATIONS[uiLang]?.matches || "Понравилось"],
+          ["profile", TRANSLATIONS[uiLang]?.profile || "Профиль"],
+          ...(auth?.is_admin ? [["admin", TRANSLATIONS[uiLang]?.admin || "Админ"]] : [])
+        ].map(([id,lb])=>(
+            <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
+              <span style={{fontSize:"18px"}}>{id==="browse"?"🏠":id==="swipe"?"💬":id==="map"?"🗺️":id==="matches"?"❤️":id==="profile"?"👤":"🔐"}</span>
+              <span>{lb}</span>
+              {id==="matches"&&liked.size>0&&<span style={{background:"#ff6b6b",color:"#fff",borderRadius:"10px",padding:"2px 6px",fontSize:"11px",fontWeight:"700",marginLeft:"4px"}}>{liked.size}</span>}
+            </button>
         ))}
       </div>
 
@@ -961,12 +968,12 @@ const sendChat = async (profileId, text) => {
                 <div style={{display:"flex",alignItems:"center",gap:"16px",flex:1}}>
                   <div style={{fontSize:"28px",flexShrink:0}}>⚠️</div>
                   <div>
-                    <div style={{fontSize:"14px",fontWeight:600,color:"#92400E",marginBottom:"4px"}}>Ваш профиль не верифицирован</div>
-                    <div style={{fontSize:"12px",color:"rgba(146,64,14,0.7)"}}>Загрузите документ для подтверждения личности и получите больше совпадений</div>
+                    <div style={{fontSize:"14px",fontWeight:600,color:"#92400E",marginBottom:"4px"}}>{TRANSLATIONS[uiLang]?.notVerified || "Your profile is not verified"}</div>
+                    <div style={{fontSize:"12px",color:"rgba(146,64,14,0.7)"}}>{TRANSLATIONS[uiLang]?.uploadDoc || "Upload an ID document for verification and get more matches"}</div>
                   </div>
                 </div>
                 <button onClick={()=>setTab("profile")} style={{background:"#92400E",color:"white",border:"none",borderRadius:"12px",padding:"10px 20px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s",whiteSpace:"nowrap",flexShrink:0}}>
-                   Верифицировать сейчас
+                   {TRANSLATIONS[uiLang]?.verifyNow || "Verify Now"}
                 </button>
               </div>
             </div>
@@ -1675,7 +1682,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
 
   return (
     <div className="page"><div style={{maxWidth:"640px",margin:"0 auto"}}>
-      <h1 className="pt" style={{marginBottom:22}}>Мой профиль</h1>
+      <h1 className="pt" style={{marginBottom:22}}>{TRANSLATIONS[uiLang]?.myProfileTitle || "My Profile"}</h1>
       <div className="prof-card">
         <div className="prof-av" style={{margin:"0 auto 16px",width:64,height:64,fontSize:22}}>{auth.initials||auth.avatar||"?"}</div>
         <PhotoUpload photos={photos} onChange={setPhotos} onSaved={handlePhotosSaved} label="Фотографии профиля"/>
@@ -1771,7 +1778,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
         </div>
       </div>
       <button className="btn-primary" style={{marginTop:20,width:"100%",padding:"15px",fontSize:15}} onClick={handleSave} disabled={saving}>
-        {saving?"⏳ Сохранение...":saved?"✅ Сохранено!":"Сохранить профиль"}
+        {saving?"⏳ Сохранение...":saved?"✅ Сохранено!":TRANSLATIONS[uiLang]?.saveProfile || "Save Profile"}
       </button>
       <div style={{height:40}}/>
 
@@ -1940,6 +1947,54 @@ const TRANSLATIONS = {
     resetPassword: "Reset Password",
     resetCode: "Reset Code",
     newPassword: "New Password",
+    browse: "Browse",
+    swipe: "Swipe",
+    map: "Map",
+    matches: "Liked",
+    profile: "Profile",
+    admin: "Admin",
+    logout: "Logout",
+    myProfile: "My Profile",
+    notVerified: "Your profile is not verified",
+    uploadDoc: "Upload an ID document for verification and get more matches",
+    verifyNow: "Verify Now",
+    madeInKazakhstan: "Made in Kazakhstan",
+    findIdealRoommate: "Find Your Perfect Roommate",
+    smartMatching2: "Smart matching by lifestyle, not just budget and size",
+    viewProfiles: "View Profiles",
+    activeUsers: "Active Users",
+    citiesInKazakhstan: "Cities in Kazakhstan",
+    satisfactionRate: "Match Satisfaction Rate",
+    advantages: "Advantages",
+    whyChoose: "Why Choose Roomate.kz",
+    idVerification: "ID Verification",
+    idVerDesc: "Every profile is verified and checked for your safety",
+    seventeenCities: "17 Cities",
+    citiesDesc: "From Almaty to Aktau — covering all of Kazakhstan",
+    threeLangs: "3 Languages",
+    langsDesc: "Chat in Kazakh, Russian or English",
+    quickMatch: "Quick Matching",
+    quickMatchDesc: "Find your perfect roommate in less than a week",
+    compatibility: "Compatibility",
+    compatibilityDesc: "Detailed compatibility analysis by 20+ criteria",
+    compatibleRoommates: "Compatible Roommates",
+    explorProfiles: "Explore Compatible Profiles",
+    compatible: "Compatibility",
+    readyToFind: "Ready to find your ideal roommate?",
+    joinCommunity2: "Join the community of 4,200+ roommates who have already found their perfect match on Roomate.kz",
+    viewOnMap: "View profiles on the map",
+    freeMatches: "Free matches · Verified profiles",
+    verificationStatus: "Verification Status",
+    verified: "✓ Verified",
+    pending: "⏳ Pending",
+    notVerified2: "⚠️ Not verified",
+    saveProfile: "Save Profile",
+    saved: "Saved!",
+    saving: "Saving...",
+    myProfileTitle: "My Profile",
+    verificationTitle: "🔐 Profile Verification",
+    uploadIdDoc: "Upload Document for Verification",
+    successVerification: "✓ Thank you for verifying! Your profile is now verified and you'll get more matches.",
   },
   ru: {
     appName: "RoommatchKAZ",
@@ -2018,6 +2073,54 @@ const TRANSLATIONS = {
     resetPassword: "Сброс пароля",
     resetCode: "Код сброса",
     newPassword: "Новый пароль",
+    browse: "Обзор",
+    swipe: "Свайп",
+    map: "Карта",
+    matches: "Понравилось",
+    profile: "Профиль",
+    admin: "Админ",
+    logout: "Выход",
+    myProfile: "Мой профиль",
+    notVerified: "Ваш профиль не верифицирован",
+    uploadDoc: "Загрузите документ для подтверждения личности и получите больше совпадений",
+    verifyNow: "Верифицировать сейчас",
+    madeInKazakhstan: "Сделано в Казахстане",
+    findIdealRoommate: "Найдите своего идеального соседа",
+    smartMatching2: "Умный подбор по образу жизни, не только по бюджету и площади",
+    viewProfiles: "Посмотрите анкеты",
+    activeUsers: "Активных пользователей",
+    citiesInKazakhstan: "Городов по Казахстану",
+    satisfactionRate: "Удовлетворенность совпадений",
+    advantages: "Преимущества",
+    whyChoose: "Почему выбирают Roomate.kz",
+    idVerification: "Проверка ИИН",
+    idVerDesc: "Каждый профиль проверен и верифицирован для вашей безопасности",
+    seventeenCities: "17 городов",
+    citiesDesc: "От Алматы до Актау — охватываем весь Казахстан",
+    threeLangs: "3 языка",
+    langsDesc: "Общайтесь на казахском, русском или английском",
+    quickMatch: "Быстрый подбор",
+    quickMatchDesc: "Найдите идеального соседя менее чем за неделю",
+    compatibility: "Совместимость",
+    compatibilityDesc: "Детальный анализ совместимости по 20+ критериям",
+    compatibleRoommates: "Совместимые соседи",
+    explorProfiles: "Исследуйте совместимые профили",
+    compatible: "Совместимость",
+    readyToFind: "Готовы найти вашего идеального соседя?",
+    joinCommunity2: "Присоединяйтесь к сообществу более 4,200 соседей по комнате, которые уже нашли идеальное совпадение на Roomate.kz",
+    viewOnMap: "Посмотрите профили на карте",
+    freeMatches: "Бесплатные совпадения · Проверенные профили",
+    verificationStatus: "Статус верификации",
+    verified: "✓ Верифицирован",
+    pending: "⏳ На проверке",
+    notVerified2: "⚠️ Не верифицирован",
+    saveProfile: "Сохранить профиль",
+    saved: "Сохранено!",
+    saving: "Сохранение...",
+    myProfileTitle: "Мой профиль",
+    verificationTitle: "🔐 Проверка профиля",
+    uploadIdDoc: "Загрузить документ для проверки",
+    successVerification: "✓ Спасибо за верификацию! Ваш профиль теперь проверен и вы получите больше совпадений.",
   },
   kk: {
     appName: "RoommatchKAZ",
@@ -2096,6 +2199,54 @@ const TRANSLATIONS = {
     resetPassword: "Құпия сөзді қалпына келтіру",
     resetCode: "Қалпына келтіру коды",
     newPassword: "Жаңа құпия сөз",
+    browse: "Шолу",
+    swipe: "Сырғыт",
+    map: "Карта",
+    matches: "Ұнады",
+    profile: "Профиль",
+    admin: "Админ",
+    logout: "Шығу",
+    myProfile: "Менің профилім",
+    notVerified: "Сіздің профилінің расталмайды",
+    uploadDoc: "Өзіндік сәйкестіліктің құжатын салып тіке және көп сәйкестіліктердіңіз",
+    verifyNow: "Қазір растау",
+    madeInKazakhstan: "Қазақстанда жасалды",
+    findIdealRoommate: "Өзіңіздің ынамдарыңыз табыңыз",
+    smartMatching2: "Ақылды таңдау өмір салты бойынша, тек бюджет және аудан бойынша емес",
+    viewProfiles: "Профильдерді қараңыз",
+    activeUsers: "Белсенді пайдаланушылар",
+    citiesInKazakhstan: "Қазақстандағы қалалары",
+    satisfactionRate: "Сәйкестіліктің қанағаттану деңгейі",
+    advantages: "Артықшылықтары",
+    whyChoose: "Неге Roomate.kz таңдау керек",
+    idVerification: "ИИН тексеру",
+    idVerDesc: "Әр профиль сіздің қауіпсіздігінің өтіп және растамалылан",
+    seventeenCities: "17 қала",
+    citiesDesc: "Алматыдан Актауға дейін — бүкіл Қазақстанды қамқорлаймыз",
+    threeLangs: "3 тіл",
+    langsDesc: "Қазақ, орыс немесе ағылшын тілінде сөйлесіңіз",
+    quickMatch: "Тез сәйкестендіру",
+    quickMatchDesc: "Іс аптадан кем уақытта ынамдарыңыз табыңыз",
+    compatibility: "Сәйкестіліктерді",
+    compatibilityDesc: "20+ критерийі бойынша толық сәйкестіліктердіңіздіңіз талдау",
+    compatibleRoommates: "Сәйкес ынамдар",
+    explorProfiles: "Сәйкес профильдерді зерттеңіз",
+    compatible: "Сәйкестіліктеңіз",
+    readyToFind: "Өзіңіздің ынамдарыңыз табуға дайынсыз бе?",
+    joinCommunity2: "4200-ден асам ынамдарын қауымдастыққа қосылыңыз, олар қазі Roomate.kz-де идеалды сәйкестіліктерін таба алды",
+    viewOnMap: "Профильдерді картада қараңыз",
+    freeMatches: "Бесплатный сәйкестіліктер · Растамалы профильдер",
+    verificationStatus: "Растау күйі",
+    verified: "✓ Растамалы",
+    pending: "⏳ Қараңыз",
+    notVerified2: "⚠️ Растамалы емес",
+    saveProfile: "Профильді сақтау",
+    saved: "Сақталды!",
+    saving: "Сақталуда...",
+    myProfileTitle: "Менің профилім",
+    verificationTitle: "🔐 Профиль растау",
+    uploadIdDoc: "Растауға құжат салыңыз",
+    successVerification: "✓ Растау үшін рахмет! Сіздің профиліңіз қазі растамалы және сіз көп сәйкестіліктерді аласыз.",
   }
 };
 

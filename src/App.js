@@ -12,20 +12,6 @@ import AdminPanel from './components/AdminPanel';
 // internally useRealtimeChat handles all polling via its own fallback.
 import 'leaflet/dist/leaflet.css';
 import ApiClient from './api-client';
-import { useLanguage } from '../i18n';
-
-function MyComponent() {
-  const { t } = useLanguage();
-
-  return (
-    <div>
-      <h1>{t('home.heroTitle')}</h1>
-      <p>{t('profile.perMonth')}</p>
-      {/* With variable substitution: */}
-      <p>{t('matches.writeFirst', { name: 'Айгерим' })}</p>
-    </div>
-  );
-}
 
 
 const api = new ApiClient();

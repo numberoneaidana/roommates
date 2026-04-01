@@ -2795,7 +2795,7 @@ function AuthScreen({onAuth}){
             <div style={{fontSize:"56px",fontWeight:"800",color:"#fff",lineHeight:"1.1",marginBottom:"28px",letterSpacing:"-1px"}}>
                 <>Найдите Идеального <br/><span style={{color:"#A8D5BA"}}>Соседа</span><br/>в Казахстане</>
             </div>
-            <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"0",lineHeight:"1.7",fontWeight:"400"}}>{TRANSLATIONS[uiLang].connectRoommates}</p>
+            <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"0",lineHeight:"1.7",fontWeight:"400"}}>{TRANSLATIONS[uiLang]?.connectRoommates || "Connect with roommates across Kazakhstan"}</p>
           </div>
           
           <div style={{display:"flex",flexDirection:"column",gap:"28px"}}>
@@ -2839,17 +2839,17 @@ function AuthScreen({onAuth}){
           </div>
           
           <div className="fg-form">
-            <label className="fl">{TRANSLATIONS[uiLang].email}</label>
+            <label className="fl">{TRANSLATIONS[uiLang]?.email || "Email"}</label>
             <input className="fi" type="email" placeholder="nomad@almaty.kz" value={form.email} onChange={e=>upd("email",e.target.value)}/>
           </div>
           
           <div className="fg-form" style={{marginBottom:"8px"}}>
-            <label className="fl">{TRANSLATIONS[uiLang].password}</label>
+            <label className="fl">{TRANSLATIONS[uiLang]?.password || "Password"}</label>
             <input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/>
           </div>
           
           <div className="fg-form" style={{marginBottom:"24px"}}>
-            <label className="fl">{TRANSLATIONS[uiLang].prefLanguages}</label>
+            <label className="fl">{TRANSLATIONS[uiLang]?.prefLanguages || "Preferred Languages"}</label>
             <div className="chip-row">
               {["Казахский","Русский","Английский"].map(l=>(
                 <button key={l} className={`chip-sel ${form.languages.includes(l)?"on":""}`} onClick={()=>toggleLang(l)} style={{flex:1,fontSize:"12px",padding:"10px 12px"}}>{l==="Казахский"?"🇰🇿":l==="Русский"?"🇷🇺":"🌍"} {l}</button>
@@ -2858,7 +2858,7 @@ function AuthScreen({onAuth}){
           </div>
           
           <div style={{textAlign:"right",marginBottom:"24px"}}>
-            <span style={{fontSize:"13px",color:"#5a8f6f",cursor:"pointer",fontWeight:"600",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.8"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>setShowReset(true)}>{TRANSLATIONS[uiLang].forgotPassword}</span>
+            <span style={{fontSize:"13px",color:"#5a8f6f",cursor:"pointer",fontWeight:"600",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.8"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>setShowReset(true)}>{TRANSLATIONS[uiLang]?.forgotPassword || "Forgot password?"}</span>
           </div>
           
           <button className="btn-enter-sanctuary" onClick={handleLoginSubmit} disabled={loading}>
@@ -2866,7 +2866,7 @@ function AuthScreen({onAuth}){
           </button>
           
           <p style={{textAlign:"center",fontSize:"13px",color:"#999",marginTop:"28px"}}>
-            {TRANSLATIONS[uiLang].newToNeighborhood} <span style={{color:"#5a8f6f",cursor:"pointer",fontWeight:"700",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.7"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>{setMode("register");setStep(0);}}>{TRANSLATIONS[uiLang].joinCommunity}</span>
+            {TRANSLATIONS[uiLang]?.newToNeighborhood || "New here?"} <span style={{color:"#5a8f6f",cursor:"pointer",fontWeight:"700",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.7"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>{setMode("register");setStep(0);}}>{TRANSLATIONS[uiLang]?.joinCommunity || "Join us"}</span>
           </p>
           
           {showReset && (

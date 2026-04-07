@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage, LanguageSwitcher } from '../i18n';
+import {TRANSLATIONS} from './components/translations.js'
+import { useLanguage } from './languageContext';
 
 function HomePage({ onGetStarted }) {
   const { t } = useLanguage();

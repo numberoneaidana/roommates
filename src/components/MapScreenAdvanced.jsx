@@ -284,7 +284,9 @@ const MapScreenAdvanced = ({
   onLike = () => {},
   conversations = {},
   onSendMessage = () => {},
-  setTab = () => {}
+  setTab = () => {},
+  uiLang = "ru",
+  TRANSLATIONS = {}
 }) => {
   const DEFAULT_CENTER = [43.238, 76.945];
 
@@ -382,12 +384,13 @@ const MapScreenAdvanced = ({
 
   const css = `
     .map-advanced-container {
-      height: calc(100vh - 49px);
+      height: calc(100vh - 68px);
       display: grid;
       grid-template-columns: 400px 1fr;
       grid-template-rows: 70px 1fr;
       position: relative;
       background: ${colors.cream};
+      margin-top: 68px;
     }
     .map-adv-topbar {
       grid-column: 1 / -1;
@@ -636,26 +639,13 @@ const MapScreenAdvanced = ({
             Roomate<span>.kz</span>
           </div>
 
-          {/* Search */}
-          <div className="map-adv-search" style={{ maxWidth: 220 }}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <circle cx="9" cy="9" r="6" stroke={colors.ink30} strokeWidth="1.8" />
-              <path d="M15 15l3 3" stroke={colors.ink30} strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            <input
-              placeholder="Search profiles…"
-              value={searchText}
-              onChange={e => setSearchText(e.target.value)}
-            />
-          </div>
-
           <div className="map-adv-divider" />
 
           {/* Housing filter */}
-          <span className="map-adv-filter-label">Housing</span>
+          <span className="map-adv-filter-label">{TRANSLATIONS[uiLang]?.map?.housing || "Housing"}</span>
           {[
-            { label: 'All', val: null },
-            { label: '🏠 Has', val: true },
+            { label: TRANSLATIONS[uiLang]?.all || "All", val: null },
+            { label: TRANSLATIONS[uiLang]?.yes || "Yes", val: true },
             { label: 'No', val: false }
           ].map(({ label, val }) => (
             <button
@@ -670,11 +660,11 @@ const MapScreenAdvanced = ({
           <div className="map-adv-divider" />
 
           {/* Gender filter */}
-          <span className="map-adv-filter-label">Gender</span>
+          <span className="map-adv-filter-label">{TRANSLATIONS[uiLang]?.gender || "Gender"}</span>
           {[
-            { label: 'All', val: null },
-            { label: '👩 F', val: 'female' },
-            { label: '👨 M', val: 'male' }
+            { label: TRANSLATIONS[uiLang]?.all || "All", val: null },
+            { label: TRANSLATIONS[uiLang]?.female || "Female", val: 'female' },
+            { label: TRANSLATIONS[uiLang]?.male || "Male", val: 'male' }
           ].map(({ label, val }) => (
             <button
               key={String(val)}
@@ -688,31 +678,31 @@ const MapScreenAdvanced = ({
           <div className="map-adv-divider" />
 
           {/* Draw tools */}
-          <span className="map-adv-filter-label">Draw area</span>
+          <span className="map-adv-filter-label">{TRANSLATIONS[uiLang]?.map?.drawArea || "Draw area"}</span>
           <button
             className={`tb-btn ${drawMode === 'freehand' ? 'tb-btn-active' : 'tb-btn-idle'}`}
             onClick={() => toggleDraw('freehand')}
             title="Hold & drag to paint a freehand area"
           >
-            ✏️ Freehand
+            ✏️ {TRANSLATIONS[uiLang]?.map?.drawFreehand || "Freehand"}
           </button>
           <button
             className={`tb-btn ${drawMode === 'polygon' ? 'tb-btn-active' : 'tb-btn-idle'}`}
             onClick={() => toggleDraw('polygon')}
             title="Click points, double-click to close"
           >
-            🔺 Polygon
+            🔺 {TRANSLATIONS[uiLang]?.map?.drawPolygon || "Polygon"}
           </button>
           <button
             className={`tb-btn ${drawMode === 'circle' ? 'tb-btn-active' : 'tb-btn-idle'}`}
             onClick={() => toggleDraw('circle')}
             title="Click & drag to set a circle area"
           >
-            ⭕ Circle
+            ⭕ {TRANSLATIONS[uiLang]?.map?.drawCircle || "Circle"}
           </button>
           {drawnShapes.length > 0 && (
             <button className="tb-btn tb-btn-danger" onClick={clearShapes}>
-              ✕ Clear ({drawnShapes.length})
+              ✕ {TRANSLATIONS[uiLang]?.map?.clearShapes || "Clear"} ({drawnShapes.length})
             </button>
           )}
 
@@ -737,7 +727,7 @@ const MapScreenAdvanced = ({
         {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
         <div className="map-adv-sidebar">
           <div className="map-adv-sidebar-header">
-            <div className="map-adv-sidebar-title">Quick regions</div>
+            <div className="map-adv-sidebar-title">{TRANSLATIONS[uiLang]?.region || "Регионы"}</div>
             <div className="map-adv-regions">
               {popularRegions.map(region => (
                 <div

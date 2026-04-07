@@ -134,11 +134,11 @@ const DashboardLayout = ({
   };
 
   const tabs = [
-    { id: 'browse', icon: '🔍', label: 'Обзор' },
-    { id: 'swipe', icon: '❤️', label: 'Свайп' },
-    { id: 'map', icon: '📍', label: 'Карта' },
-    { id: 'matches', icon: '⭐', label: 'Избранное' },
-    { id: 'profile', icon: '👤', label: 'Профиль' },
+    { id: 'browse', label: 'Обзор' },
+    { id: 'swipe',label: 'Свайп' },
+    { id: 'map',label: 'Карта' },
+    { id: 'matches', label: 'Избранное' },
+    { id: 'profile', label: 'Профиль' },
   ];
 
   return (

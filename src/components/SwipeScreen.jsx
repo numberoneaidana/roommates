@@ -14,7 +14,7 @@ const getInitials = (name) => {
   return (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
 };
 
-const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = () => {}, onLike = () => {}, auth = {} }) => {
+const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = () => {}, onLike = () => {}, auth = {}, uiLang = "ru", TRANSLATIONS = {} }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [mouseDown, setMouseDown] = useState(null);
@@ -68,8 +68,8 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
       <div className="swipe-screen">
         <div className="swipe-empty-state">
           <div className="empty-icon">💚</div>
-          <h2>No more profiles</h2>
-          <p>You've seen everyone in your area. Check back later for new matches!</p>
+          <h2>{TRANSLATIONS[uiLang]?.swipe?.noMoreProfiles || "No more profiles"}</h2>
+          <p>{TRANSLATIONS[uiLang]?.swipe?.checkBack || "You've seen everyone in your area. Check back later for new matches!"}</p>
         </div>
       </div>
     );
@@ -78,8 +78,8 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
   return (
     <div className="swipe-screen">
       <div className="swipe-header">
-        <h1>Find your <em>perfect</em> roommate</h1>
-        <p>Swipe right to like, left to skip</p>
+        <h1>{TRANSLATIONS[uiLang]?.swipe?.title || "Find your perfect roommate"}</h1>
+        <p>{TRANSLATIONS[uiLang]?.swipe?.subtitle || "Swipe right to like, left to skip"}</p>
       </div>
 
       <div className="swipe-container">
@@ -109,34 +109,34 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
                 ))}
                 {currentProfile.verification_status === 'approved' && (
                   <span className="card-tag" style={{background: '#E4F0E0', color: '#7A9E7E', border: '1px solid #C8DEC4'}}>
-                    ✓ Верифицирован
+                    ✓ {TRANSLATIONS[uiLang]?.swipe?.verified || "Verified"}
                   </span>
                 )}
                 {currentProfile.verification_status === 'pending' && (
                   <span className="card-tag" style={{background: '#FEF3C7', color: '#92400E', border: '1px solid rgba(146,64,14,0.2)'}}>
-                    ⏳ На проверке
+                    ⏳ {TRANSLATIONS[uiLang]?.swipe?.pending || "Pending"}
                   </span>
                 )}
               </div>
 
               <div className="card-details">
                 <div className="detail-row">
-                  <span className="label">Age:</span>
+                  <span className="label">{TRANSLATIONS[uiLang]?.swipe?.age || "Age"}:</span>
                   <span className="value">{currentProfile.age}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="label">Occupation:</span>
-                  <span className="value">{currentProfile.occupation || 'Not specified'}</span>
+                  <span className="label">{TRANSLATIONS[uiLang]?.swipe?.occupation || "Occupation"}:</span>
+                  <span className="value">{currentProfile.occupation || TRANSLATIONS[uiLang]?.swipe?.notSpecified || 'Not specified'}</span>
                 </div>
               </div>
 
               <div className="card-bio">
-                {currentProfile.bio || 'No bio yet'}
+                {currentProfile.bio || TRANSLATIONS[uiLang]?.swipe?.noBio || 'No bio yet'}
               </div>
 
               <div className="card-footer">
                 <div className="match-score">
-                  <span className="score-label">Match Score</span>
+                  <span className="score-label">{TRANSLATIONS[uiLang]?.swipe?.matchScore || "Match Score"}</span>
                   <span className="score-value">
                     {Math.round(Math.random() * 30 + 70)}%
                   </span>
@@ -150,7 +150,7 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
           <button
             className="action-btn pass-btn"
             onClick={handleSwipeLeft}
-            title="Skip (Left)"
+            title={TRANSLATIONS[uiLang]?.swipe?.skip || "Skip (Left)"}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M19 5L5 19M5 5L19 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -159,7 +159,7 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
 
           <div className="progress-info">
             <span className="progress-text">
-              {currentIndex + 1} of {availableProfiles.length}
+              {currentIndex + 1} {TRANSLATIONS[uiLang]?.swipe?.of || "of"} {availableProfiles.length}
             </span>
             <div className="progress-bar">
               <div
@@ -172,7 +172,7 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
           <button
             className="action-btn like-btn"
             onClick={handleSwipeRight}
-            title="Like (Right)"
+            title={TRANSLATIONS[uiLang]?.swipe?.like || "Like (Right)"}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
@@ -185,8 +185,8 @@ const SwipeScreen = ({ allProfiles = [], liked = new Set(), onSelectProfile = ()
       </div>
 
       <div className="swipe-instructions">
-        <p>💬 Click card to view full profile</p>
-        <p>👈 ➡️ Drag to swipe or use buttons</p>
+        <p>{TRANSLATIONS[uiLang]?.swipe?.clickCard || "💬 Click card to view full profile"}</p>
+        <p>{TRANSLATIONS[uiLang]?.swipe?.dragSwipe || "👈 ➡️ Drag to swipe or use buttons"}</p>
       </div>
     </div>
   );

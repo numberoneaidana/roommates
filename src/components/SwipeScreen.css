@@ -5,6 +5,7 @@
   align-items: center;
   justify-content: center;
   padding: 48px 20px;
+  padding-top: 68px;
   background: var(--cream, #FAFDF9);
 }
 

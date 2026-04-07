@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import {TRANSLATIONS} from './translations.js';
 
-function HomePage({onGetStarted}) {
+
+function HomePage({onGetStarted, uiLang = "ru", connected, auth, setAuth}) {
   const [scrolled, setScrolled] = useState(false);
   const [visibleElements, setVisibleElements] = useState(new Set());
-
+  const translations = TRANSLATIONS[uiLang] || {};
+  
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -59,31 +62,6 @@ function HomePage({onGetStarted}) {
       <style>{globalStyles}</style>
       <div style={{background: colors.cream, minHeight: '100vh', fontFamily: "'Geologica', sans-serif"}}>
         
-        {/* NAV */}
-        <nav style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 52px', height: '68px', background: 'rgba(250,253,249,0.88)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${colors.matchaLight}`}}>
-          <a href="#!" role = 'button' onClick={(e) => e.preventDefault()}  style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: colors.ink, textDecoration: 'none', letterSpacing: '0.2px'}}>
-            <div style={{width: '32px', height: '32px', borderRadius: '10px', background: colors.matcha, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
-              <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
-                <path d="M8.5 2L14 6.8V15H10.5V11H6.5V15H3V6.8L8.5 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-                <path d="M5.5 5C7 3.2 10 2.8 11.5 4.5C9.5 4.5 7.5 6 7.5 8" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            Roomate<span style={{color: colors.matcha}}>.kz</span>
-          </a>
-
-          <ul style={{display: 'flex', gap: '36px', listStyle: 'none'}}>
-            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Карта</a></li>
-            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Понравилось</a></li>
-            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Профиль</a></li>
-            <li><a href="#!" role="button" onClick={(e) => e.preventDefault()} style={{textDecoration: 'none', color: colors.ink60, fontSize: '0.84rem', fontWeight: 400, transition: 'color 0.2s', letterSpacing: '0.2px'}}>Главная</a></li>
-          </ul>
-
-          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-            <button onClick={onGetStarted} style={{padding: '9px 22px', borderRadius: '100px', border: `1.5px solid ${colors.matchaLight}`, background: 'transparent', color: colors.ink, fontFamily: "'Geologica', sans-serif", fontSize: '0.83rem', fontWeight: 400, cursor: 'pointer', textDecoration: 'none', transition: 'border-color 0.2s, background 0.2s'}}>Войти</button>
-            <button onClick={onGetStarted} style={{padding: '9px 24px', borderRadius: '100px', background: colors.matcha, color: 'white', border: 'none', fontFamily: "'Geologica', sans-serif", fontSize: '0.83rem', fontWeight: 500, cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s, transform 0.2s'}}>Зарегистрироваться</button>
-          </div>
-        </nav>
-
         {/* HERO */}
         <section style={{minHeight: '100vh', paddingTop: '68px', background: colors.cream, position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden'}}>
           {/* Blobs */}
@@ -94,29 +72,29 @@ function HomePage({onGetStarted}) {
           <div style={{position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '80px 56px 80px 72px'}}>
             <div style={{display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.matchaPale, border: `1px solid ${colors.matchaLight}`, padding: '6px 14px', borderRadius: '100px', width: 'fit-content', marginBottom: '36px', fontSize: '0.76rem', fontWeight: 500, color: colors.matcha, letterSpacing: '0.3px', animation: 'softUp 0.8s ease both'}}>
               <span style={{width: '5px', height: '5px', background: colors.matcha, borderRadius: '50%'}}/>
-              🇰🇿 Сделано для Казахстана
+              {translations.home?.madeForKZ || "🇰🇿 Made for Kazakhstan"}
             </div>
 
             <h1 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(3rem, 5vw, 5rem)', fontWeight: 600, lineHeight: 1.0, letterSpacing: '-1.5px', color: colors.ink, marginBottom: '28px', animation: 'softUp 0.8s 0.1s ease both'}}>
-              Найдите своего<br/><em style={{fontStyle: 'italic', color: colors.matcha}}>идеального</em><br/>соседа по комнате
+              {translations.home?.findPerfect || "Find your perfect"}<br/><em style={{fontStyle: 'italic', color: colors.matcha}}>{translations.home?.perfectRoommate || "perfect roommate"}</em><br/>{translations.home?.roommate || "roommate"}
             </h1>
 
             <p style={{fontSize: '1rem', fontWeight: 300, color: colors.ink60, lineHeight: 1.8, maxWidth: '420px', marginBottom: '44px', animation: 'softUp 0.8s 0.2s ease both'}}>
-              От Алматы до Астаны — общайтесь с проверенными соседями по квартире, подходящими по образу жизни.
+              {translations.home?.subtitle || "From Almaty to Astana — connect with verified roommates matched by lifestyle."}
             </p>
 
             <div style={{display: 'flex', gap: '14px', flexWrap: 'wrap', animation: 'softUp 0.8s 0.3s ease both'}}>
               <button onClick={onGetStarted} style={{display: 'inline-flex', alignItems: 'center', gap: '10px', background: colors.ink, color: 'white', padding: '16px 32px', borderRadius: '100px', fontFamily: "'Geologica', sans-serif", fontSize: '0.92rem', fontWeight: 500, textDecoration: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.25s, transform 0.25s'}}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="white" strokeWidth="1.4"/><path d="M11 11L14 14" stroke="white" strokeWidth="1.4" strokeLinecap="round"/></svg>
-                Посмотрите анкеты
+                {translations.home?.browseProfiles || "Browse Profiles"}
               </button>
             </div>
 
             <div style={{display: 'flex', gap: 0, marginTop: '60px', paddingTop: '44px', borderTop: `1px solid ${colors.matchaLight}`, animation: 'softUp 0.8s 0.4s ease both'}}>
               {[
-                {n: '4,200', s: '+', l: 'Активных пользователей'},
-                {n: '17', s: '', l: 'Городов по Казахстану'},
-                {n: '92', s: '%', l: 'Удовлетворенность совпадений'}
+                {n: '4,200', s: '+', l: translations.home?.activeUsers || 'Active Users'},
+                {n: '17', s: '', l: translations.home?.citiesInKZ || 'Cities in Kazakhstan'},
+                {n: '92', s: '%', l: translations.home?.matchSatisfaction || 'Match Satisfaction'}
               ].map((stat, i) => (
                 <div key={i} style={{flex: 1, paddingRight: i < 2 ? '24px' : 0, paddingLeft: i > 0 ? '24px' : 0, borderRight: i < 2 ? `1px solid ${colors.matchaLight}` : 'none'}}>
                   <div style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '2.4rem', fontWeight: 600, color: colors.ink, letterSpacing: '-1px', lineHeight: 1, marginBottom: '4px'}}>
@@ -192,17 +170,17 @@ function HomePage({onGetStarted}) {
             <div>
               <div style={{fontSize: '0.72rem', fontWeight: 500, letterSpacing: '3px', textTransform: 'uppercase', color: colors.matcha, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
                 <span style={{width: '20px', height: '1px', background: colors.matcha}}/>
-                Шаг за шагом
+                {translations.home?.stepByStep || "Step by step"}
               </div>
-              <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>Три шага к вашему <br/> новому соседу</h2>
+              <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>{translations.home?.threeSteps || "Three steps to your new roommate"}<br/> новому соседу</h2>
             </div>
           </div>
 
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px'}}>
             {[
-              {n: 1, h: 'Создайте профиль', d: 'Ответьте на 20 вопросов о вашем образе жизни — сон, чистоплотность, социальные привычки, бюджет. Занимает четыре минуты.'},
-              {n: 2, h: 'Получите совпадения', d: 'Наш алгоритм оценивает более 40 данных и показывает наиболее совместимых людей рядом с вами.'},
-              {n: 3, h: 'Свяжитесь и переезжайте', d: 'Общайтесь на казахском, русском или английском. Все профили проверены по ИИН. Организуйте просмотры. Переезжайте.'}
+              {n: 1, h: translations.home?.step1Title || 'Create Profile', d: translations.home?.step1Desc || 'Answer 20 questions about your lifestyle — sleep schedule, cleanliness, social habits, budget. Takes four minutes.'},
+              {n: 2, h: translations.home?.step2Title || 'Get Matches', d: translations.home?.step2Desc || 'Our algorithm evaluates 40+ data points and shows the most compatible people near you.'},
+              {n: 3, h: translations.home?.step3Title || 'Connect & Move', d: translations.home?.step3Desc || 'Chat in Kazakh, Russian, or English. All profiles verified by ID. Schedule viewings. Move in.'}
             ].map((step, i) => (
               <div key={i} className="reveal" style={{background: colors.white, border: `1px solid ${colors.matchaLight}`, padding: '40px 36px', position: 'relative', transition: 'background 0.3s', borderRadius: i === 0 ? '24px 0 0 24px' : i === 2 ? '0 24px 24px 0' : '0'}}>
                 <div style={{width: '36px', height: '36px', borderRadius: '50%', background: colors.matchaPale, border: `1px solid ${colors.matchaLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cormorant Garamond', serif", fontSize: '1rem', fontWeight: 600, color: colors.matcha, marginBottom: '24px'}}>
@@ -225,10 +203,10 @@ function HomePage({onGetStarted}) {
         {/* TRUST STRIP */}
         <div style={{background: colors.white, borderTop: `1px solid ${colors.matchaLight}`, borderBottom: `1px solid ${colors.matchaLight}`, padding: '48px 72px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', alignItems: 'center'}}>
           {[
-            {h: 'Верифицированные профили', d: 'Каждый пользователь проверен'},
-            {h: 'Совместимость образа жизни', d: 'Оцени своего соседа по 20+ факторам для лучших совпадений'},
-            {h: 'Поддержка 3 языков', d: 'Общайтесь на казахском, русском или английском'},
-            {h: '17 городов в КЗ', d: 'От Алматы до Актау — покрытие по всей стране'}
+            {h: translations.home?.verifiedProfiles || 'Verified Profiles', d: translations.home?.eachUserVerified || 'Each user is verified'},
+            {h: translations.home?.lifestyleMatch || 'Lifestyle Match', d: translations.home?.evaluateOver20 || 'Evaluate your roommate on 20+ factors for best matches'},
+            {h: translations.home?.triLanguageSupport || '3 Language Support', d: translations.home?.chatInThreeLangs || 'Chat in Kazakh, Russian, or English'},
+            {h: translations.home?.coverageCountry || '17 Cities in KZ', d: translations.home?.coverageAll || 'Coverage across the entire country'}
           ].map((item, i) => (
             <div key={i} className="reveal" style={{display: 'flex', alignItems: 'center', gap: '14px'}}>
               <div style={{width: '48px', height: '48px', borderRadius: '14px', background: colors.matchaPale, border: `1px solid ${colors.matchaLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.25s'}}>
@@ -252,9 +230,9 @@ function HomePage({onGetStarted}) {
             <div>
               <div style={{fontSize: '0.72rem', fontWeight: 500, letterSpacing: '3px', textTransform: 'uppercase', color: colors.matcha, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
                 <span style={{width: '20px', height: '1px', background: colors.matcha}}/>
-                REVIEWS
+                {translations.home?.reviews || "REVIEWS"}
               </div>
-              <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>Реальные соседи,<br/>реальные истории</h2>
+              <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>{translations.home?.realStories || "Real roommates, real stories"}</h2>
             </div>
           </div>
 
@@ -299,19 +277,19 @@ function HomePage({onGetStarted}) {
               <div>
                 <div style={{fontSize: '0.72rem', fontWeight: 500, letterSpacing: '3px', textTransform: 'uppercase', color: colors.matcha, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
                   <span style={{width: '20px', height: '1px', background: colors.matcha}}/>
-                  Безопасность
+                  {translations.home?.security || "Security"}
                 </div>
-                <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>Проверенные<br/>профили для вашей<br/>безопасности</h2>
+                <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem, 3.5vw, 3rem)', fontWeight: 600, letterSpacing: '-0.5px', lineHeight: 1.08, color: colors.ink}}>{translations.home?.verifiedForSafety || "Verified profiles for your safety"}</h2>
               </div>
             </div>
 
             <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center', marginBottom: '60px'}}>
               <div style={{display: 'flex', flexDirection: 'column', gap: '24px'}}>
                 {[
-                  {icon: '🛡️', title: 'Проверка ИИН', desc: 'Все профили проверяются по базе ИИН для полной безопасности'},
-                  {icon: '⏱️', title: 'Проверка 24 часа', desc: 'Каждый новый профиль проходит верификацию в течение суток'},
-                  {icon: '🚫', title: 'Блокировка мошенников', desc: 'Система автоматически выявляет и блокирует подозрительные аккаунты'},
-                  {icon: '📱', title: 'Подтверждение номера', desc: 'Обязательная верификация по номеру телефона'}
+                  {icon: '🛡️', title: translations.home?.idVerification || 'ID Verification', desc: translations.home?.allProfilesVerified || 'All profiles verified by ID database for full security'},
+                  {icon: '⏱️', title: translations.home?.verification24h || '24 Hour Verification', desc: translations.home?.eachNewProfile || 'Each new profile is verified within 24 hours'},
+                  {icon: '🚫', title: translations.home?.fraudBlocking || 'Fraud Blocking', desc: translations.home?.systemAutomatically || 'System automatically detects and blocks suspicious accounts'},
+                  {icon: '📱', title: translations.home?.phoneConfirmation || 'Phone Confirmation', desc: translations.home?.requiredPhoneVerification || 'Required phone number verification'}
                 ].map((item, i) => (
                   <div key={i} className="reveal" style={{display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 20px', background: colors.matchaMist, borderRadius: '16px', border: `1px solid ${colors.matchaLight}`, transition: 'all 0.3s'}}>
                     <div style={{fontSize: '1.8rem', flexShrink: 0}}>{item.icon}</div>
@@ -347,9 +325,9 @@ function HomePage({onGetStarted}) {
             {/* Verification Stats */}
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px'}}>
               {[
-                {stat: '100%', label: 'Профилей верифицировано', emoji: '✓'},
-                {stat: '<24ч', label: 'Время проверки', emoji: '⏱️'},
-                {stat: '0%', label: 'Мошеннических профилей', emoji: '🔒'}
+                {stat: translations.home?.percent100Verified || '100%', label: translations.home?.profilesVerified || 'Profiles Verified', emoji: '✓'},
+                {stat: translations.home?.verificationTime || '<24h', label: translations.home?.timeToVerify || 'Verification Time', emoji: '⏱️'},
+                {stat: translations.home?.zeroFraud || '0%', label: translations.home?.fraudProfiles || 'Fraudulent Profiles', emoji: '🔐'}
               ].map((item, i) => (
                 <div key={i} className="reveal" style={{background: colors.matchaMist, border: `1px solid ${colors.matchaLight}`, borderRadius: '24px', padding: '32px 24px', textAlign: 'center', transition: 'all 0.3s', cursor: 'pointer'}} onMouseEnter={(e) => e.currentTarget.style.background = colors.matchaLight} onMouseLeave={(e) => e.currentTarget.style.background = colors.matchaMist}>
                   <div style={{fontSize: '2.4rem', marginBottom: '12px'}}>{item.emoji}</div>
@@ -368,19 +346,19 @@ function HomePage({onGetStarted}) {
             <div style={{position: 'absolute', bottom: '-60px', left: '30%', width: '200px', height: '200px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%'}}/>
             <div>
               <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2.2rem, 3.5vw, 3.2rem)', fontWeight: 600, lineHeight: 1.08, letterSpacing: '-0.5px', color: 'white', marginBottom: '16px'}}>
-               Готов найти<br/>своего <em style={{fontStyle: 'italic', color: 'rgba(255,255,255,0.7)'}}>человека?</em>
+               {translations.home?.readyFind || "Ready to find your person?"}<br/><em style={{fontStyle: 'italic', color: 'rgba(255,255,255,0.7)'}}></em>
               </h2>
               <p style={{fontSize: '0.95rem', fontWeight: 300, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75}}>
-                Присоединяйтесь к более чем 4,200 людям, которые уже используют Roomate.kz для поиска совместимых соседей по комнате по всему Казахстану. Регистрация бесплатна, навсегда.
+                {translations.home?.joinThousands || "Join over 4,200 people already using Roomate.kz to find compatible roommates across Kazakhstan. Sign up free, forever."}
               </p>
             </div>
             <div style={{position: 'relative'}}>
               <button onClick={onGetStarted} style={{width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: colors.white, color: colors.matcha, fontFamily: "'Geologica', sans-serif", fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke={colors.matcha} strokeWidth="1.6" strokeLinecap="round"/></svg>
-                Создайте аккаунт бесплатно
+                {translations.home?.createAccountFree || "Create Account Free"}
               </button>
               <div style={{fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: '10px', textAlign: 'center', fontWeight: 300}}>
-                Оплата не требуется · Проверка в течение 24 часов
+                {translations.home?.noPayment || "No payment required · Verification within 24 hours"}
               </div>
             </div>
           </div>
@@ -396,7 +374,7 @@ function HomePage({onGetStarted}) {
               Roomate<span style={{color: colors.matchaMid}}>.kz</span>
             </a>
             <p style={{fontSize: '0.83rem', fontWeight: 300, color: 'rgba(255,255,255,0.38)', lineHeight: 1.8, marginBottom: '28px'}}>
-              Первый в Казахстане умный сервис по подбору соседей по комнате. Подбор по образу жизни во всех 17 городах, с проверкой ИИН для безопасности.
+              {translations.home?.smartService || "Kazakhstan's first smart roommate matching service. Lifestyle-based matching across all 17 cities, with ID verification for security."}
             </p>
             <div style={{display: 'flex', flexWrap: 'wrap', gap: '7px'}}>
               {['Алматы', 'Астана', 'Шымкент', 'Актау', '+13 городов'].map((city, i) => (
@@ -407,9 +385,9 @@ function HomePage({onGetStarted}) {
             </div>
           </div>
           {[
-{h: 'Жилье', links: ['Поиск комнат', 'Сдать жилье', 'Проверка совместимости', 'Безопасная сделка']},
-{h: 'Локации', links: ['Алматы', 'Астана', 'Шымкент', 'Все города']},
-{h: 'Ресурс', links: ['О проекте', 'Центр доверия', 'Полезные статьи', 'Поддержка']}
+{h: translations.home?.navigation || 'Search Rooms', links: [translations.home?.advertiseProperty || 'Advertise Property', translations.home?.checkCompatibility || 'Check Compatibility', translations.home?.safeDeal || 'Safe Deal']},
+{h: translations.home?.locations || 'Locations', links: [translations.home?.allCities || 'All Cities']},
+{h: translations.home?.resources || 'Resources', links: [translations.home?.aboutProject || 'About Project', translations.home?.trustCenter || 'Trust Center', translations.home?.helpfulArticles || 'Helpful Articles', translations.home?.support || 'Support']}
           ].map((col, i) => (
             <div key={i}>
               <h5 style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '0.95rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: '20px', letterSpacing: '0.3px'}}>
@@ -424,8 +402,8 @@ function HomePage({onGetStarted}) {
           ))}
         </footer>
         <div style={{background: colors.ink, padding: '0 72px 32px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', fontWeight: 300, color: 'rgba(255,255,255,0.18)', paddingTop: '20px'}}>
-          <span>© 2026 Roomate.kz · Астана, Казахстан</span>
-          <span>Политика конфиденциальности · Условия использования</span>
+          <span>{translations.home?.copyright || "© 2026 Roomate.kz · Astana, Kazakhstan"}</span>
+          <span>{translations.home?.policyAnd || "Privacy Policy · Terms of Use"}</span>
         </div>
       </div>
     </>

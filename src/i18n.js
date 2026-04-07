@@ -140,6 +140,10 @@ export const TRANSLATIONS = {
     // HomePage
     home: {
       madeInKazakhstan: '🇰🇿 Made for Kazakhstan',
+      findPerfect: 'Find your perfect',
+      roommate: 'roommate',
+      inKazakhstan: 'in Kazakhstan',
+      connectRoommates: 'Connect with verified roommates across Kazakhstan',
       heroTitle: 'Find your',
       heroTitleItalic: 'perfect',
       heroTitleEnd: 'roommate',
@@ -500,6 +504,10 @@ export const TRANSLATIONS = {
 
     home: {
       madeInKazakhstan: '🇰🇿 Сделано для Казахстана',
+      findPerfect: 'Найдите своего идеального',
+      roommate: 'соседа',
+      inKazakhstan: 'в Казахстане',
+      connectRoommates: 'Общайтесь с проверенными соседями по всему Казахстану',
       heroTitle: 'Найдите своего',
       heroTitleItalic: 'идеального',
       heroTitleEnd: 'соседа по комнате',
@@ -759,7 +767,7 @@ export const TRANSLATIONS = {
       password: 'Құпия сөз',
       rememberMe: 'Мені есте сақта',
       forgotPassword: 'Құпия сөзді ұмыттыңыз ба?',
-      welcomeBack: 'Қайта оралдыңыз',
+      welcomeBack : 'Қош келдіңіз!',
       signInMessage: 'Мінсіз көршіні табу үшін кіріңіз',
       newHere: 'Roomate.kz-ті пайдаланған жоқсыз ба?',
       joinCommunity: 'Қауымдастыққа қосылыңыз',
@@ -781,8 +789,16 @@ export const TRANSLATIONS = {
       networkError: 'Желі қатесі: интернет байланысын тексеріңіз немесе сервер қолжетімді болмауы мүмкін. Қайтадан байқап көріңіз.',
       invalidCredentials: 'Қате email немесе құпия сөз',
       accountNotFound: 'Аккаунт табылмады. Тіркелуіңізді сұраймыз.',
+      loginInYourAccount: 'Өз аккаунтыңызға кіріңіз',
+      
     },
-
+    banner :{
+      findRoommate: 'Мінсіз көршіңізді табыңыз',
+      trueProfiled: 'Тексерілген профильдер · Қазақстан бойынша',
+      interactiveMap: 'Интерактивті карта · 17 қала',
+      lifestyleMatch: 'Сәйкестік негізінде таңдау · 20+ критерий',
+      joinCommunity: 'Қауымдастыққа қосылыңыз',
+    },
     register: {
       stepBasic: 'Негізгі ақпарат',
       stepBasicSub: 'Өзіңіз туралы айтыңыз',
@@ -848,6 +864,10 @@ export const TRANSLATIONS = {
 
     home: {
       madeInKazakhstan: '🇰🇿 Қазақстанда жасалған',
+      findPerfect: 'Өзіңізге мінсіз',
+      roommate: 'бөлме серіктісін',
+      inKazakhstan: 'Қазақстанда табыңыз',
+      connectRoommates: 'Қазақстан бойынша тексерілген бөлме серіктерімен байланысыңыз',
       heroTitle: 'Өзіңізге',
       heroTitleItalic: 'мінсіз',
       heroTitleEnd: 'бөлме серіктесін табыңыз',

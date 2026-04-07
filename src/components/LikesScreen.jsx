@@ -10,7 +10,9 @@ const LikesScreen = ({
   conversations = {},
   onSendMessage = () => {},
   activeChat = null,
-  setActiveChat = () => {}
+  setActiveChat = () => {},
+  uiLang = "ru",
+  TRANSLATIONS = {}
 }) => {
   const [activeFilters, setActiveFilters] = useState({ 'All saved': true });
   const [chatMessageText, setChatMessageText] = useState("");
@@ -83,7 +85,7 @@ const LikesScreen = ({
       justify-content: space-between;
       height: 64px;
       position: sticky;
-      top: 49px;
+      top: 68px;
       z-index: 50;
     }
 
@@ -161,6 +163,7 @@ const LikesScreen = ({
 
     .likes-body {
       padding: 40px 52px;
+      padding-top: 68px;
     }
 
     .likes-section-hd {
@@ -760,43 +763,6 @@ const LikesScreen = ({
     <div>
       <style>{styles}</style>
       <div className="likes-container">
-        {/* TOP BAR */}
-        <div className="likes-topbar">
-          <div className="likes-topbar-left">
-            <div className="likes-topbar-logo">
-              <div style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '8px',
-                background: colors.matcha,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
-                  <path d="M8.5 2L14 6.8V15H10.5V11H6.5V15H3V6.8L8.5 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-                </svg>
-              </div>
-              Roomate<span>.kz</span>
-            </div>
-            <div className="likes-page-title">Saved</div>
-          </div>
-          <div className="likes-topbar-right">
-            <button className="likes-btn-sm">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M1 3H11M3 6H9M5 9H7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              </svg>
-              Filter
-            </button>
-            <button className="likes-btn-sm">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              </svg>
-              Browse more
-            </button>
-            <div className="map-avi">AN</div>
-          </div>
-        </div>
 
         <div className="likes-body">
           {/* MUTUAL MATCHES SECTION */}
@@ -804,9 +770,9 @@ const LikesScreen = ({
             <div style={{ marginBottom: '40px' }}>
               <div className="mutual-strip">
                 <div className="mutual-strip-left">
-                  <div className="mutual-strip-eyebrow">Mutual matches</div>
-                  <div className="mutual-strip-title">They liked you <em>back</em></div>
-                  <div className="mutual-strip-sub">{matchedProfiles.length} {matchedProfiles.length === 1 ? 'person has' : 'people have'} also liked your profile — start a conversation</div>
+                  <div className="mutual-strip-eyebrow">{TRANSLATIONS[uiLang]?.matches?.mutualMatch || "Mutual matches"}</div>
+                  <div className="mutual-strip-title">{TRANSLATIONS[uiLang]?.matches?.title || "They liked you"} <em>back</em></div>
+                  <div className="mutual-strip-sub">{matchedProfiles.length} {matchedProfiles.length === 1 ? TRANSLATIONS[uiLang]?.common?.yes || 'person has' : TRANSLATIONS[uiLang]?.matches?.mutualMatch || 'people have'} {TRANSLATIONS[uiLang]?.matches?.canChat || 'also liked your profile — start a conversation'}</div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '28px', position: 'relative', zIndex: '1' }}>
@@ -825,10 +791,10 @@ const LikesScreen = ({
               <div style={{ marginBottom: '40px' }}>
                 <div className="likes-section-hd">
                   <div>
-                    <div className="likes-section-eyebrow">Your matches</div>
-                    <div className="likes-section-title">People who matched with you</div>
+                    <div className="likes-section-eyebrow">{TRANSLATIONS[uiLang]?.matches?.title || "Your matches"}</div>
+                    <div className="likes-section-title">{TRANSLATIONS[uiLang]?.matches?.subtitle || "People who matched with you"}</div>
                   </div>
-                  <div className="likes-count-badge">{matchedProfiles.length} match{matchedProfiles.length !== 1 ? 'es' : ''}</div>
+                  <div className="likes-count-badge">{matchedProfiles.length} {TRANSLATIONS[uiLang]?.matches?.mutualMatch || 'match'}{matchedProfiles.length !== 1 ? 'es' : ''}</div>
                 </div>
 
                 <div className="likes-grid">
@@ -836,7 +802,7 @@ const LikesScreen = ({
                     <div key={person.id} className="lp-card" style={{ position: 'relative' }}>
                       <div className={`lp-card-visual lpv${(idx % 4) + 1}`}>
                         <div className="lp-avi-large">{getInitials(person.name)}</div>
-                        <div className="lp-mutual-badge">✓ Matched</div>
+                        <div className="lp-mutual-badge">{TRANSLATIONS[uiLang]?.matches?.matched || "✓ Matched"}</div>
                         {/* Show housing badge if they have housing */}
                         {(person.tags || []).some(tag => typeof tag === 'string' && (tag.toLowerCase().includes('жилье') || tag.toLowerCase().includes('housing') || tag.toLowerCase().includes('квартир'))) && (
                           <div style={{
@@ -853,7 +819,7 @@ const LikesScreen = ({
                             alignItems: 'center',
                             gap: '4px'
                           }}>
-                            🏠 Has housing
+                            {TRANSLATIONS[uiLang]?.matches?.hasHousing || "🏠 Has housing"}
                           </div>
                         )}
                         <div className="lp-like-btn liked">
@@ -882,13 +848,13 @@ const LikesScreen = ({
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                               <path d="M2 1H10C10.6 1 11 1.4 11 2V8C11 8.6 10.6 9 10 9H3L1 11V2C1 1.4 1.4 1 2 1Z" fill="currentColor" />
                             </svg>
-                            Message
+                            {TRANSLATIONS[uiLang]?.matches?.message || "Message"}
                           </button>
                           <button 
                             className="lp-btn-profile"
                             onClick={() => onSelectProfile(person)}
                           >
-                            Profile →
+                            {TRANSLATIONS[uiLang]?.matches?.profile || "Profile →"}
                           </button>
                         </div>
                       </div>
@@ -903,9 +869,9 @@ const LikesScreen = ({
                   <div className="likes-section-hd">
                     <div>
                       <div className="likes-section-eyebrow">On the map</div>
-                      <div className="likes-section-title">People with housing available</div>
+                      <div className="likes-section-title">{TRANSLATIONS[uiLang]?.matches?.peopleWithHousing || "People with housing available"}</div>
                     </div>
-                    <div className="likes-count-badge">{matchedWithHousing.length} with housing</div>
+                    <div className="likes-count-badge">{matchedWithHousing.length} {TRANSLATIONS[uiLang]?.matches?.withHousing || "with housing"}</div>
                   </div>
                   <div style={{
                     background: colors.matchaMist,
@@ -914,7 +880,7 @@ const LikesScreen = ({
                     marginBottom: '40px'
                   }}>
                     <p style={{ fontSize: '0.9rem', color: colors.ink60, marginBottom: '16px' }}>
-                      These matched people have indicated they have housing/apartments available. They can be viewed on the map with their locations.
+                      {TRANSLATIONS[uiLang]?.matches?.peopleWithHousingDesc || "These matched people have indicated they have housing/apartments available. They can be viewed on the map with their locations."}
                     </p>
                     <div style={{
                       display: 'flex',
@@ -1113,7 +1079,7 @@ const LikesScreen = ({
                       onMouseEnter={(e) => e.target.style.background = '#6a8e6e'}
                       onMouseLeave={(e) => e.target.style.background = colors.matcha}
                     >
-                      Send
+                      {TRANSLATIONS[uiLang]?.matches?.message || "Send"}
                     </button>
                   </div>
                 </div>
@@ -1123,18 +1089,25 @@ const LikesScreen = ({
 
           {/* FILTER CHIPS */}
           <div className="likes-filter-row">
-            {['All saved (12)', 'People (8)', 'Rooms (4)', 'High match only', 'Near metro', 'Under ₸70k'].map((chip, idx) => (
+            {[
+              { key: 'allSaved', label: TRANSLATIONS[uiLang]?.matches?.allSaved || "All saved (12)" },
+              { key: 'people', label: TRANSLATIONS[uiLang]?.matches?.people || "People (8)" },
+              { key: 'rooms', label: TRANSLATIONS[uiLang]?.matches?.rooms || "Rooms (4)" },
+              { key: 'highMatch', label: TRANSLATIONS[uiLang]?.matches?.highMatchOnly || "High match only", icon: true },
+              { key: 'metro', label: TRANSLATIONS[uiLang]?.matches?.nearMetro || "Near metro" },
+              { key: 'price', label: TRANSLATIONS[uiLang]?.matches?.underPrice || "Under ₸70k" }
+            ].map((chip, idx) => (
               <div
                 key={idx}
-                className={`lf-chip ${activeFilters[chip] ? 'active' : ''}`}
-                onClick={() => setActiveFilters(prev => ({ ...prev, [chip]: !prev[chip] }))}
+                className={`lf-chip ${activeFilters[chip.key] ? 'active' : ''}`}
+                onClick={() => setActiveFilters(prev => ({ ...prev, [chip.key]: !prev[chip.key] }))}
               >
-                {chip === 'High match only' && (
+                {chip.icon && (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                     <path d="M5 1L6 3.5H8.5L6.5 5L7 8L5 6.5L3 8L3.5 5L1.5 3.5H4L5 1Z" stroke="currentColor" strokeWidth="1" />
                   </svg>
                 )}
-                {chip}
+                {chip.label}
               </div>
             ))}
           </div>
@@ -1142,10 +1115,10 @@ const LikesScreen = ({
           {/* LIKED PEOPLE SECTION */}
           <div className="likes-section-hd">
             <div>
-              <div className="likes-section-eyebrow">Saved profiles</div>
-              <div className="likes-section-title">People you liked</div>
+              <div className="likes-section-eyebrow">{TRANSLATIONS[uiLang]?.matches?.savedProfiles || "Saved profiles"}</div>
+              <div className="likes-section-title">{TRANSLATIONS[uiLang]?.matches?.yourLiked || "People you liked"}</div>
             </div>
-            <div className="likes-count-badge">{likedPeople.length} people</div>
+            <div className="likes-count-badge">{likedPeople.length} {TRANSLATIONS[uiLang]?.matches?.people || "people"}</div>
           </div>
 
           <div className="likes-grid">
@@ -1172,10 +1145,10 @@ const LikesScreen = ({
                         <span key={i} className="lp-tag">{tag}</span>
                       ))}
                       {person.verification_status === 'approved' && (
-                        <span className="lp-tag" style={{background: '#E4F0E0', color: '#7A9E7E', border: '1px solid #C8DEC4'}}>✓ Верифицирован</span>
+                        <span className="lp-tag" style={{background: '#E4F0E0', color: '#7A9E7E', border: '1px solid #C8DEC4'}}>✓ {TRANSLATIONS[uiLang]?.matches?.verified || "Verified"}</span>
                       )}
                       {person.verification_status === 'pending' && (
-                        <span className="lp-tag" style={{background: '#FEF3C7', color: '#92400E', border: '1px solid rgba(146,64,14,0.2)'}}>⏳ На проверке</span>
+                        <span className="lp-tag" style={{background: '#FEF3C7', color: '#92400E', border: '1px solid rgba(146,64,14,0.2)'}}>⏳ {TRANSLATIONS[uiLang]?.matches?.pending || "Pending"}</span>
                       )}
                     </div>
                     <div className="lp-card-actions">
@@ -1183,7 +1156,7 @@ const LikesScreen = ({
                         className="lp-btn-profile"
                         onClick={() => onSelectProfile(person)}
                       >
-                        View profile →
+                        {TRANSLATIONS[uiLang]?.matches?.profile || "View profile →"}
                       </button>
                     </div>
                   </div>

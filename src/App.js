@@ -12,7 +12,8 @@ import AdminPanel from './components/AdminPanel';
 // internally useRealtimeChat handles all polling via its own fallback.
 import 'leaflet/dist/leaflet.css';
 import ApiClient from './api-client';
-
+import {TRANSLATIONS} from './components/translations.js'
+import { useLanguage } from './languageContext';
 
 const api = new ApiClient();
 
@@ -455,7 +456,7 @@ function AddressMapSelector({ address, lat, lng, region, onAddressChange, onLoca
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
-
+  const [uiLang, setUiLang] = useState(null); // default to Russian; can be made dynamic based on user preference
   useEffect(() => {
     if (mapInstanceRef.current) return;
 
@@ -539,7 +540,7 @@ function AddressMapSelector({ address, lat, lng, region, onAddressChange, onLoca
         <div ref={mapRef} style={{ width: '100%', height: '300px' }} />
         <div style={{ background: 'linear-gradient(135deg,#fef3c7,#fde68a)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#92400e', fontWeight: '600' }}>
           <span style={{ fontSize: '18px' }}>💡</span>
-          <span>{isGeocoding ? 'Определяю адрес...' : 'Кликните на карту, чтобы указать точное местоположение вашего жилья'}</span>
+          <span>{isGeocoding ? 'Определяю адрес...' : 'Address'}</span>
         </div>
       </div>
     </div>
@@ -558,7 +559,6 @@ export default function App() {
     const token = localStorage.getItem("roommate_kz_token");
     return token ? "loading" : null;
   });
-  const [uiLang, setUiLang] = useState("en"); // Language state for UI translations
   const [showAuthFlow, setShowAuthFlow] = useState(false);
   const [notification, setNotification] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
@@ -571,7 +571,10 @@ export default function App() {
   const [liked, setLiked] = useState(new Set());
   const [sent, setSent] = useState(new Set());
   const [setSentMessages] = useState({});
-
+  const [uiLang, setUiLang] = useState(() => {
+    const saved = localStorage.getItem("roommate_kz_lang");
+    return saved && TRANSLATIONS[saved] ? saved : "ru";
+  });
   const [activeChat, setActiveChat] = useState(null);
   const [selected, setSelected] = useState(null);
   const [msgText, setMsgText] = useState("");
@@ -785,7 +788,53 @@ const sendChat = async (profileId, text) => {
   });
   const likedProfiles = Array.from(likedProfilesMap.values());
 
-  if (!auth && !showAuthFlow) return <HomePage onGetStarted={() => setShowAuthFlow(true)} />;
+  if (!auth && !showAuthFlow) return (
+    <>
+      <nav style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 52px', height: '68px', background: 'rgba(250,253,249,0.88)', backdropFilter: 'blur(20px)', borderBottom: `1px solid #C8DEC4`}}>
+        <a href="#!" style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: '#1C2B1E', textDecoration: 'none', letterSpacing: '0.2px', cursor: 'pointer'}}>
+          <div style={{width: '32px', height: '32px', borderRadius: '10px', background: '#7A9E7E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+              <path d="M8.5 2L14 6.8V15H10.5V11H6.5V15H3V6.8L8.5 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M5.5 5C7 3.2 10 2.8 11.5 4.5C9.5 4.5 7.5 6 7.5 8" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          Roomate<span style={{color: '#7A9E7E'}}>.kz</span>
+        </a>
+
+        <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
+          <div style={{display:"flex",gap:"4px",background:"rgba(200,222,196,0.2)",borderRadius:"100px",padding:"4px 6px"}}>
+            {[["en","EN"],["ru","RU"],["kk","ҚАЗ"]].map(([code,label])=>(
+              <button
+                key={code}
+                onClick={()=>{localStorage.setItem("roommate_kz_lang",code);window.location.reload();}}
+                style={{
+                  padding:"6px 10px",
+                  background:uiLang===code?"#5a8f6f":"transparent",
+                  color:uiLang===code?"white":"#7A9E7E",
+                  border:"none",
+                  borderRadius:"8px",
+                  fontSize:"10px",
+                  fontWeight:uiLang===code?700:500,
+                  cursor:"pointer",
+                  transition:"all 0.2s",
+                  fontFamily:"'Geologica', sans-serif",
+                  letterSpacing:"0.3px"
+                }}
+                title={label}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+            <button onClick={() => setShowAuthFlow(true)} style={{padding: '9px 22px', borderRadius: '100px', border: '1.5px solid #C8DEC4', background: 'transparent', color: '#1C2B1E', fontFamily: "'Geologica', sans-serif", fontSize: '0.83rem', fontWeight: 400, cursor: 'pointer', textDecoration: 'none', transition: 'border-color 0.2s, background 0.2s'}}>{TRANSLATIONS[uiLang]?.login || "Войти"}</button>
+            <button onClick={() => setShowAuthFlow(true)} style={{padding: '9px 24px', borderRadius: '100px', background: '#7A9E7E', color: 'white', border: 'none', fontFamily: "'Geologica', sans-serif", fontSize: '0.83rem', fontWeight: 500, cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s, transform 0.2s'}}>{TRANSLATIONS[uiLang]?.register || "Зарегистрироваться"}</button>
+          </div>
+        </div>
+      </nav>
+      <HomePage onGetStarted={() => setShowAuthFlow(true)} uiLang={uiLang} />
+    </>
+  );
   if (!auth) return <AuthScreen onAuth={setAuth} />;
 
   // Admin only sees verification interface
@@ -894,42 +943,120 @@ const sendChat = async (profileId, text) => {
       
       <style>{notification ? `@keyframes slideInRight { from { opacity: 0; transform: translateX(400px); } to { opacity: 1; transform: translateX(0); } }` : ''}</style>
 
-      {/* Header */}
-      <div style={{background:"#fff",borderBottom:"1px solid #e0e0e0",padding:"16px 40px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:"50",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-        <div style={{fontSize:"20px",fontWeight:"700",color:"#2c5f47",fontFamily:"var(--font-display)"}}>RoommatchKAZ</div>
-        <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
-          <div title={connected ? "Подключено" : "Переподключение…"}
-            style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: connected ? "#4caf50" : "#f59e0b",
-              boxShadow: connected ? "0 0 6px rgba(76,175,80,.7)" : "none",
-              transition: "all .4s",
-            }}
-          />
-          <button style={{padding:"8px 16px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"14px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#2c5f47"; e.target.style.color="#2c5f47";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}} onClick={()=>setAuth(null)} title={TRANSLATIONS[uiLang]?.logout || "Logout"}>
-            {TRANSLATIONS[uiLang]?.logout || "Logout"}
-          </button>
-          <div style={{width:"40px",height:"40px",borderRadius:"50%",background:"#5a8f6f",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"14px"}}>{auth.initials}</div>
-        </div>
-      </div>
+      {/* PERSISTENT NAVBAR */}
+      <nav style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 52px', height: '68px', background: 'rgba(250,253,249,0.88)', backdropFilter: 'blur(20px)', borderBottom: `1px solid #C8DEC4`}}>
+        <a href="#!" style={{display: 'flex', alignItems: 'center', gap: '10px', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: '#1C2B1E', textDecoration: 'none', letterSpacing: '0.2px', cursor: 'pointer'}}>
+          <div style={{width: '32px', height: '32px', borderRadius: '10px', background: '#7A9E7E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+              <path d="M8.5 2L14 6.8V15H10.5V11H6.5V15H3V6.8L8.5 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M5.5 5C7 3.2 10 2.8 11.5 4.5C9.5 4.5 7.5 6 7.5 8" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          Roomate<span style={{color: '#7A9E7E'}}>.kz</span>
+        </a>
 
-      {/* Top Navigation Tabs */}
-      <div style={{background:"#fff",borderBottom:"2px solid #e0e0e0",padding:"0",display:"flex",justifyContent:"center",gap:"0",zIndex:"40",position:"sticky",top:"60px"}}>
-        {[
-          ["browse", TRANSLATIONS[uiLang]?.browse || "Browse"],
-          ["swipe", TRANSLATIONS[uiLang]?.swipe || "Swipe"],
-          ["map", TRANSLATIONS[uiLang]?.map || "Map"],
-          ["matches", TRANSLATIONS[uiLang]?.matches || "Liked"],
-          ["profile", TRANSLATIONS[uiLang]?.profile || "Profile"],
-          ...(auth?.is_admin ? [["admin", TRANSLATIONS[uiLang]?.admin || "Admin"]] : [])
-        ].map(([id,lb])=>(
-            <button key={id} onClick={()=>setTab(id)} style={{padding:"16px 32px",background:"transparent",border:"none",color:tab===id?"#5a8f6f":"#999",fontSize:"15px",fontWeight:tab===id?"700":"500",display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?"3px solid #5a8f6f":"3px solid transparent",marginBottom:"-2px",position:"relative"}} onMouseEnter={e=>{if(tab!==id) e.currentTarget.style.color="#2c5f47";}} onMouseLeave={e=>{if(tab!==id) e.currentTarget.style.color="#999";}}>
-              <span style={{fontSize:"18px"}}>{id==="browse"?"🏠":id==="swipe"?"💬":id==="map"?"🗺️":id==="matches"?"❤️":id==="profile"?"👤":"🔐"}</span>
-              <span>{lb}</span>
-              {id==="matches"&&liked.size>0&&<span style={{background:"#ff6b6b",color:"#fff",borderRadius:"10px",padding:"2px 6px",fontSize:"11px",fontWeight:"700",marginLeft:"4px"}}>{liked.size}</span>}
-            </button>
-        ))}
-      </div>
+        {/* Navigation Tabs - Only show when authenticated */}
+        {auth && (
+          <div style={{display: 'flex', gap: '0', alignItems: 'center'}}>
+            {[
+              { id: 'browse', label:  TRANSLATIONS[uiLang]?.navbar?.home || "Обзор" },
+              { id: 'swipe', label: TRANSLATIONS[uiLang]?.navbar?.swipe || "Свайп" },
+              { id: 'map', label: TRANSLATIONS[uiLang]?.navbar?.map || "Карта" },
+              { id: 'matches', label: TRANSLATIONS[uiLang]?.navbar?.matches || "Избранное" },
+              { id: 'profile', label: TRANSLATIONS[uiLang]?.navbar?.profile || "Профиль" },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                style={{
+                  padding: '16px 24px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: tab === id ? '#7A9E7E' : 'rgba(28,43,30,0.6)',
+                  fontSize: '14px',
+                  fontWeight: tab === id ? '700' : '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  borderBottom: tab === id ? `3px solid #7A9E7E` : '3px solid transparent',
+                  marginBottom: '-2px',
+                  whiteSpace: 'nowrap',
+                  fontFamily: "'Geologica', sans-serif",
+                }}
+                onMouseEnter={(e) => {
+                  if (tab !== id) {
+                    e.currentTarget.style.color = '#7A9E7E';
+                    e.currentTarget.style.background = 'rgba(200,222,196,0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (tab !== id) {
+                    e.currentTarget.style.color = 'rgba(28,43,30,0.6)';
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Right Section */}
+        <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
+          {/* Language Switcher */}
+          <div style={{display:"flex",gap:"4px",background:"rgba(200,222,196,0.2)",borderRadius:"100px",padding:"4px 6px"}}>
+            {[["en","EN"],["ru","RU"],["kk","ҚАЗ"]].map(([code,label])=>(
+              <button
+                key={code}
+                onClick={()=>{localStorage.setItem("roommate_kz_lang",code);window.location.reload();}}
+                style={{
+                  padding:"6px 10px",
+                  background:uiLang===code?"#5a8f6f":"transparent",
+                  color:uiLang===code?"white":"#7A9E7E",
+                  border:"none",
+                  borderRadius:"8px",
+                  fontSize:"10px",
+                  fontWeight:uiLang===code?700:500,
+                  cursor:"pointer",
+                  transition:"all 0.2s",
+                  fontFamily:"'Geologica', sans-serif",
+                  letterSpacing:"0.3px"
+                }}
+                title={label}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {auth ? (
+            <>
+              <div title={connected ? "Подключено" : "Переподключение…"}
+                style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: connected ? "#4caf50" : "#f59e0b",
+                  boxShadow: connected ? "0 0 6px rgba(76,175,80,.7)" : "none",
+                  transition: "all .4s",
+                }}
+              />
+              <button style={{padding:"8px 16px",background:"transparent",border:"1px solid #e0e0e0",borderRadius:"8px",color:"#666",fontSize:"14px",fontWeight:"600",cursor:"pointer",transition:"all 0.2s"}} onMouseEnter={e=>{e.target.style.borderColor="#2c5f47"; e.target.style.color="#2c5f47";}} onMouseLeave={e=>{e.target.style.borderColor="#e0e0e0"; e.target.style.color="#666";}} onClick={()=>setAuth(null)} title="Выйти">
+                Выход
+              </button>
+              <div style={{width:"40px",height:"40px",borderRadius:"50%",background:"#5a8f6f",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"14px"}}>{auth.initials}</div>
+            </>
+          ) : (
+            <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+              <button onClick={() => setShowAuthFlow(true)} style={{padding: '9px 22px', borderRadius: '100px', border: '1.5px solid #C8DEC4', background: 'transparent', color: '#1C2B1E', fontFamily: "'Geologica', sans-serif", fontSize: '0.83rem', fontWeight: 400, cursor: 'pointer', textDecoration: 'none', transition: 'border-color 0.2s, background 0.2s'}}>Войти</button>
+              <button onClick={() => setShowAuthFlow(true)} style={{padding: '9px 24px', borderRadius: '100px', background: '#7A9E7E', color: 'white', border: 'none', fontFamily: "'Geologica', sans-serif", fontSize: '0.83rem', fontWeight: 500, cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s, transform 0.2s'}}>Зарегистрироваться</button>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      <style>{notification ? `@keyframes slideInRight { from { opacity: 0; transform: translateX(400px); } to { opacity: 1; transform: translateX(0); } }` : ''}</style>
 
       {tab==="swipe"&&(
         <SwipeScreen
@@ -946,11 +1073,13 @@ const sendChat = async (profileId, text) => {
             } catch(e) { console.warn("likeProfile error:", e.message); }
           }}
           auth={auth}
+          uiLang={uiLang}
+          TRANSLATIONS={TRANSLATIONS}
         />
       )}
 
       {tab==="browse"&&(
-        <div style={{background:"#FAFDF9",minHeight:"100vh"}}>
+        <div style={{background:"#FAFDF9",minHeight:"100vh",paddingTop:"68px"}}>
           <style>{`
             @keyframes softUp {
               from { opacity: 0; transform: translateY(22px); }
@@ -964,194 +1093,24 @@ const sendChat = async (profileId, text) => {
 
           {/* VERIFICATION BANNER */}
           {auth?.verification_status !== 'approved' && (
-            <div style={{background:"linear-gradient(135deg, #FEF3C7 0%, #FEFCE8 100%)",borderBottom:"2px solid #FEF08A",padding:"20px 72px",position:"sticky",top:0,zIndex:45}}>
+            <div style={{background:"linear-gradient(135deg, #FEF3C7 0%, #FEFCE8 100%)",borderBottom:"2px solid #FEF08A",padding:"20px 72px",position:"sticky",top:"68px",zIndex:45}}>
               <div style={{maxWidth:"1200px",margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"24px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"16px",flex:1}}>
                   <div style={{fontSize:"28px",flexShrink:0}}>⚠️</div>
                   <div>
-                    <div style={{fontSize:"14px",fontWeight:600,color:"#92400E",marginBottom:"4px"}}>{TRANSLATIONS[uiLang]?.notVerified || "Your profile is not verified"}</div>
-                    <div style={{fontSize:"12px",color:"rgba(146,64,14,0.7)"}}>{TRANSLATIONS[uiLang]?.uploadDoc || "Upload an ID document for verification and get more matches"}</div>
+                    <div style={{fontSize:"14px",fontWeight:600,color:"#92400E",marginBottom:"4px"}}>Ваш профиль не верифицирован</div>
+                    <div style={{fontSize:"12px",color:"rgba(146,64,14,0.7)"}}>Загрузите документ для подтверждения личности и получите больше совпадений</div>
                   </div>
                 </div>
                 <button onClick={()=>setTab("profile")} style={{background:"#92400E",color:"white",border:"none",borderRadius:"12px",padding:"10px 20px",fontFamily:"'Geologica', sans-serif",fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.2s",whiteSpace:"nowrap",flexShrink:0}}>
-                   {TRANSLATIONS[uiLang]?.verifyNow || "Verify Now"}
+                   Верифицировать сейчас
                 </button>
               </div>
             </div>
           )}
+           <HomePage onGetStarted={() => setShowAuthFlow(true)} uiLang={uiLang} auth={auth} setAuth={setAuth} connected={connected} />;
 
-          {/* HERO SECTION */}
-          <section style={{minHeight:"100vh",padding:"100px 72px",background:"#FAFDF9",position:"relative",display:"grid",gridTemplateColumns:"1fr 1fr",overflow:"hidden",alignItems:"center"}}>
-            {/* Blobs */}
-            <div style={{position:"absolute",width:"600px",height:"600px",borderRadius:"50%",background:"rgba(168,197,160,0.22)",top:"-100px",right:"-100px",filter:"blur(90px)",pointerEvents:"none"}}/>
-            <div style={{position:"absolute",width:"400px",height:"400px",borderRadius:"50%",background:"rgba(200,222,196,0.18)",bottom:0,left:"20%",filter:"blur(90px)",pointerEvents:"none"}}/>
 
-            {/* LEFT CONTENT */}
-            <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",justifyContent:"center",paddingRight:"80px"}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#E4F0E0",border:"1px solid #C8DEC4",padding:"6px 14px",borderRadius:"100px",width:"fit-content",marginBottom:"36px",fontSize:"0.76rem",fontWeight:500,color:"#7A9E7E",letterSpacing:"0.3px",animation:"softUp 0.8s ease both"}}>
-                <span style={{width:"5px",height:"5px",background:"#7A9E7E",borderRadius:"50%"}}/>
-                 Сделано в Казахстане
-              </div>
-
-              <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(3rem, 5vw, 4.5rem)",fontWeight:600,lineHeight:1.1,letterSpacing:"-1.5px",color:"#1C2B1E",marginBottom:"28px",animation:"softUp 0.8s 0.1s ease both"}}>
-                Найдите своего<br/><em style={{fontStyle:"italic",color:"#7A9E7E"}}>идеального</em><br/>соседа
-              </h1>
-
-              <p style={{fontSize:"1rem",fontWeight:300,color:"rgba(28,43,30,0.6)",lineHeight:1.8,maxWidth:"420px",marginBottom:"44px",animation:"softUp 0.8s 0.2s ease both"}}>
-                Умный подбор по образу жизни, не только по бюджету и площади
-              </p>
-
-              <div style={{display:"flex",gap:"14px",flexWrap:"wrap",animation:"softUp 0.8s 0.3s ease both"}}>
-                <button onClick={()=>setTab("map")} style={{display:"inline-flex",alignItems:"center",gap:"10px",background:"#1C2B1E",color:"white",padding:"16px 32px",borderRadius:"100px",fontFamily:"'Geologica', sans-serif",fontSize:"0.92rem",fontWeight:500,textDecoration:"none",border:"none",cursor:"pointer",transition:"background 0.25s, transform 0.25s"}}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="white" strokeWidth="1.4"/><path d="M11 11L14 14" stroke="white" strokeWidth="1.4" strokeLinecap="round"/></svg>
-                  Посмотрите анкеты
-                </button>
-              </div>
-
-              <div style={{display:"flex",gap:0,marginTop:"60px",paddingTop:"44px",borderTop:"1px solid #C8DEC4",animation:"softUp 0.8s 0.4s ease both"}}>
-                {[
-                  {n:"4,200",s:"+",l:"Активных пользователей"},
-                  {n:"17",s:"",l:"Городов по Казахстану"},
-                  {n:"92",s:"%",l:"Удовлетворенность совпадений"}
-                ].map((stat,i)=>(
-                  <div key={i} style={{flex:1,paddingRight:i<2?"24px":0,paddingLeft:i>0?"24px":0,borderRight:i<2?"1px solid #C8DEC4":"none"}}>
-                    <div style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"2.4rem",fontWeight:600,color:"#1C2B1E",letterSpacing:"-1px",lineHeight:1,marginBottom:"4px"}}>
-                      {stat.n}<span style={{color:"#7A9E7E"}}>{stat.s}</span>
-                    </div>
-                    <div style={{fontSize:"0.78rem",fontWeight:300,color:"rgba(28,43,30,0.6)",letterSpacing:"0.3px"}}>{stat.l}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* FEATURES SECTION */}
-          <section style={{padding:"100px 72px",background:"#FFFFFF",borderTop:"1px solid #C8DEC4"}}>
-            <div style={{maxWidth:"1200px",margin:"0 auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"64px"}}>
-                <div>
-                  <div style={{fontSize:"0.72rem",fontWeight:500,letterSpacing:"3px",textTransform:"uppercase",color:"#7A9E7E",marginBottom:"12px",display:"flex",alignItems:"center",gap:"8px"}}>
-                    <span style={{width:"20px",height:"1px",background:"#7A9E7E"}}/>
-                    Преимущества
-                  </div>
-                  <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(2rem, 3.5vw, 3rem)",fontWeight:600,letterSpacing:"-0.5px",lineHeight:1.08,color:"#1C2B1E"}}>Почему выбирают<br/>Roomate.kz</h2>
-                </div>
-              </div>
-
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:"24px",marginBottom:"60px"}}>
-                {[
-                  {icon:"🛡️",title:"Проверка ИИН",desc:"Каждый профиль проверен и верифицирован для вашей безопасности"},
-                  {icon:"🗺️",title:"17 городов",desc:"От Алматы до Актау — охватываем весь Казахстан"},
-                  {icon:"💬",title:"3 языка",desc:"Общайтесь на казахском, русском или английском"},
-                  {icon:"⚡",title:"Быстрый подбор",desc:"Найдите идеального соседа менее чем за неделю"},
-                  {icon:"✨",title:"Совместимость",desc:"Детальный анализ совместимости по 20+ критериям"}
-                ].map((feature,i)=>(
-                  <div key={i} className="reveal" style={{background:"#FAFDF9",border:"1px solid #C8DEC4",borderRadius:"24px",padding:"32px 28px",textAlign:"center",transition:"all 0.3s"}}>
-                    <div style={{fontSize:"2.8rem",marginBottom:"16px"}}>{feature.icon}</div>
-                    <h3 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.1rem",fontWeight:600,color:"#1C2B1E",marginBottom:"8px"}}>{feature.title}</h3>
-                    <p style={{fontSize:"0.85rem",fontWeight:300,color:"rgba(28,43,30,0.6)",lineHeight:1.6}}>{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* FEATURED PROFILES */}
-          <section style={{padding:"100px 72px",background:"#FAFDF9"}}>
-            <div style={{maxWidth:"1200px",margin:"0 auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"64px"}}>
-                <div>
-                  <div style={{fontSize:"0.72rem",fontWeight:500,letterSpacing:"3px",textTransform:"uppercase",color:"#7A9E7E",marginBottom:"12px",display:"flex",alignItems:"center",gap:"8px"}}>
-                    <span style={{width:"20px",height:"1px",background:"#7A9E7E"}}/>
-                    Совместимые соседи
-                  </div>
-                  <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(2rem, 3.5vw, 3rem)",fontWeight:600,letterSpacing:"-0.5px",lineHeight:1.08,color:"#1C2B1E"}}>Исследуйте<br/>совместимые профили</h2>
-                </div>
-              </div>
-
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:"24px",marginBottom:"60px"}}>
-                {allProfiles.slice(0,6).map((profile,idx)=>{
-                  const compatibility = Math.floor(Math.random()*30)+70;
-                  return (
-                    <div key={idx} onClick={()=>{setSelected(profile);setMsgText("");}} style={{background:"#FFFFFF",border:"1px solid #C8DEC4",borderRadius:"24px",padding:"20px",cursor:"pointer",transition:"transform 0.2s, box-shadow 0.2s",position:"relative",overflow:"hidden"}} onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="0 12px 40px rgba(122,158,126,0.15)";}} onMouseLeave={(e)=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 0 0 transparent";}}>
-                      {/* Header with Avatar */}
-                      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
-                        <div style={{width:"44px",height:"44px",borderRadius:"50%",background:"#E4F0E0",border:"2px solid #C8DEC4",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#7A9E7E",flexShrink:0}}>
-                          {(profile.full_name||"").split(" ").map(n=>n[0]).join("").toUpperCase()||"?"}
-                        </div>
-                        <div>
-                          <div style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1rem",fontWeight:600,color:"#1C2B1E",lineHeight:1.2}}>{profile.full_name}</div>
-                          <div style={{fontSize:"0.7rem",fontWeight:300,color:"rgba(28,43,30,0.6)",marginTop:"2px",display:"flex",alignItems:"center",gap:"3px"}}>
-                            📍 {(profile.region||"Казахстан").split(",")[0]}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Tags */}
-                      <div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"14px"}}>
-                        {[profile.gender||"—",profile.housing_type||"—",profile.occupation||"—",(profile.budget_min&&profile.budget_max)?`₸${profile.budget_min/1000 | 0}-${profile.budget_max/1000 | 0}k`:"Не указан"].map((tag,i)=>(
-                          <span key={i} style={{fontSize:"0.65rem",fontWeight:400,padding:"4px 10px",borderRadius:"100px",background:i<2?"#E4F0E0":"#FFFFFF",color:i<2?"#7A9E7E":"rgba(28,43,30,0.6)",border:`1px solid ${i<2?"#C8DEC4":"rgba(28,43,30,0.08)"}`,letterSpacing:"0.2px"}}>
-                            {tag}
-                          </span>
-                        ))}
-                        {profile.verification_status === 'approved' && (
-                          <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#E4F0E0",color:"#7A9E7E",border:"1px solid #C8DEC4",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
-                            ✓ Верифицирован
-                          </span>
-                        )}
-                        {profile.verification_status === 'pending' && (
-                          <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#FEF3C7",color:"#92400E",border:"1px solid rgba(146,64,14,0.2)",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
-                            ⏳ На проверке
-                          </span>
-                        )}
-                        {((!profile.verification_status )||(profile.verification_status === 'rejected')) && (
-                          <span style={{fontSize:"0.7rem",fontWeight:600,padding:"4px 10px",borderRadius:"100px",background:"#FEE2E2",color:"#DC2626",border:"1px solid rgba(220,38,38,0.2)",letterSpacing:"0.2px",display:"flex",alignItems:"center",gap:"4px"}}>
-                            ⚠️ Не верифицирован
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Compatibility Bar */}
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",background:"#F2F8F1",borderRadius:"12px"}}>
-                        <span style={{fontSize:"0.7rem",color:"rgba(28,43,30,0.6)",fontWeight:300,flex:1}}>Совместимость</span>
-                        <div style={{flex:2,height:"4px",background:"#C8DEC4",borderRadius:"2px"}}>
-                          <div style={{height:"100%",borderRadius:"2px",background:"#7A9E7E",width:`${compatibility}%`}}/>
-                        </div>
-                        <span style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"1.1rem",fontWeight:600,color:"#7A9E7E"}}>{compatibility}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          {/* CTA SECTION */}
-          <section style={{padding:"100px 72px",background:"#FFFFFF"}}>
-            <div style={{maxWidth:"1200px",margin:"0 auto"}}>
-              <div style={{background:"linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)",borderRadius:"32px",padding:"80px 72px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"60px",alignItems:"center",position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",top:"-80px",right:"-80px",width:"320px",height:"320px",background:"rgba(255,255,255,0.08)",borderRadius:"50%"}}/>
-                <div style={{position:"absolute",bottom:"-60px",left:"30%",width:"200px",height:"200px",background:"rgba(255,255,255,0.05)",borderRadius:"50%"}}/>
-                <div style={{position:"relative",zIndex:2}}>
-                  <h2 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"clamp(2.2rem, 3.5vw, 3.2rem)",fontWeight:600,lineHeight:1.08,letterSpacing:"-0.5px",color:"white",marginBottom:"16px"}}>
-                    Готовы найти<br/>вашего <em style={{fontStyle:"italic",color:"rgba(255,255,255,0.7)"}}>идеального</em> соседа?
-                  </h2>
-                  <p style={{fontSize:"0.95rem",fontWeight:300,color:"rgba(255,255,255,0.72)",lineHeight:1.75}}>
-                    Присоединяйтесь к сообществу более 4,200 соседей по комнате, которые уже нашли идеальное совпадение на Roomate.kz
-                  </p>
-                </div>
-                <div style={{position:"relative",zIndex:2}}>
-                  <button onClick={()=>setTab("map")} style={{width:"100%",padding:"16px",borderRadius:"14px",border:"none",background:"white",color:"#7A9E7E",fontFamily:"'Geologica', sans-serif",fontSize:"0.92rem",fontWeight:600,cursor:"pointer",transition:"transform 0.2s, box-shadow 0.2s",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="#7A9E7E" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                    Посмотрите профили на карте
-                  </button>
-                  <div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.45)",marginTop:"10px",textAlign:"center",fontWeight:300}}>
-                    Бесплатные совпадения · Проверенные профили
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
       )}
 
@@ -1171,6 +1130,8 @@ const sendChat = async (profileId, text) => {
           conversations={conversations}
           onSendMessage={(profileId, msgText) => sendChat(profileId, msgText)}
           setTab={setTab}
+          uiLang={uiLang}
+          TRANSLATIONS={TRANSLATIONS}
         />
       )}
 
@@ -1191,11 +1152,13 @@ const sendChat = async (profileId, text) => {
           onSendMessage={(profileId, msgText) => sendChat(profileId, msgText)}
           activeChat={activeChat}
           setActiveChat={setActiveChat}
+          uiLang={uiLang}
+          TRANSLATIONS={TRANSLATIONS}
         />
       )}
 
       {tab==="profile"&&(
-        <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} showVerificationModal={showVerificationModal} setShowVerificationModal={setShowVerificationModal} uiLang={uiLang} />
+        <ProfileEditTab auth={auth} setAuth={setAuth} api={api} KZ_REGIONS={KZ_REGIONS} showVerificationModal={showVerificationModal} setShowVerificationModal={setShowVerificationModal} />
       )}
 
       {tab==="admin" && auth?.is_admin && (
@@ -1628,7 +1591,7 @@ export function ProfileModal({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: 
 
 // ── REGISTRATION (MULTI-STEP) ─────────────────────────────────────────────────
 
-function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal, setShowVerificationModal, uiLang }) {
+function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal, setShowVerificationModal }) {
   const [form, setForm] = useState({
     name:auth.name||"",age:auth.age||"",bio:auth.bio||"",occupation:auth.occupation||"",
     region:auth.region||"",budget:auth.budget||"",renter_type:auth.renter_type||"looking",
@@ -1683,7 +1646,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
 
   return (
     <div className="page"><div style={{maxWidth:"640px",margin:"0 auto"}}>
-      <h1 className="pt" style={{marginBottom:22}}>{TRANSLATIONS[uiLang]?.myProfileTitle || "My Profile"}</h1>
+      <h1 className="pt" style={{marginBottom:22}}>Мой профиль</h1>
       <div className="prof-card">
         <div className="prof-av" style={{margin:"0 auto 16px",width:64,height:64,fontSize:22}}>{auth.initials||auth.avatar||"?"}</div>
         <PhotoUpload photos={photos} onChange={setPhotos} onSaved={handlePhotosSaved} label="Фотографии профиля"/>
@@ -1779,7 +1742,7 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
         </div>
       </div>
       <button className="btn-primary" style={{marginTop:20,width:"100%",padding:"15px",fontSize:15}} onClick={handleSave} disabled={saving}>
-        {saving?"⏳ Сохранение...":saved?"✅ Сохранено!":TRANSLATIONS[uiLang]?.saveProfile || "Save Profile"}
+        {saving?"⏳ Сохранение...":saved?"✅ Сохранено!":"Сохранить профиль"}
       </button>
       <div style={{height:40}}/>
 
@@ -1869,563 +1832,12 @@ function ProfileEditTab({ auth, setAuth, api, KZ_REGIONS, showVerificationModal,
   );
 }
 
-
-const TRANSLATIONS = {
-  en: {
-    appName: "RoommatchKAZ",
-    findRoommate: "Find Your Perfect Roommate Today",
-    connectRoommates: "Connect with roommates across Kazakhstan",
-    verifiedRoommates: "Verified Roommates",
-    verifiedDesc: "Find trustworthy people looking for apartments across Kazakhstan",
-    languagePreferences: "Language Preferences",
-    languageDesc: "Chat in Kazakh, Russian or English",
-    smartMatching: "Smart Matching",
-    smartDesc: "Get matched by lifestyle and preferences, not just budget",
-    createProfile: "Create Profile",
-    findPerfectMatch: "Let's find your perfect roommate",
-    logIn: "Login",
-    signUp: "Register",
-    email: "Email",
-    password: "Password",
-    rememberMe: "Remember me",
-    forgotPassword: "Forgot password?",
-    enterSanctuary: "Enter RoommatchKAZ",
-    prefLanguages: "Preferred Languages",
-    next: "Next →",
-    back: "← Back",
-    createBtn: "Create Profile 🎉",
-    creating: "Creating...",
-    welcomeBack: "Welcome Back",
-    signInMessage: "Sign in to find your perfect roommate",
-    newToNeighborhood: "New to RoommatchKAZ?",
-    joinCommunity: "Join the community",
-    alreadyHaveAccount: "Already have an account?",
-    basicInfo: "Basic Information",
-    tellAboutYourself: "Tell us about yourself",
-    name: "Name",
-    age: "Age",
-    gender: "Gender",
-    region: "Region",
-    budget: "Budget (₸/month)",
-    yourSituation: "Your Situation",
-    lookingForPlace: "Looking for apartment",
-    lookingForRoommate: "Looking for roommate",
-    havePlace: "Have apartment",
-    lookingForRoommate2: "Looking for roommate",
-    housing: "Housing & Work",
-    moveInDate: "Move-in Date",
-    remoteWork: "Remote Work",
-    schedule: "Schedule",
-    languages: "Languages",
-    lifestyle: "Lifestyle",
-    finalStep: "Final Step",
-    profession: "Profession / Study",
-    cleanliness: "Cleanliness",
-    sociability: "Sociability",
-    badHabits: "Bad Habits",
-    smoking: "Smoking",
-    alcohol: "Alcohol",
-    pets: "Pets",
-    hasPet: "Have pet",
-    noPet: "No pet",
-    guests: "Guests",
-    noiseLevel: "Noise Level",
-    religion: "Religion",
-    quiet: "Quiet",
-    moderate: "Moderate",
-    loud: "Loud",
-    yes: "Yes",
-    no: "No",
-    never: "Never",
-    rarely: "Rarely",
-    sometimes: "Sometimes",
-    often: "Often",
-    university: "University",
-    aboutYourself: "About Yourself",
-    saveProfile: "Save Profile",
-    saved: "Saved!",
-    saving: "Saving...",
-    resetPassword: "Reset Password",
-    resetCode: "Reset Code",
-    newPassword: "New Password",
-    browse: "Browse",
-    swipe: "Swipe",
-    map: "Map",
-    matches: "Liked",
-    profile: "Profile",
-    admin: "Admin",
-    logout: "Logout",
-    myProfile: "My Profile",
-    notVerified: "Your profile is not verified",
-    uploadDoc: "Upload an ID document for verification and get more matches",
-    verifyNow: "Verify Now",
-    madeInKazakhstan: "Made in Kazakhstan",
-    findIdealRoommate: "Find Your Perfect Roommate",
-    smartMatching2: "Smart matching by lifestyle, not just budget and size",
-    viewProfiles: "View Profiles",
-    activeUsers: "Active Users",
-    citiesInKazakhstan: "Cities in Kazakhstan",
-    satisfactionRate: "Match Satisfaction Rate",
-    advantages: "Advantages",
-    whyChoose: "Why Choose Roomate.kz",
-    idVerification: "ID Verification",
-    idVerDesc: "Every profile is verified and checked for your safety",
-    seventeenCities: "17 Cities",
-    citiesDesc: "From Almaty to Aktau — covering all of Kazakhstan",
-    threeLangs: "3 Languages",
-    langsDesc: "Chat in Kazakh, Russian or English",
-    quickMatch: "Quick Matching",
-    quickMatchDesc: "Find your perfect roommate in less than a week",
-    compatibility: "Compatibility",
-    compatibilityDesc: "Detailed compatibility analysis by 20+ criteria",
-    compatibleRoommates: "Compatible Roommates",
-    explorProfiles: "Explore Compatible Profiles",
-    compatible: "Compatibility",
-    readyToFind: "Ready to find your ideal roommate?",
-    joinCommunity2: "Join the community of 4,200+ roommates who have already found their perfect match on Roomate.kz",
-    viewOnMap: "View profiles on the map",
-    freeMatches: "Free matches · Verified profiles",
-    verificationStatus: "Verification Status",
-    verified: "✓ Verified",
-    pending: "⏳ Pending",
-    notVerified2: "⚠️ Not verified",
-    saveProfile: "Save Profile",
-    saved: "Saved!",
-    saving: "Saving...",
-    myProfileTitle: "My Profile",
-    verificationTitle: "🔐 Profile Verification",
-    uploadIdDoc: "Upload Document for Verification",
-    successVerification: "✓ Thank you for verifying! Your profile is now verified and you'll get more matches.",
-  },
-  ru: {
-    appName: "RoommatchKAZ",
-    findRoommate: "Найдите идеального соседа сегодня",
-    connectRoommates: "Свяжитесь с соседями по всему Казахстану",
-    verifiedRoommates: "Проверенные соседи",
-    verifiedDesc: "Найдите надежных людей в поиске квартир по Казахстану",
-    languagePreferences: "Предпочтения языка",
-    languageDesc: "Общайтесь на казахском, русском или английском языке",
-    smartMatching: "Умное сопоставление",
-    smartDesc: "Подбор соседей на основе стиля жизни и предпочтений",
-    createProfile: "Создайте профиль",
-    findPerfectMatch: "Давайте найдем вашего идеального соседа",
-    logIn: "Вход",
-    signUp: "Регистрация",
-    email: "Email",
-    password: "Пароль",
-    rememberMe: "Запомнить меня",
-    forgotPassword: "Забыли пароль?",
-    enterSanctuary: "Войти в RoommatchKAZ",
-    prefLanguages: "Предпочтительные языки",
-    next: "Далее →",
-    back: "← Назад",
-    createBtn: "Создать профиль 🎉",
-    creating: "Создание...",
-    welcomeBack: "С возвращением",
-    signInMessage: "Войдите, чтобы найти идеального соседа",
-    newToNeighborhood: "Еще не использовали RoommatchKAZ?",
-    joinCommunity: "Присоединяйтесь к сообществу",
-    alreadyHaveAccount: "Уже есть аккаунт?",
-    basicInfo: "Основная информация",
-    tellAboutYourself: "Расскажите нам о себе",
-    name: "Имя",
-    age: "Возраст",
-    gender: "Пол",
-    region: "Регион",
-    budget: "Бюджет (₸/мес)",
-    yourSituation: "Ваша ситуация",
-    lookingForPlace: "Ищу квартиру",
-    lookingForRoommate: "Ищу соседа",
-    havePlace: "Есть квартира",
-    lookingForRoommate2: "Ищу соседа",
-    housing: "Жилье и работа",
-    moveInDate: "Дата заезда",
-    remoteWork: "Удаленная работа",
-    schedule: "График",
-    languages: "Языки",
-    lifestyle: "Образ жизни",
-    finalStep: "Последний шаг",
-    profession: "Профессия / Учеба",
-    cleanliness: "Чистоплотность",
-    sociability: "Общительность",
-    badHabits: "Вредные привычки",
-    smoking: "Курение",
-    alcohol: "Алкоголь",
-    pets: "Питомцы",
-    hasPet: "Есть питомец",
-    noPet: "Нет питомца",
-    guests: "Гости",
-    noiseLevel: "Уровень шума",
-    religion: "Вероисповедание",
-    quiet: "Тихо",
-    moderate: "Умеренно",
-    loud: "Громко",
-    yes: "Да",
-    no: "Нет",
-    never: "Никогда",
-    rarely: "Редко",
-    sometimes: "Иногда",
-    often: "Часто",
-    university: "Университет",
-    aboutYourself: "О себе",
-    saveProfile: "Сохранить профиль",
-    saved: "Сохранено!",
-    saving: "Сохранение...",
-    resetPassword: "Сброс пароля",
-    resetCode: "Код сброса",
-    newPassword: "Новый пароль",
-    browse: "Обзор",
-    swipe: "Свайп",
-    map: "Карта",
-    matches: "Понравилось",
-    profile: "Профиль",
-    admin: "Админ",
-    logout: "Выход",
-    myProfile: "Мой профиль",
-    notVerified: "Ваш профиль не верифицирован",
-    uploadDoc: "Загрузите документ для подтверждения личности и получите больше совпадений",
-    verifyNow: "Верифицировать сейчас",
-    madeInKazakhstan: "Сделано в Казахстане",
-    findIdealRoommate: "Найдите своего идеального соседа",
-    smartMatching2: "Умный подбор по образу жизни, не только по бюджету и площади",
-    viewProfiles: "Посмотрите анкеты",
-    activeUsers: "Активных пользователей",
-    citiesInKazakhstan: "Городов по Казахстану",
-    satisfactionRate: "Удовлетворенность совпадений",
-    advantages: "Преимущества",
-    whyChoose: "Почему выбирают Roomate.kz",
-    idVerification: "Проверка ИИН",
-    idVerDesc: "Каждый профиль проверен и верифицирован для вашей безопасности",
-    seventeenCities: "17 городов",
-    citiesDesc: "От Алматы до Актау — охватываем весь Казахстан",
-    threeLangs: "3 языка",
-    langsDesc: "Общайтесь на казахском, русском или английском",
-    quickMatch: "Быстрый подбор",
-    quickMatchDesc: "Найдите идеального соседя менее чем за неделю",
-    compatibility: "Совместимость",
-    compatibilityDesc: "Детальный анализ совместимости по 20+ критериям",
-    compatibleRoommates: "Совместимые соседи",
-    explorProfiles: "Исследуйте совместимые профили",
-    compatible: "Совместимость",
-    readyToFind: "Готовы найти вашего идеального соседя?",
-    joinCommunity2: "Присоединяйтесь к сообществу более 4,200 соседей по комнате, которые уже нашли идеальное совпадение на Roomate.kz",
-    viewOnMap: "Посмотрите профили на карте",
-    freeMatches: "Бесплатные совпадения · Проверенные профили",
-    verificationStatus: "Статус верификации",
-    verified: "✓ Верифицирован",
-    pending: "⏳ На проверке",
-    notVerified2: "⚠️ Не верифицирован",
-    myProfileTitle: "Мой профиль",
-    verificationTitle: "🔐 Проверка профиля",
-    uploadIdDoc: "Загрузить документ для проверки",
-    successVerification: "✓ Thank you for verifying! Your profile is now verified and you'll get more matches.",
-    mutualMatches: "Mutual Matches",
-    theyLikedYouBack: "They liked you back",
-    tapOpenThenLike: "Tap open, then like their profile — start a conversation",
-    yourMatches: "Your Matches",
-    peopleWhoMatched: "People who matched with you",
-    match: "match",
-    matches2: "matches",
-    savedProfiles: "Saved Profiles",
-    peopleYouLiked: "People you liked",
-    allUsers: "All users",
-    people: "People",
-    rooms: "Rooms",
-    highMatchOnly: "High match only",
-    nearMetro: "Near metro",
-    underPrice: "Under",
-    message: "Message",
-    profileBtn: "Profile",
-    filter: "Filter",
-    browseMore: "Browse more",
-  },
-  ru: {
-    appName: "RoommatchKAZ",
-    findRoommate: "Найдите идеального соседа сегодня",
-    connectRoommates: "Свяжитесь с соседями по всему Казахстану",
-    verifiedRoommates: "Проверенные соседи",
-    verifiedDesc: "Найдите надежных людей в поиске квартир по Казахстану",
-    languagePreferences: "Предпочтения языка",
-    languageDesc: "Общайтесь на казахском, русском или английском языке",
-    smartMatching: "Умное сопоставление",
-    smartDesc: "Подбор соседей на основе стиля жизни и предпочтений",
-    createProfile: "Создайте профиль",
-    findPerfectMatch: "Давайте найдем вашего идеального соседа",
-    logIn: "Вход",
-    signUp: "Регистрация",
-    email: "Email",
-    password: "Пароль",
-    rememberMe: "Запомнить меня",
-    forgotPassword: "Забыли пароль?",
-    enterSanctuary: "Войти в RoommatchKAZ",
-    prefLanguages: "Предпочтительные языки",
-    next: "Далее →",
-    back: "← Назад",
-    createBtn: "Создать профиль 🎉",
-    creating: "Создание...",
-    welcomeBack: "С возвращением",
-    signInMessage: "Войдите, чтобы найти идеального соседа",
-    newToNeighborhood: "Еще не использовали RoommatchKAZ?",
-    joinCommunity: "Присоединяйтесь к сообществу",
-    alreadyHaveAccount: "Уже есть аккаунт?",
-    basicInfo: "Основная информация",
-    tellAboutYourself: "Расскажите нам о себе",
-    name: "Имя",
-    age: "Возраст",
-    gender: "Пол",
-    region: "Регион",
-    budget: "Бюджет (₸/мес)",
-    yourSituation: "Ваша ситуация",
-    lookingForPlace: "Ищу квартиру",
-    lookingForRoommate: "Ищу соседа",
-    havePlace: "Есть квартира",
-    lookingForRoommate2: "Ищу соседа",
-    housing: "Жилье и работа",
-    moveInDate: "Дата заезда",
-    remoteWork: "Удаленная работа",
-    schedule: "График",
-    languages: "Языки",
-    lifestyle: "Образ жизни",
-    finalStep: "Последний шаг",
-    profession: "Профессия / Учеба",
-    cleanliness: "Чистоплотность",
-    sociability: "Общительность",
-    badHabits: "Вредные привычки",
-    smoking: "Курение",
-    alcohol: "Алкоголь",
-    pets: "Питомцы",
-    hasPet: "Есть питомец",
-    noPet: "Нет питомца",
-    guests: "Гости",
-    noiseLevel: "Уровень шума",
-    religion: "Вероисповедание",
-    quiet: "Тихо",
-    moderate: "Умеренно",
-    loud: "Громко",
-    yes: "Да",
-    no: "Нет",
-    never: "Никогда",
-    rarely: "Редко",
-    sometimes: "Иногда",
-    often: "Часто",
-    university: "Университет",
-    aboutYourself: "О себе",
-    saveProfile: "Сохранить профиль",
-    saved: "Сохранено!",
-    saving: "Сохранение...",
-    resetPassword: "Сброс пароля",
-    resetCode: "Код сброса",
-    newPassword: "Новый пароль",
-    browse: "Обзор",
-    swipe: "Свайп",
-    map: "Карта",
-    matches: "Понравилось",
-    profile: "Профиль",
-    admin: "Админ",
-    logout: "Выход",
-    myProfile: "Мой профиль",
-    notVerified: "Ваш профиль не верифицирован",
-    uploadDoc: "Загрузите документ для подтверждения личности и получите больше совпадений",
-    verifyNow: "Верифицировать сейчас",
-    madeInKazakhstan: "Сделано в Казахстане",
-    findIdealRoommate: "Найдите своего идеального соседа",
-    smartMatching2: "Умный подбор по образу жизни, не только по бюджету и площади",
-    viewProfiles: "Посмотрите анкеты",
-    activeUsers: "Активных пользователей",
-    citiesInKazakhstan: "Городов по Казахстану",
-    satisfactionRate: "Удовлетворенность совпадений",
-    advantages: "Преимущества",
-    whyChoose: "Почему выбирают Roomate.kz",
-    idVerification: "Проверка ИИН",
-    idVerDesc: "Каждый профиль проверен и верифицирован для вашей безопасности",
-    seventeenCities: "17 городов",
-    citiesDesc: "От Алматы до Актау — охватываем весь Казахстан",
-    threeLangs: "3 языка",
-    langsDesc: "Общайтесь на казахском, русском или английском",
-    quickMatch: "Быстрый подбор",
-    quickMatchDesc: "Найдите идеального соседя менее чем за неделю",
-    compatibility: "Совместимость",
-    compatibilityDesc: "Детальный анализ совместимости по 20+ критериям",
-    compatibleRoommates: "Совместимые соседи",
-    explorProfiles: "Исследуйте совместимые профили",
-    compatible: "Совместимость",
-    readyToFind: "Готовы найти вашего идеального соседя?",
-    joinCommunity2: "Присоединяйтесь к сообществу более 4,200 соседей по комнате, которые уже нашли идеальное совпадение на Roomate.kz",
-    viewOnMap: "Посмотрите профили на карте",
-    freeMatches: "Бесплатные совпадения · Проверенные профили",
-    verificationStatus: "Статус верификации",
-    verified: "✓ Верифицирован",
-    pending: "⏳ На проверке",
-    notVerified2: "⚠️ Не верифицирован",
-    myProfileTitle: "Мой профиль",
-    verificationTitle: "🔐 Проверка профиля",
-    uploadIdDoc: "Загрузить документ для проверки",
-    successVerification: "✓ Спасибо за верификацию! Ваш профиль теперь проверен и вы получите больше совпадений.",
-    mutualMatches: "Взаимные совпадения",
-    theyLikedYouBack: "Они тоже вам понравились",
-    tapOpenThenLike: "Откройте профиль, затем лайкните — начните общение",
-    yourMatches: "Ваши совпадения",
-    peopleWhoMatched: "Люди, которые совпадают с вами",
-    match: "совпадение",
-    matches2: "совпадения",
-    savedProfiles: "Сохраненные профили",
-    peopleYouLiked: "Люди, которым вы понравились",
-    allUsers: "Все пользователи",
-    people: "Люди",
-    rooms: "Комнаты",
-    highMatchOnly: "Только высокие совпадения",
-    nearMetro: "Рядом с метро",
-    underPrice: "Менее",
-    message: "Сообщение",
-    profileBtn: "Профиль",
-    filter: "Фильтр",
-    browseMore: "Посмотреть еще",
-    appName: "RoommatchKAZ",
-    findRoommate: "Өз ынамдарыңыз бүгін табыңыз",
-    connectRoommates: "Қазақстан бойынша құрдастарға қосылыңыз",
-    verifiedRoommates: "Тексерілген құрдастар",
-    verifiedDesc: "Қазақстан бойынша пәтер іздеп жүрген сенімді адамдарды табыңыз",
-    languagePreferences: "Тіл сайламалары",
-    languageDesc: "Қазақ, орыс немесе ағылшын тілінде сөйлесіңіз",
-    smartMatching: "Ақылды сәйкестендіру",
-    smartDesc: "Бюджет ғана емес, өмір салтына сәйкес сәйкестендіру",
-    createProfile: "Профиль құру",
-    findPerfectMatch: "Өзіңіздің ынамдарыңыз табайық",
-    logIn: "Кіру",
-    signUp: "Тіркелу",
-    email: "Email",
-    password: "Құпия сөз",
-    rememberMe: "Мені есте сақта",
-    forgotPassword: "Құпия сөзді ұмыт пысыңыз бе?",
-    enterSanctuary: "RoommatchKAZ-ға кіріңіз",
-    prefLanguages: "Ұсынылған тілдер",
-    next: "Келесі →",
-    back: "← Артқа",
-    createBtn: "Профиль құру 🎉",
-    creating: "Құрудағы...",
-    welcomeBack: "Қайта оралған сіз",
-    signInMessage: "Өз ынамдарыңыз табу үшін кіріңіз",
-    newToNeighborhood: "RoommatchKAZ-ға жаңалығыңыз?",
-    joinCommunity: "Қауымдастыққа қосылыңыз",
-    alreadyHaveAccount: "Аккаунтыңыз бар ма?",
-    basicInfo: "Негіздеме ақпарат",
-    tellAboutYourself: "Өзіңіз туралы айтыңыз",
-    name: "Атыңыз",
-    age: "Жасы",
-    gender: "Жынысы",
-    region: "Облысы",
-    budget: "Бюджет (₸/ай)",
-    yourSituation: "Өзіңіздің жағдайы",
-    lookingForPlace: "Пәтер іздеп жүрмін",
-    lookingForRoommate: "Құрдас іздеп жүрмін",
-    havePlace: "Пәтер бар",
-    lookingForRoommate2: "Құрдас іздеп жүрмін",
-    housing: "Тынығу орны және жұмысы",
-    moveInDate: "Ауысу күні",
-    remoteWork: "Қашықтан жұмыс",
-    schedule: "Кестесі",
-    languages: "Тілдер",
-    lifestyle: "Өмір салты",
-    finalStep: "Соңғы қадам",
-    profession: "Мамандығы / Оқуы",
-    cleanliness: "Тазалығы",
-    sociability: "Қоршылығы",
-    badHabits: "Ауыр әдеттері",
-    smoking: "Түтін",
-    alcohol: "Спирт",
-    pets: "Үй жануарлары",
-    hasPet: "Үй жануары бар",
-    noPet: "Үй жануары жоқ",
-    guests: "Қонақтар",
-    noiseLevel: "Шу деңгейі",
-    religion: "Дінінің",
-    quiet: "Тыныш",
-    moderate: "Орташа",
-    loud: "Шумды",
-    yes: "Иә",
-    no: "Жоқ",
-    never: "Ешқашан",
-    rarely: "Сирек",
-    sometimes: "Кейде",
-    often: "Құйын",
-    university: "Университеті",
-    aboutYourself: "Өзіңіз туралы",
-    saveProfile: "Профильді сақтау",
-    saved: "Сақталды!",
-    saving: "Сақталуда...",
-    resetPassword: "Құпия сөзді қалпына келтіру",
-    resetCode: "Қалпына келтіру коды",
-    newPassword: "Жаңа құпия сөз",
-    browse: "Шолу",
-    swipe: "Сырғыт",
-    map: "Карта",
-    matches: "Ұнады",
-    profile: "Профиль",
-    admin: "Админ",
-    logout: "Шығу",
-    myProfile: "Менің профилім",
-    notVerified: "Сіздің профилінің расталмайды",
-    uploadDoc: "Өзіндік сәйкестіліктің құжатын салып тіке және көп сәйкестіліктердіңіз",
-    verifyNow: "Қазір растау",
-    madeInKazakhstan: "Қазақстанда жасалды",
-    findIdealRoommate: "Өзіңіздің ынамдарыңыз табыңыз",
-    smartMatching2: "Ақылды таңдау өмір салты бойынша, тек бюджет және аудан бойынша емес",
-    viewProfiles: "Профильдерді қараңыз",
-    activeUsers: "Белсенді пайдаланушылар",
-    citiesInKazakhstan: "Қазақстандағы қалалары",
-    satisfactionRate: "Сәйкестіліктің қанағаттану деңгейі",
-    advantages: "Артықшылықтары",
-    whyChoose: "Неге Roomate.kz таңдау керек",
-    idVerification: "ИИН тексеру",
-    idVerDesc: "Әр профиль сіздің қауіпсіздігінің өтіп және растамалылан",
-    seventeenCities: "17 қала",
-    citiesDesc: "Алматыдан Актауға дейін — бүкіл Қазақстанды қамқорлаймыз",
-    threeLangs: "3 тіл",
-    langsDesc: "Қазақ, орыс немесе ағылшын тілінде сөйлесіңіз",
-    quickMatch: "Тез сәйкестендіру",
-    quickMatchDesc: "Іс аптадан кем уақытта ынамдарыңыз табыңыз",
-    compatibility: "Сәйкестіліктерді",
-    compatibilityDesc: "20+ критерийі бойынша толық сәйкестіліктердіңіздіңіз талдау",
-    compatibleRoommates: "Сәйкес ынамдар",
-    explorProfiles: "Сәйкес профильдерді зерттеңіз",
-    compatible: "Сәйкестіліктеңіз",
-    readyToFind: "Өзіңіздің ынамдарыңыз табуға дайынсыз бе?",
-    joinCommunity2: "4200-ден асам ынамдарын қауымдастыққа қосылыңыз, олар қазі Roomate.kz-де идеалды сәйкестіліктерін таба алды",
-    viewOnMap: "Профильдерді картада қараңыз",
-    freeMatches: "Бесплатный сәйкестіліктер · Растамалы профильдер",
-    verificationStatus: "Растау күйі",
-    verified: "✓ Растамалы",
-    pending: "⏳ Қараңыз",
-    notVerified2: "⚠️ Растамалы емес",
-    myProfileTitle: "Менің профилім",
-    verificationTitle: "🔐 Профиль растау",
-    uploadIdDoc: "Растауға құжат салыңыз",
-    successVerification: "✓ Растау үшін рахмет! Сіздің профиліңіз қазі растамалы және сіз көп сәйкестіліктерді аласыз.",
-    mutualMatches: "Ара сәйкестіліктер",
-    theyLikedYouBack: "Олар сіздің ұнағыңызды",
-    tapOpenThenLike: "Профильді ашыңыз, одан сөйтіп лайк таратыңыз — әңгімелесіңіз",
-    yourMatches: "Сіздің сәйкестіліктеріңіз",
-    peopleWhoMatched: "Сіздің сәйкестіліктеріңіз бар адамдар",
-    match: "сәйкес",
-    matches2: "сәйкестіліктер",
-    savedProfiles: "Сохраняемые профили",
-    peopleYouLiked: "Сіздің ұнағыңыз адамдар",
-    allUsers: "Барлық пайдаланушылар",
-    people: "Адамдар",
-    rooms: "Бөлмелер",
-    highMatchOnly: "Тек жоғары сәйкестіліктер",
-    nearMetro: "Метроның жанында",
-    underPrice: "Аз",
-    message: "Хабарлама",
-    profileBtn: "Профиль",
-    filter: "Сүзгі",
-    browseMore: "Тағы қараңыз",
-  }
-};
-
 function AuthScreen({onAuth}){
   const [mode, setMode]=useState("login");
-  const [uiLang, setUiLang] = useState(null); // null = language selection, "ru", "en", "kk"
+  const [uiLang, setUiLang] = useState(() => {
+    const saved = localStorage.getItem("roommate_kz_lang");
+    return saved && TRANSLATIONS[saved] ? saved : null;
+  }); // null = language selection, "ru", "en", "kk"
   const [showReset, setShowReset] = useState(false);
   const [step, setStep]=useState(0);
   const [photos, setPhotos] = useState([null, null, null]);
@@ -2443,6 +1855,35 @@ function AuthScreen({onAuth}){
   });
   const [loading, setLoading] = useState(false);
 
+  // Language switcher component
+  const LanguageSwitcher = () => (
+    <div style={{display:"flex",gap:"6px",background:"rgba(255,255,255,0.15)",backdropFilter:"blur(10px)",borderRadius:"100px",padding:"4px 6px",border:"1px solid rgba(255,255,255,0.2)"}}>
+      {[["en","EN"],["ru","RU"],["kk","ҚАЗ"]].map(([code,label])=>(
+        <button
+          key={code}
+          onClick={()=>{setUiLang(code);localStorage.setItem("roommate_kz_lang",code);}}
+          style={{
+            padding:"6px 12px",
+            background:uiLang===code?"rgba(255,255,255,0.95)":"transparent",
+            color:uiLang===code?"#5a8f6f":"rgba(255,255,255,0.7)",
+            border:"none",
+            borderRadius:"100px",
+            fontSize:"11px",
+            fontWeight:uiLang===code?700:500,
+            cursor:"pointer",
+            transition:"all 0.2s",
+            fontFamily:"'Geologica', sans-serif",
+            letterSpacing:"0.5px"
+          }}
+          onMouseEnter={e=>{if(uiLang!==code) e.target.style.color="rgba(255,255,255,0.95)"}}
+          onMouseLeave={e=>{if(uiLang!==code) e.target.style.color="rgba(255,255,255,0.7)"}}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
   // Language selection screen
   if (!uiLang) {
     return (
@@ -2452,22 +1893,7 @@ function AuthScreen({onAuth}){
           <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"42px",fontWeight:700,color:"#fff",marginBottom:"16px",letterSpacing:"-1px"}}>RoommatchKAZ</h1>
           <p style={{fontSize:"18px",color:"rgba(255,255,255,0.9)",marginBottom:"48px",lineHeight:1.6}}>Выберите язык / Тілді таңдаңыз / Выберите язык</p>
           
-          <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-            <button onClick={()=>{setUiLang("en");setMode("login");}} style={{padding:"18px 32px",background:"rgba(255,255,255,0.95)",color:"#5a8f6f",border:"none",borderRadius:"16px",fontFamily:"'Geologica', sans-serif",fontSize:"18px",fontWeight:700,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}} onMouseEnter={e=>{e.target.style.transform="translateY(-4px)";e.target.style.boxShadow="0 12px 32px rgba(0,0,0,0.2)";}} onMouseLeave={e=>{e.target.style.transform="translateY(0)";e.target.style.boxShadow="0 8px 24px rgba(0,0,0,0.15)";}}>
-              <span style={{fontSize:"32px"}}>🇬🇧</span>
-              <span>English</span>
-            </button>
 
-            <button onClick={()=>{setUiLang("ru");setMode("login");}} style={{padding:"18px 32px",background:"rgba(255,255,255,0.95)",color:"#5a8f6f",border:"none",borderRadius:"16px",fontFamily:"'Geologica', sans-serif",fontSize:"18px",fontWeight:700,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}} onMouseEnter={e=>{e.target.style.transform="translateY(-4px)";e.target.style.boxShadow="0 12px 32px rgba(0,0,0,0.2)";}} onMouseLeave={e=>{e.target.style.transform="translateY(0)";e.target.style.boxShadow="0 8px 24px rgba(0,0,0,0.15)";}}>
-              <span style={{fontSize:"32px"}}>🇷🇺</span>
-              <span>Русский</span>
-            </button>
-
-            <button onClick={()=>{setUiLang("kk");setMode("login");}} style={{padding:"18px 32px",background:"rgba(255,255,255,0.95)",color:"#5a8f6f",border:"none",borderRadius:"16px",fontFamily:"'Geologica', sans-serif",fontSize:"18px",fontWeight:700,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}} onMouseEnter={e=>{e.target.style.transform="translateY(-4px)";e.target.style.boxShadow="0 12px 32px rgba(0,0,0,0.2)";}} onMouseLeave={e=>{e.target.style.transform="translateY(0)";e.target.style.boxShadow="0 8px 24px rgba(0,0,0,0.15)";}}>
-              <span style={{fontSize:"32px"}}>🇰🇿</span>
-              <span>Қазақша</span>
-            </button>
-          </div>
 
           <p style={{fontSize:"14px",color:"rgba(255,255,255,0.7)",marginTop:"48px"}}>Вы можете изменить язык позже в настройках</p>
         </div>
@@ -2596,56 +2022,56 @@ function AuthScreen({onAuth}){
 
   const upd=(k,v)=>setForm(f=>({...f,[k]:v}));
   const toggleLang=(l)=>setForm(f=>({...f,languages:f.languages.includes(l)?f.languages.filter(x=>x!==l):[...f.languages,l]}));
-  const STEPS=["Основное","Жильё","Образ жизни + О себе"];
+  const STEPS=[TRANSLATIONS[uiLang].main,TRANSLATIONS[uiLang].housing,TRANSLATIONS[uiLang].lifestyle];
 
   const stepContent=()=>{
     if(step===0) return(
       <>
-        <div className="step-title">Основная информация</div>
-        <div className="step-sub">Расскажите немного о себе</div>
+        <div className="step-title">{TRANSLATIONS[uiLang].main}</div>
+        <div className="step-sub">{TRANSLATIONS[uiLang].aboutYourself}</div>
         <div className="grid2">
-          <div className="fg-form"><label className="fl">Имя *</label><input className="fi" placeholder="Айгерим" value={form.name} onChange={e=>upd("name",e.target.value)}/></div>
-          <div className="fg-form"><label className="fl">Возраст *</label><input className="fi" type="number" placeholder="23" value={form.age} onChange={e=>upd("age",e.target.value)}/></div>
+          <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].name} *</label><input className="fi" placeholder="Айгерим" value={form.name} onChange={e=>upd("name",e.target.value)}/></div>
+          <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].age} *</label><input className="fi" type="number" placeholder="23" value={form.age} onChange={e=>upd("age",e.target.value)}/></div>
         </div>
-        <div className="fg-form"><label className="fl">Email *</label><input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/></div>
-        <div className="fg-form"><label className="fl">Пароль *</label><input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/></div>
+        <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].email} *</label><input className="fi" type="email" placeholder="mail@example.com" value={form.email} onChange={e=>upd("email",e.target.value)}/></div>
+        <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].password} *</label><input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/></div>
         <div className="fg-form">
-          <label className="fl">Пол *</label>
+          <label className="fl">{TRANSLATIONS[uiLang].gender} *</label>
           <div className="chip-row">
-            {[["♀ Девушка","female"],["♂ Парень","male"]].map(([l,v])=>(
+            {[[`♀ ${TRANSLATIONS[uiLang].female}`,"female"],[`♂ ${TRANSLATIONS[uiLang].male}`,"male"]].map(([l,v])=>(
               <button key={v} className={`chip-sel ${form.gender===v?"on":""}`} onClick={()=>upd("gender",v)}>{l}</button>
             ))}
           </div>
         </div>
         <div className="grid2">
-          <div className="fg-form"><label className="fl">Регион *</label>
+          <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].region} *</label>
             <select className="fi" value={form.region} onChange={e=>upd("region",e.target.value)}>
-              <option value="">Выберите регион</option>
+              <option value="">{TRANSLATIONS[uiLang].chooseRegion}</option>
               {KZ_REGIONS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
-          <div className="fg-form"><label className="fl">Бюджет (₸/мес) *</label><input className="fi" type="number" placeholder="80000" value={form.budget} onChange={e=>upd("budget",e.target.value)}/></div>
+          <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].budget} *</label><input className="fi" type="number" placeholder="80000" value={form.budget} onChange={e=>upd("budget",e.target.value)}/></div>
         </div>
         <div className="fg-form">
-          <label className="fl">Ваша ситуация *</label>
+          <label className="fl">{TRANSLATIONS[uiLang].yourSituation} *</label>
           <div className="chip-row" style={{gap:"10px"}}>
             <button className={`chip-sel ${form.renterType==="looking"?"on":""}`} onClick={()=>upd("renterType","looking")} style={{flex:1,textAlign:"center",padding:"14px 16px"}}>
-              <div style={{fontSize:"20px",marginBottom:"4px"}}>🔍</div><div style={{fontSize:"13px",fontWeight:"700"}}>Ищу жильё</div><div style={{fontSize:"10px",opacity:".7",marginTop:"2px"}}>Ищу квартиру + соседа</div>
+              <div style={{fontSize:"20px",marginBottom:"4px"}}>🔍</div><div style={{fontSize:"13px",fontWeight:"700"}}>{TRANSLATIONS[uiLang].lookingForPlace}</div><div style={{fontSize:"10px",opacity:".7",marginTop:"2px"}}>{TRANSLATIONS[uiLang].lookingForRoommate}</div>
             </button>
             <button className={`chip-sel ${form.renterType==="has_place"?"on":""}`} onClick={()=>upd("renterType","has_place")} style={{flex:1,textAlign:"center",padding:"14px 16px"}}>
-              <div style={{fontSize:"20px",marginBottom:"4px"}}>🏠</div><div style={{fontSize:"13px",fontWeight:"700"}}>Есть жильё</div><div style={{fontSize:"10px",opacity:".7",marginTop:"2px"}}>Ищу соседа к себе</div>
+              <div style={{fontSize:"20px",marginBottom:"4px"}}>🏠</div><div style={{fontSize:"13px",fontWeight:"700"}}>{TRANSLATIONS[uiLang].havePlace}</div><div style={{fontSize:"10px",opacity:".7",marginTop:"2px"}}>{TRANSLATIONS[uiLang].lookingForRoommate}</div>
             </button>
           </div>
         </div>
         {form.renterType === "has_place" && (
           <div className="fg-form" style={{background:"linear-gradient(135deg,#f0fdf4,var(--accent-light))",padding:"16px",borderRadius:"var(--rs)",border:"2px solid var(--accent)"}}>
-            <label className="fl" style={{color:"var(--accent2)"}}> Адрес вашего жилья *</label>
+            <label className="fl" style={{color:"var(--accent2)"}}> {TRANSLATIONS[uiLang].homeAddress} *</label>
             <input className="fi" placeholder="ул. Абая 150, кв. 45" value={form.address} onChange={e=>upd("address",e.target.value)}/>
             <AddressMapSelector address={form.address} lat={form.lat} lng={form.lng} region={form.region} onAddressChange={(addr) => upd("address", addr)} onLocationChange={(lat, lng) => { setForm(f => ({ ...f, lat, lng })); }}/>
-            <div style={{fontSize:"11px",color:"var(--mid)",marginTop:"6px",lineHeight:"1.5"}}>💡 Вы можете ввести адрес вручную или кликнуть на карту.</div>
+            <div style={{fontSize:"11px",color:"var(--mid)",marginTop:"6px",lineHeight:"1.5"}}>{TRANSLATIONS[uiLang].clickMap}</div>
             {form.lat && form.lng && (
               <div style={{marginTop:'10px',padding:'8px 12px',background:'rgba(255,255,255,.7)',borderRadius:'8px',fontSize:'11px',color:'#666',display:'flex',alignItems:'center',gap:'6px'}}>
-                <span style={{fontSize:'14px'}}>✓</span><span>Координаты: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}</span>
+                <span style={{fontSize:'14px'}}>✓</span><span>{TRANSLATIONS[uiLang].coordinates}: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}</span>
               </div>
             )}
           </div>
@@ -2654,33 +2080,33 @@ function AuthScreen({onAuth}){
     );
     if(step===1) return(
       <>
-        <div className="step-title">Жильё и работа</div>
-        <div className="step-sub">Ваши условия и требования</div>
+        <div className="step-title">{TRANSLATIONS[uiLang].workAndHome}</div>
+        <div className="step-sub">{TRANSLATIONS[uiLang].yourConditions}</div>
         {form.renterType === "looking" && (
-          <div className="fg-form"><label className="fl">Дата заезда</label><input className="fi" type="date" value={form.move_in} onChange={e=>upd("move_in",e.target.value)}/></div>
+          <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].moveInDate}</label><input className="fi" type="date" value={form.move_in} onChange={e=>upd("move_in",e.target.value)}/></div>
         )}
         {form.renterType === "has_place" && (
           <div className="fg-form" style={{background:"linear-gradient(135deg,#f0fdf4,var(--accent-light))",padding:"16px",borderRadius:"var(--rs)",border:"2px solid var(--accent)"}}>
-            <label className="fl" style={{color:"var(--accent2)"}}>📍 Адрес вашего жилья *</label>
+            <label className="fl" style={{color:"var(--accent2)"}}> {TRANSLATIONS[uiLang].homeAddress} *</label>
             <input className="fi" placeholder="ул. Абая 150, кв. 45" value={form.address} onChange={e=>upd("address",e.target.value)}/>
             <AddressMapSelector address={form.address} lat={form.lat} lng={form.lng} region={form.region} onAddressChange={(addr) => upd("address", addr)} onLocationChange={(lat, lng) => { setForm(f => ({ ...f, lat, lng })); }}/>
-            <div style={{fontSize:"11px",color:"var(--mid)",marginTop:"6px",lineHeight:"1.5"}}>💡 Вы можете ввести адрес вручную или кликнуть на карту.</div>
+            <div style={{fontSize:"11px",color:"var(--mid)",marginTop:"6px",lineHeight:"1.5"}}>{TRANSLATIONS[uiLang].clickMap}</div>
             {form.lat && form.lng && (
               <div style={{marginTop:'10px',padding:'8px 12px',background:'rgba(255,255,255,.7)',borderRadius:'8px',fontSize:'11px',color:'#666',display:'flex',alignItems:'center',gap:'6px'}}>
-                <span style={{fontSize:'14px'}}>✓</span><span>Координаты: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}</span>
+                <span style={{fontSize:'14px'}}>✓</span><span>{TRANSLATIONS[uiLang].coordinates}: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}</span>
               </div>
             )}
           </div>
         )}
         <div className="fg-form">
-          <label className="fl">Удалённая работа</label>
+          <label className="fl">{TRANSLATIONS[uiLang].remoteWork}</label>
           <div className="chip-row">
-            <button className={`chip-sel ${form.remote?"on":""}`} onClick={()=>upd("remote",true)}>💻 Да</button>
-            <button className={`chip-sel ${!form.remote?"on":""}`} onClick={()=>upd("remote",false)}>🏢 Нет</button>
+            <button className={`chip-sel ${form.remote?"on":""}`} onClick={()=>upd("remote",true)}>💻 {TRANSLATIONS[uiLang].yes}</button>
+            <button className={`chip-sel ${!form.remote?"on":""}`} onClick={()=>upd("remote",false)}>🏢 {TRANSLATIONS[uiLang].no}</button>
           </div>
         </div>
         <div className="fg-form">
-          <label className="fl">Режим дня</label>
+          <label className="fl">{TRANSLATIONS[uiLang].rezhim}</label>
           <div className="chip-row">
             {[["🌅 Жаворонок","Жаворонок"],["🌙 Сова","Сова"],["🔄 Гибкий","Гибкий"]].map(([l,v])=>(
               <button key={v} className={`chip-sel ${form.schedule===v?"on":""}`} onClick={()=>upd("schedule",v)}>{l}</button>
@@ -2688,7 +2114,7 @@ function AuthScreen({onAuth}){
           </div>
         </div>
         <div className="fg-form">
-          <label className="fl">Языки</label>
+          <label className="fl">{TRANSLATIONS[uiLang].languages}</label>
           <div className="chip-row">
             {["Казахский","Русский","Английский"].map(l=>(
               <button key={l} className={`chip-sel ${form.languages.includes(l)?"on":""}`} onClick={()=>toggleLang(l)}>{l==="Казахский"?"🇰🇿":l==="Русский"?"🇷🇺":"🌍"} {l}</button>
@@ -2708,9 +2134,9 @@ function AuthScreen({onAuth}){
     );
     if(step===2) return(
       <>
-        <div className="step-title">Образ жизни + О себе</div>
-        <div className="step-sub">Финальный шаг для лучших smart-рекомендаций</div>
-        <div className="fg-form"><label className="fl">Профессия / учёба</label><input className="fi" placeholder="Студентка, дизайнер, врач…" value={form.occupation} onChange={e=>upd("occupation",e.target.value)}/></div>
+        <div className="step-title">{TRANSLATIONS[uiLang].lifestyle}</div>
+        <div className="step-sub">{TRANSLATIONS[uiLang].finalStep}</div>
+        <div className="fg-form"><label className="fl">{TRANSLATIONS[uiLang].profession}</label><input className="fi" placeholder="Студентка, дизайнер, врач…" value={form.occupation} onChange={e=>upd("occupation",e.target.value)}/></div>
         {form.studyWork === "Учёба" && (
           <div className="fg-form">
             <label className="fl">Университет</label>
@@ -2720,46 +2146,46 @@ function AuthScreen({onAuth}){
             </select>
           </div>
         )}
-        {[["Чистоплотность","cleanliness",["😕 Нет","😐 Средне","🙂 Хорошо","😊 Очень","✨ Идеал"]],["Общительность","social",["🤫 Тихоня","😐 Средне","🙂 Общаюсь","😄 Активный","🎉 Тусовщик"]]].map(([l,k,labels])=>(
+        {[[TRANSLATIONS[uiLang].cleanliness,"cleanliness",["😕 Нет","😐 Средне","🙂 Хорошо","😊 Очень","✨ Идеал"]],[TRANSLATIONS[uiLang].sociability,"sociability",["🤫 Тихоня","😐 Средне","🙂 Общаюсь","😄 Активный","🎉 Тусовщик"]]].map(([l,k,labels])=>(
           <div className="fg-form" key={k}>
             <label className="fl">{l}: <span style={{color:"var(--accent)",fontWeight:"700"}}>{labels[form[k]-1]}</span></label>
             <input type="range" className="frange" min={1} max={5} value={form[k]} onChange={e=>upd(k,+e.target.value)}/>
           </div>
         ))}
         <div className="fg-form">
-          <label className="fl">Вредные привычки</label>
+          <label className="fl">{TRANSLATIONS[uiLang].badHabitsDesc}</label>
           <div className="chip-row">
-            <button className={`chip-sel ${form.smoking?"on":""}`} onClick={()=>upd("smoking",!form.smoking)}>🚬 Курю</button>
-            <button className={`chip-sel ${form.alcohol?"on":""}`} onClick={()=>upd("alcohol",!form.alcohol)}>🍷 Пью алкоголь</button>
+            <button className={`chip-sel ${form.smoking?"on":""}`} onClick={()=>upd("smoking",!form.smoking)}>🚬 {TRANSLATIONS[uiLang].smoking}</button>
+            <button className={`chip-sel ${form.alcohol?"on":""}`} onClick={()=>upd("alcohol",!form.alcohol)}>🍷 {TRANSLATIONS[uiLang].alcohol}</button>
           </div>
         </div>
         <div className="fg-form">
-          <label className="fl">Питомцы</label>
+          <label className="fl">{TRANSLATIONS[uiLang].pets}</label>
           <div className="chip-row">
-            <button className={`chip-sel ${form.pets?"on":""}`} onClick={()=>upd("pets",true)}>🐾 Есть питомец</button>
-            <button className={`chip-sel ${!form.pets?"on":""}`} onClick={()=>upd("pets",false)}>🚫 Нет питомца</button>
+            <button className={`chip-sel ${form.pets?"on":""}`} onClick={()=>upd("pets",true)}>🐾 {TRANSLATIONS[uiLang].hasPet}</button>
+            <button className={`chip-sel ${!form.pets?"on":""}`} onClick={()=>upd("pets",false)}>🚫 {TRANSLATIONS[uiLang].noPet}</button>
           </div>
         </div>
         <div className="fg-form">
-          <label className="fl">Гости</label>
+          <label className="fl">{TRANSLATIONS[uiLang].guests}</label>
           <div className="chip-row">
-            {[["Никогда","Никогда"],["Редко","Редко"],["Иногда","Иногда"],["Часто","Часто"]].map(([l,v])=>(
+            {[[TRANSLATIONS[uiLang].never, "never"], [TRANSLATIONS[uiLang].rarely, "rarely"], [TRANSLATIONS[uiLang].sometimes, "sometimes"], [TRANSLATIONS[uiLang].often, "often"]].map(([l,v])=>(
               <button key={v} className={`chip-sel ${form.guests===v?"on":""}`} onClick={()=>upd("guests",v)}>{l}</button>
             ))}
           </div>
         </div>
         <div className="fg-form">
-          <label className="fl">Уровень шума дома</label>
+          <label className="fl">{TRANSLATIONS[uiLang].noiseLevel}</label>
           <div className="chip-row">
-            {[["🤫 Тихо","Тихая"],["🔉 Умеренно","Умеренная"],["🔊 Шумно","Шумная"]].map(([l,v])=>(
+            {[[`🤫 ${TRANSLATIONS[uiLang].quiet}`, "Тихая"],[`🔉 ${TRANSLATIONS[uiLang].moderate}`, "Умеренная"],[`🔊 ${TRANSLATIONS[uiLang].loud}`, "Шумная"]].map(([l,v])=>(
               <button key={v} className={`chip-sel ${form.noise===v?"on":""}`} onClick={()=>upd("noise",v)}>{l}</button>
             ))}
           </div>
         </div>
         <div className="fg-form">
-          <label className="fl">Вероисповедание</label>
+          <label className="fl">{TRANSLATIONS[uiLang].religion}</label>
           <div className="chip-row">
-            {[["Мусульман(ка)","Мусульманка"],["Нерелигиозный","Нет"],["Другое","Другое"]].map(([l,v])=>(
+            {[[TRANSLATIONS[uiLang].muslim, "Мусульманка"],[TRANSLATIONS[uiLang].nonReligious, "Нет"],[TRANSLATIONS[uiLang].other, "Другое"]].map(([l,v])=>(
               <button key={v} className={`chip-sel ${form.religion===v||(form.religion==="Мусульманин"&&v==="Мусульманка")?"on":""}`} onClick={()=>upd("religion",v==="Мусульманка"?(form.gender==="male"?"Мусульманин":"Мусульманка"):v)}>{l}</button>
             ))}
           </div>
@@ -2772,14 +2198,14 @@ function AuthScreen({onAuth}){
         <div style={{background:"var(--bg2)",borderRadius:"var(--rs)",padding:"16px",marginBottom:"16px"}}>
           <div style={{fontSize:"13px",fontWeight:"700",color:"var(--mid)",marginBottom:"10px"}}>📋 Ваша анкета:</div>
           <div style={{fontSize:"13px",color:"var(--mid)",lineHeight:"1.8"}}>
-            <div>{form.name}, {form.age} лет · {form.gender==="female"?"♀ Девушка":"♂ Парень"}</div>
+            <div>{form.name}, {form.age} лет · {form.gender==="female"?"♀ "+TRANSLATIONS[uiLang].female:"♂ "+TRANSLATIONS[uiLang].male}</div>
             <div>{KZ_REGIONS.find(r=>r.id===form.region)?.name||"Не указан"}</div>
             <div>{(+form.budget||0).toLocaleString()} ₸/мес · 📅 {form.move_in||"Не указано"}</div>
             <div>{form.schedule||"Не указан"} · {form.remote?"💻 Удалёнка":"🏢 Офис"}</div>
             <div>{form.studyWork === "Учёба" ? (form.university || "Университет не указан") : (form.occupation || "Профессия не указана")}</div>
-            {form.smoking&&<div>🚬 Курю</div>}
-            {form.alcohol&&<div>🍷 Пью алкоголь</div>}
-            {form.pets&&<div>🐾 Есть питомец</div>}
+            {form.smoking&&<div>🚬 {TRANSLATIONS[uiLang].smoking}</div>}
+            {form.alcohol&&<div>🍷 {TRANSLATIONS[uiLang].alcohol}</div>}
+            {form.pets&&<div>🐾 {TRANSLATIONS[uiLang].hasPet}</div>}
           </div>
         </div>
       </>
@@ -2791,35 +2217,35 @@ function AuthScreen({onAuth}){
       <div className="auth-left">
         <div className="auth-left-content">
           <div style={{marginBottom:"48px"}}>
-            <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"32px",fontFamily:"var(--font-display)",letterSpacing:"0.5px",opacity:"0.95"}}>RoommatchKAZ</div>
+            <div style={{fontSize:"28px",fontWeight:"700",color:"#fff",marginBottom:"32px",fontFamily:"var(--font-display)",letterSpacing:"0.5px",opacity:"0.95"}}>{TRANSLATIONS[uiLang].appName}</div>
             <div style={{fontSize:"56px",fontWeight:"800",color:"#fff",lineHeight:"1.1",marginBottom:"28px",letterSpacing:"-1px"}}>
-                <>Найдите Идеального <br/><span style={{color:"#A8D5BA"}}>Соседа</span><br/>в Казахстане</>
+                <>{TRANSLATIONS[uiLang].findPerfect} <br/><span style={{color:"#A8D5BA"}}>{TRANSLATIONS[uiLang].perfect}</span><br/>{TRANSLATIONS[uiLang].roommate}</>
             </div>
-            <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"0",lineHeight:"1.7",fontWeight:"400"}}>{TRANSLATIONS[uiLang]?.connectRoommates || "Connect with roommates across Kazakhstan"}</p>
+            <p style={{color:"rgba(255,255,255,.8)",fontSize:"15px",marginBottom:"0",lineHeight:"1.7",fontWeight:"400"}}>{TRANSLATIONS[uiLang].connectRoommates}</p>
           </div>
           
           <div style={{display:"flex",flexDirection:"column",gap:"28px"}}>
             <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
               <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
               <div style={{paddingTop:"4px"}}>
-                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Настоящие профили</div>
-                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Проверенные люди в поиске соседей</div>
+                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>{TRANSLATIONS[uiLang].trueProfiles}</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>{TRANSLATIONS[uiLang].verifiedProfilesInSearch}</div>
               </div>
             </div>
             
             <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
               <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
               <div style={{paddingTop:"4px"}}>
-                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Интерактивные карты</div>
-                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Исследуйте районы от Алматы до Астаны</div>
+                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>{TRANSLATIONS[uiLang].interactiveMap}</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>{TRANSLATIONS[uiLang].searchfromcities}</div>
               </div>
             </div>
             
             <div style={{display:"flex",gap:"16px",alignItems:"flex-start"}}>
               <div style={{width:"56px",height:"56px",minWidth:"56px",background:"rgba(255,255,255,.15)",backdropFilter:"blur(10px)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",border:"1px solid rgba(255,255,255,.2)"}}>✓</div>
               <div style={{paddingTop:"4px"}}>
-                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>Идеальная совместимость</div>
-                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>Подбор по образу жизни, не только по бюджету и площади</div>
+                <div style={{color:"#fff",fontSize:"16px",fontWeight:"700",marginBottom:"6px"}}>{TRANSLATIONS[uiLang].perfectMatch}</div>
+                <div style={{color:"rgba(255,255,255,.75)",fontSize:"15px",lineHeight:"1.7"}}>{TRANSLATIONS[uiLang].lifestyleMatch}</div>
               </div>
             </div>
           </div>
@@ -2829,72 +2255,64 @@ function AuthScreen({onAuth}){
       <div className="auth-right">
         <div className="auth-card-login">
           <div style={{textAlign:"center",marginBottom:"32px"}}>
-            <div style={{fontSize:"28px",fontWeight:"800",color:"#1e4a36",marginBottom:"8px",letterSpacing:"-0.5px"}}>С возвращением</div>
-            <p style={{fontSize:"15px",color:"#888",margin:0,fontWeight:"400",lineHeight:"1.6"}}>Войдите в свой аккаунт</p>
+            <div style={{fontSize:"28px",fontWeight:"800",color:"#1e4a36",marginBottom:"8px",letterSpacing:"-0.5px"}}>{TRANSLATIONS[uiLang].welcomeBack}</div>
+            <p style={{fontSize:"15px",color:"#888",margin:0,fontWeight:"400",lineHeight:"1.6"}}>{TRANSLATIONS[uiLang].loginInYourAccount}</p>
           </div>
           
           <div className="auth-tabs-container">
-            <button className={`auth-tab ${mode==="login"?"active":""}`} onClick={()=>setMode("login")} style={{borderBottom:mode==="login"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="login"?"#1e4a36":"#999",fontWeight:mode==="login"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>Вход</button>
-            <button className={`auth-tab ${mode==="register"?"active":""}`} onClick={()=>{setMode("register");setStep(0);}} style={{borderBottom:mode==="register"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="register"?"#1e4a36":"#999",fontWeight:mode==="register"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>Регистрация</button>
+            <button className={`auth-tab ${mode==="login"?"active":""}`} onClick={()=>setMode("login")} style={{borderBottom:mode==="login"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="login"?"#1e4a36":"#999",fontWeight:mode==="login"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>{TRANSLATIONS[uiLang].login}</button>
+            <button className={`auth-tab ${mode==="register"?"active":""}`} onClick={()=>{setMode("register");setStep(0);}} style={{borderBottom:mode==="register"?"2px solid #5a8f6f":"1px solid #ddd",color:mode==="register"?"#1e4a36":"#999",fontWeight:mode==="register"?"600":"500",background:"none",padding:"12px 0",cursor:"pointer",fontSize:"15px",transition:"all 0.3s"}}>{TRANSLATIONS[uiLang].register}</button>
           </div>
           
           <div className="fg-form">
-            <label className="fl">{TRANSLATIONS[uiLang]?.email || "Email"}</label>
+            <label className="fl">{TRANSLATIONS[uiLang].email}</label>
             <input className="fi" type="email" placeholder="nomad@almaty.kz" value={form.email} onChange={e=>upd("email",e.target.value)}/>
           </div>
           
           <div className="fg-form" style={{marginBottom:"8px"}}>
-            <label className="fl">{TRANSLATIONS[uiLang]?.password || "Password"}</label>
+            <label className="fl">{TRANSLATIONS[uiLang].password}</label>
             <input className="fi" type="password" placeholder="••••••••" value={form.password} onChange={e=>upd("password",e.target.value)}/>
           </div>
           
-          <div className="fg-form" style={{marginBottom:"24px"}}>
-            <label className="fl">{TRANSLATIONS[uiLang]?.prefLanguages || "Preferred Languages"}</label>
-            <div className="chip-row">
-              {["Казахский","Русский","Английский"].map(l=>(
-                <button key={l} className={`chip-sel ${form.languages.includes(l)?"on":""}`} onClick={()=>toggleLang(l)} style={{flex:1,fontSize:"12px",padding:"10px 12px"}}>{l==="Казахский"?"🇰🇿":l==="Русский"?"🇷🇺":"🌍"} {l}</button>
-              ))}
-            </div>
-          </div>
           
           <div style={{textAlign:"right",marginBottom:"24px"}}>
-            <span style={{fontSize:"13px",color:"#5a8f6f",cursor:"pointer",fontWeight:"600",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.8"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>setShowReset(true)}>{TRANSLATIONS[uiLang]?.forgotPassword || "Forgot password?"}</span>
+            <span style={{fontSize:"13px",color:"#5a8f6f",cursor:"pointer",fontWeight:"600",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.8"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>setShowReset(true)}>{TRANSLATIONS[uiLang].forgotPassword}</span>
           </div>
           
           <button className="btn-enter-sanctuary" onClick={handleLoginSubmit} disabled={loading}>
-            {loading ? "Загрузка..." : "Присоединиться →"}
+            {loading ? TRANSLATIONS[uiLang].loading : TRANSLATIONS[uiLang].login}
           </button>
           
           <p style={{textAlign:"center",fontSize:"13px",color:"#999",marginTop:"28px"}}>
-            {TRANSLATIONS[uiLang]?.newToNeighborhood || "New here?"} <span style={{color:"#5a8f6f",cursor:"pointer",fontWeight:"700",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.7"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>{setMode("register");setStep(0);}}>{TRANSLATIONS[uiLang]?.joinCommunity || "Join us"}</span>
+            {TRANSLATIONS[uiLang].newToNeighborhood} <span style={{color:"#5a8f6f",cursor:"pointer",fontWeight:"700",transition:"all 0.2s ease"}} onMouseEnter={e=>e.target.style.opacity="0.7"} onMouseLeave={e=>e.target.style.opacity="1"} onClick={()=>{setMode("register");setStep(0);}}>{TRANSLATIONS[uiLang].joinCommunity}</span>
           </p>
           
           {showReset && (
             <div style={{marginTop:"24px",padding:"20px",background:"var(--bg2)",borderRadius:"var(--rs)",border:"1px solid var(--border)"}}>
-              <div style={{fontSize:"14px",fontWeight:"700",marginBottom:"12px"}}>Сброс пароля</div>
+              <div style={{fontSize:"14px",fontWeight:"700",marginBottom:"12px"}}>{TRANSLATIONS[uiLang].resetPassword}</div>
               <div className="fg-form">
-                <label className="fl">Email</label>
+                <label className="fl">{TRANSLATIONS[uiLang].email}</label>
                 <input className="fi" type="email" placeholder="soosedi@almaty.kz" value={form.email} onChange={e=>upd("email",e.target.value)}/>
               </div>
               <div className="fg-form">
-                <label className="fl">Код сброса</label>
+                <label className="fl">{TRANSLATIONS[uiLang].resetCode}</label>
                 <input className="fi" placeholder="6-значный код" value={resetCode} onChange={e=>setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}/>
               </div>
               <div className="fg-form" style={{marginBottom:"20px"}}>
-                <label className="fl">Новый пароль</label>
+                <label className="fl">{TRANSLATIONS[uiLang].newPassword}</label>
                 <input className="fi" type="password" placeholder="Минимум 8 символов" value={form.password} onChange={e=>upd("password",e.target.value)}/>
               </div>
               {!!devResetCode && (
                 <div style={{background:"var(--accent-light)",border:"1px solid var(--accent)",padding:"10px 12px",borderRadius:"10px",fontSize:"12px",marginBottom:"14px",color:"var(--accent2)"}}>
-                  Dev code: <b>{devResetCode}</b>
+                  {TRANSLATIONS[uiLang].devResetCode}: <b>{devResetCode}</b>
                 </div>
               )}
               <div style={{display:"grid",gap:"8px"}}>
-                <button className="btn-ghost" onClick={handleForgotRequest} disabled={loading}>Получить код</button>
-                <button className="btn-primary" onClick={handleResetSubmit} disabled={loading}>{loading ? "Загрузка..." : "Сбросить пароль"}</button>
+                <button className="btn-ghost" onClick={handleForgotRequest} disabled={loading}>{TRANSLATIONS[uiLang].getResetCode}</button>
+                <button className="btn-primary" onClick={handleResetSubmit} disabled={loading}>{loading ? TRANSLATIONS[uiLang].loading : TRANSLATIONS[uiLang].resetPassword}</button>
               </div>
               <p style={{textAlign:"center",fontSize:"12px",color:"var(--muted)",marginTop:"16px"}}>
-                <span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setShowReset(false)}>Вернуться к входу</span>
+                <span style={{color:"var(--accent)",cursor:"pointer",fontWeight:"700"}} onClick={()=>setShowReset(false)}>{TRANSLATIONS[uiLang].backToLogin}</span>
               </p>
             </div>
           )}
@@ -2926,8 +2344,8 @@ function AuthScreen({onAuth}){
       <div className="auth-right">
         <div className="auth-card-login">
           <div style={{textAlign:"center",marginBottom:"24px"}}>
-            <div style={{fontSize:"22px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}>Создайте профиль</div>
-            <p style={{fontSize:"13px",color:"var(--txt2)",margin:0}}>Давайте найдем вашего идеального соседа</p>
+            <div style={{fontSize:"22px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}>{TRANSLATIONS[uiLang].createProfile}</div>
+            <p style={{fontSize:"13px",color:"var(--txt2)",margin:0}}>{TRANSLATIONS[uiLang].findPerfectMatch}</p>
           </div>
           
           <div className="auth-tabs-container">

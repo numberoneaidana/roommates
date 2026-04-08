@@ -54,7 +54,7 @@ const distKm = (la1, lo1, la2, lo2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-export function useRealtimeChat(authUserId, apiClient, { onMatch, onVerificationUpdate } = {}) {  
+export function useRealtimeChat(authUserId, apiClient, { onMatch, onVerificationUpdate, onLike } = {}) {  
   const [conversations, setConversations] = useState({});
   const [connected, setConnected] = useState(false);
   const [typingFor, setTypingFor] = useState(null);
@@ -234,6 +234,12 @@ export function useRealtimeChat(authUserId, apiClient, { onMatch, onVerification
               status: isMine ? "sent" : "received",
               created_at: data.created_at ?? new Date().toISOString(),
             });
+          }
+
+          // Handle like notifications
+          if (data.type === "like") {
+            onLike?.(data.from_user_id);
+            return;
           }
 
           // Handle verification status updates
@@ -674,6 +680,19 @@ const handleMatch = useCallback(async (withUserId) => {
     fetchMatches().catch(()=>{}); fetchProfiles().catch(()=>{});
   }, [fetchMatches, fetchProfiles, allProfiles]);
 
+  const handleLike = useCallback((likerUserId) => {
+    const likerProfile = allProfiles.find(p => p.id === likerUserId);
+    if (likerProfile) {
+      setNotification({
+        type: 'like',
+        message: `❤️ ${likerProfile.name} лайкнул(а) вас!`,
+        userId: likerUserId,
+        timestamp: Date.now()
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
+  }, [allProfiles]);
+
   const handleVerificationUpdate = useCallback((data) => {
     setAuth(prev => ({
       ...prev,
@@ -698,7 +717,7 @@ const handleMatch = useCallback(async (withUserId) => {
 //    sendTyping,
     connected,
 //    typingFor,
-  } = useRealtimeChat(auth?.id, api, { onMatch: handleMatch, onVerificationUpdate: handleVerificationUpdate });
+  } = useRealtimeChat(auth?.id, api, { onMatch: handleMatch, onVerificationUpdate: handleVerificationUpdate, onLike: handleLike });
 
 const sendFirst = async (profileId) => {
   if (!msgText.trim() || msgText.trim().length < 10) return;
@@ -933,10 +952,33 @@ const sendChat = async (profileId, text) => {
     <div style={{minHeight:"100vh",background:"#f8f9fa",fontFamily:"var(--font-body)"}}>
       {/* Notification */}
       {notification && (
-        <div style={{position:"fixed",top:"80px",right:"20px",background:notification.type==='success'?"#E4F0E0":"#FEE2E2",border:`2px solid ${notification.type==='success'?"#7A9E7E":"#DC2626"}`,color:notification.type==='success'?"#7A9E7E":"#DC2626",padding:"16px 20px",borderRadius:"12px",boxShadow:"0 4px 12px rgba(0,0,0,0.15)",maxWidth:"400px",zIndex:1000,animation:"slideInRight 0.3s ease"}}>
+        <div style={{
+          position:"fixed",
+          top:"80px",
+          right:"20px",
+          background: notification.type === 'success' ? "#E4F0E0" : notification.type === 'like' ? "#FFE8E8" : "#FEE2E2",
+          border: `2px solid ${notification.type === 'success' ? "#7A9E7E" : notification.type === 'like' ? "#FF6B9D" : "#DC2626"}`,
+          color: notification.type === 'success' ? "#7A9E7E" : notification.type === 'like' ? "#C00050" : "#DC2626",
+          padding:"16px 20px",
+          borderRadius:"12px",
+          boxShadow:"0 4px 12px rgba(0,0,0,0.15)",
+          maxWidth:"400px",
+          zIndex:1000,
+          animation:"slideInRight 0.3s ease",
+          cursor: notification.type === 'like' ? "pointer" : "default"
+        }}
+        onClick={() => {
+          if (notification.type === 'like' && notification.userId) {
+            setTab("map");
+            setNotification(null);
+          }
+        }}>
           <div style={{fontWeight:600,marginBottom:notification.reason?"8px":"0",fontSize:"14px"}}>{notification.message}</div>
           {notification.reason && (
             <div style={{fontSize:"13px",opacity:0.8,marginTop:"8px",fontStyle:"italic"}}>Причина: {notification.reason}</div>
+          )}
+          {notification.type === 'like' && (
+            <div style={{fontSize:"12px",opacity:0.8,marginTop:"8px"}}>Нажмите чтобы открыть</div>
           )}
         </div>
       )}
@@ -1064,13 +1106,21 @@ const sendChat = async (profileId, text) => {
           liked={liked}
           onSelectProfile={(p)=>{setSelected(p);setMsgText("");}}
           onLike={async (p)=>{
-            setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
-            try {
-              const result = await api.likeProfile(p.id);
-              if (result?.matched) {
-                handleMatch(p.id);
-              }
-            } catch(e) { console.warn("likeProfile error:", e.message); }
+            const isCurrentlyLiked = liked.has(p.id);
+            if (isCurrentlyLiked) {
+              setLiked(s => { const n = new Set(s); n.delete(p.id); return n; });
+              try {
+                await api.unlikeProfile(p.id);
+              } catch(e) { console.warn("unlikeProfile error:", e.message); }
+            } else {
+              setLiked(s=>{const n=new Set(s);n.add(p.id);return n;});
+              try {
+                const result = await api.likeProfile(p.id);
+                if (result?.matched) {
+                  handleMatch(p.id);
+                }
+              } catch(e) { console.warn("likeProfile error:", e.message); }
+            }
           }}
           auth={auth}
           uiLang={uiLang}
@@ -1121,11 +1171,19 @@ const sendChat = async (profileId, text) => {
           onSelectProfile={(p) => { setSelected(p); setMsgText(""); }}
           liked={liked}
           onLike={async (p) => {
-            setLiked(s => { const n = new Set(s); n.add(p.id); return n; });
-            try {
-              const result = await api.likeProfile(p.id);
-              if (result?.matched) await handleMatch(p.id);
-            } catch(e) { console.warn("likeProfile error:", e.message); }
+            const isCurrentlyLiked = liked.has(p.id);
+            if (isCurrentlyLiked) {
+              setLiked(s => { const n = new Set(s); n.delete(p.id); return n; });
+              try {
+                await api.unlikeProfile(p.id);
+              } catch(e) { console.warn("unlikeProfile error:", e.message); }
+            } else {
+              setLiked(s => { const n = new Set(s); n.add(p.id); return n; });
+              try {
+                const result = await api.likeProfile(p.id);
+                if (result?.matched) await handleMatch(p.id);
+              } catch(e) { console.warn("likeProfile error:", e.message); }
+            }
           }}
           conversations={conversations}
           onSendMessage={(profileId, msgText) => sendChat(profileId, msgText)}
@@ -1141,11 +1199,19 @@ const sendChat = async (profileId, text) => {
           liked={liked}
           onSelectProfile={(p) => { setSelected(p); setMsgText(""); }}
           onLike={async (p) => {
-            setLiked(s => { const n = new Set(s); n.add(p.id); return n; });
-            try {
-              const result = await api.likeProfile(p.id);
-              if (result?.matched) await handleMatch(p.id);
-            } catch(e) { console.warn("likeProfile error:", e.message); }
+            const isCurrentlyLiked = liked.has(p.id);
+            if (isCurrentlyLiked) {
+              setLiked(s => { const n = new Set(s); n.delete(p.id); return n; });
+              try {
+                await api.unlikeProfile(p.id);
+              } catch(e) { console.warn("unlikeProfile error:", e.message); }
+            } else {
+              setLiked(s => { const n = new Set(s); n.add(p.id); return n; });
+              try {
+                const result = await api.likeProfile(p.id);
+                if (result?.matched) await handleMatch(p.id);
+              } catch(e) { console.warn("likeProfile error:", e.message); }
+            }
           }}
           matchedProfiles={matchedProfiles}
           conversations={conversations}
@@ -1884,22 +1950,6 @@ function AuthScreen({onAuth}){
     </div>
   );
 
-  // Language selection screen
-  if (!uiLang) {
-    return (
-      <div style={{minHeight:"100vh",background:"linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
-        <div style={{textAlign:"center",maxWidth:"500px"}}>
-          <div style={{fontSize:"48px",marginBottom:"24px"}}>🌍</div>
-          <h1 style={{fontFamily:"'Cormorant Garamond', serif",fontSize:"42px",fontWeight:700,color:"#fff",marginBottom:"16px",letterSpacing:"-1px"}}>RoommatchKAZ</h1>
-          <p style={{fontSize:"18px",color:"rgba(255,255,255,0.9)",marginBottom:"48px",lineHeight:1.6}}>Выберите язык / Тілді таңдаңыз / Выберите язык</p>
-          
-
-
-          <p style={{fontSize:"14px",color:"rgba(255,255,255,0.7)",marginTop:"48px"}}>Вы можете изменить язык позже в настройках</p>
-        </div>
-      </div>
-    );
-  }
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

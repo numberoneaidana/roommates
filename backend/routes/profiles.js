@@ -81,6 +81,10 @@ router.post("/like/:id", async (req, res) => {
   }
   console.log("[like] saved OK");
 
+  // Send "like" notification to the liked user
+  broadcast(likedId, { type: "like", from_user_id: likerId });
+  console.log(`[like] 💌 like notification sent to ${likedId}`);
+
   // 2. Check mutual like
   const { data: theirLike, error: mutualErr } = await supabaseAdmin
     .from("likes").select("id")
@@ -130,12 +134,43 @@ router.post("/like/:id", async (req, res) => {
     }
   }
 
-  // 5. Push real-time event to both users
+  // 5. Push real-time event to both users (match event)
   broadcast(likerId, { type: "match", match_id: matchId, with_user_id: likedId });
   broadcast(likedId, { type: "match", match_id: matchId, with_user_id: likerId });
   console.log(`[like] ✅ MATCH ${likerId} <-> ${likedId} id=${matchId}`);
 
   return res.json({ liked: true, matched: true, match_id: matchId });
+});
+
+// DELETE /api/profiles/like/:id - remove like
+router.delete("/like/:id", async (req, res) => {
+  const likerId = req.user.id;
+  const likedId = req.params.id;
+
+  console.log(`[unlike] ${likerId} -> ${likedId}`);
+
+  if (likerId === likedId)
+    return res.status(400).json({ error: "Cannot unlike yourself" });
+
+  // Remove the like
+  const { error } = await supabaseAdmin
+    .from("likes")
+    .delete()
+    .eq("liker_id", likerId)
+    .eq("liked_id", likedId);
+
+  if (error) {
+    console.error("[unlike] delete error:", JSON.stringify(error));
+    return res.status(500).json({ error: "Failed to unlike" });
+  }
+
+  console.log("[unlike] removed OK");
+
+  // Send "unlike" notification to the liked user
+  broadcast(likedId, { type: "unlike", from_user_id: likerId });
+  console.log(`[unlike] 📭 unlike notification sent to ${likedId}`);
+
+  return res.json({ unliked: true });
 });
 
 // POST /api/profiles/pass/:id

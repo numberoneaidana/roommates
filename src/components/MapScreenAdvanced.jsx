@@ -6,7 +6,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { KZ_REGIONS } from '../logic/constants';
-
+import { ProfileModal } from '../App';
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 /** Haversine distance in km between two lat/lng points */
@@ -274,6 +274,445 @@ const DrawHandler = ({ drawMode, drawnShapes, setDrawnShapes, onDrawModeChange }
   return null;
 };
 
+// ─── Map-specific ProfileModal wrapper (right sidebar, no blur) ────────────────
+
+const MapProfilePanel = ({ p, liked, sent, msgText, setMsgText, KZ_REGIONS: regionsFromProp, onLike, onSend, onClose, hasMatch = false, likedYou = false, inline = false }) => {
+  const [isSending, setIsSending] = useState(false);
+  const [localPhoto, setLocalPhoto] = useState(0);
+
+  const regions = regionsFromProp || KZ_REGIONS;
+  const reg = regions.find(r => r.id === p.region);
+
+  const handleSend = () => {
+    if (msgText.trim().length < 10 || isSending || !hasMatch) return;
+    setIsSending(true);
+    onSend();
+    setTimeout(() => { setIsSending(false); }, 1200);
+  };
+
+  return (
+    <div style={inline ? {
+      position: "relative",
+      width: "100%",
+      height: "100%",
+      background: "#FFFFFF",
+      overflow: "auto",
+    } : {
+      position: "fixed",
+      top: "138px",
+      right: 0,
+      bottom: 0,
+      width: "520px",
+      background: "#FFFFFF",
+      boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+      zIndex: 999,
+      overflow: "auto",
+      animation: "slideInRight 0.3s ease-out"
+    }}>
+      <style>{`@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+      
+      {/* Close Button */}
+      <button onClick={onClose} style={{
+        position: inline ? "sticky" : "fixed",
+        top: "158px",
+        right: "20px",
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: "#FFFFFF",
+        border: "1.5px solid #C8DEC4",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "all 0.2s",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        zIndex: 1000
+      }}>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5L15 15" stroke="#1C2B1E" strokeWidth="2" strokeLinecap="round"/></svg>
+      </button>
+
+      {/* Content Wrapper */}
+      <div style={{ padding: "32px 24px" }}>
+        
+        {/* HERO IMAGE */}
+        <div style={{
+          position: "relative",
+          height: "240px",
+          background: p.photos?.[localPhoto]?.startsWith("http") ? `url(${p.photos[localPhoto]}) center/cover` : `linear-gradient(135deg, #5a8f6f 0%, #4a7a5f 100%)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          borderRadius: "16px",
+          marginBottom: "20px",
+          overflow: "hidden"
+        }}>
+          {/* Photo Indicators */}
+          {p.photos && p.photos.length > 0 && (
+            <div style={{ position: "absolute", bottom: "12px", left: "12px", display: "flex", gap: "6px" }}>
+              {p.photos.map((_, i) => (
+                <button key={i} onClick={() => setLocalPhoto(i)} style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: localPhoto === i ? "white" : "rgba(255,255,255,0.4)",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}/>
+              ))}
+            </div>
+          )}
+
+          {/* Online Status */}
+          {p.online && (
+            <div style={{
+              position: "absolute",
+              bottom: "12px",
+              right: "12px",
+              background: "#FFFFFF",
+              borderRadius: "100px",
+              padding: "6px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#22C55E"
+            }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22C55E" }}/>
+              Онлайн
+            </div>
+          )}
+        </div>
+
+        {/* Header */}
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "8px" }}>
+            <div>
+              <h2 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "1.6rem",
+                fontWeight: 600,
+                color: "#1C2B1E",
+                margin: "0 0 4px 0",
+                lineHeight: 1
+              }}>{p.name}, {p.age}</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                {p.verification_status === 'approved' && (
+                  <div style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "#E4F0E0",
+                    color: "#7A9E7E",
+                    padding: "4px 10px",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    fontWeight: 600
+                  }}>✓ Верифицирован</div>
+                )}
+              </div>
+            </div>
+            <button onClick={onLike} style={{
+              background: liked ? "#E4F0E0" : "#F2F8F1",
+              border: `2px solid ${liked ? "#7A9E7E" : "#C8DEC4"}`,
+              borderRadius: "14px",
+              padding: "10px 16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: liked ? "#7A9E7E" : "#1C2B1E",
+              transition: "all 0.2s",
+              fontFamily: "'Geologica', sans-serif"
+            }}>
+              {liked ? "❤️ В избранном" : "🤍 В избранное"}
+            </button>
+          </div>
+        </div>
+
+        {/* Meta Info Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+          <div style={{
+            background: "#F2F8F1",
+            borderRadius: "12px",
+            padding: "10px 12px",
+            fontSize: "12px"
+          }}>
+            <div style={{ color: "rgba(28,43,30,0.6)", fontWeight: 500, marginBottom: "2px" }}>Локация</div>
+            <div style={{ color: "#1C2B1E", fontWeight: 600 }}>📍 {reg?.name || p.region}</div>
+          </div>
+          <div style={{
+            background: "#F2F8F1",
+            borderRadius: "12px",
+            padding: "10px 12px",
+            fontSize: "12px"
+          }}>
+            <div style={{ color: "rgba(28,43,30,0.6)", fontWeight: 500, marginBottom: "2px" }}>Бюджет</div>
+            <div style={{ color: "#1C2B1E", fontWeight: 600 }}>💰 ₸{(p.budget || 0).toLocaleString()}/мес</div>
+          </div>
+          <div style={{
+            background: "#F2F8F1",
+            borderRadius: "12px",
+            padding: "10px 12px",
+            fontSize: "12px"
+          }}>
+            <div style={{ color: "rgba(28,43,30,0.6)", fontWeight: 500, marginBottom: "2px" }}>Профессия</div>
+            <div style={{ color: "#1C2B1E", fontWeight: 600 }}>{p.occupation || "—"}</div>
+          </div>
+          <div style={{
+            background: "#F2F8F1",
+            borderRadius: "12px",
+            padding: "10px 12px",
+            fontSize: "12px"
+          }}>
+            <div style={{ color: "rgba(28,43,30,0.6)", fontWeight: 500, marginBottom: "2px" }}>Въезд</div>
+            <div style={{ color: "#1C2B1E", fontWeight: 600 }}>{p.move_in || "—"}</div>
+          </div>
+        </div>
+
+        {/* Renter Type Badge */}
+        {p.renterType && (
+          <div style={{
+            background: p.renterType === "has_place" ? "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)" : "linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)",
+            borderRadius: "12px",
+            padding: "12px",
+            marginBottom: "16px",
+            border: `2px solid ${p.renterType === "has_place" ? "#FBBF24" : "#0EA5E9"}`,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}>
+            <span style={{ fontSize: "24px" }}>{p.renterType === "has_place" ? "🏠" : "🔍"}</span>
+            <div>
+              <div style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: p.renterType === "has_place" ? "#92400E" : "#075985"
+              }}>{p.renterType === "has_place" ? "Есть своё жильё" : "Ищет жильё"}</div>
+              <div style={{
+                fontSize: "11px",
+                color: p.renterType === "has_place" ? "#92400E" : "#075985",
+                opacity: 0.8
+              }}>{p.renterType === "has_place" ? "Ищет соседа к себе" : "Ищет квартиру и соседа"}</div>
+            </div>
+          </div>
+        )}
+
+        {/* About Section */}
+        <div style={{ marginBottom: "16px" }}>
+          <h3 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "1.1rem",
+            fontWeight: 600,
+            color: "#1C2B1E",
+            margin: "0 0 8px 0"
+          }}>О себе</h3>
+          <p style={{
+            fontSize: "13px",
+            lineHeight: 1.6,
+            color: "rgba(28,43,30,0.7)",
+            margin: 0
+          }}>{p.bio}</p>
+        </div>
+
+        {/* Lifestyle Section */}
+        <div style={{ marginBottom: "16px" }}>
+          <h3 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "1.1rem",
+            fontWeight: 600,
+            color: "#1C2B1E",
+            margin: "0 0 10px 0"
+          }}>Образ жизни</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "10px" }}>
+            {[["Чистоплотность", p.cleanliness], ["Общительность", p.social]].map(([l, v]) => (
+              <div key={l}>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "4px",
+                  fontSize: "12px"
+                }}>
+                  <span style={{ fontWeight: 600, color: "#1C2B1E" }}>{l}</span>
+                  <span style={{ fontWeight: 600, color: "#7A9E7E" }}>{v || 0}/5</span>
+                </div>
+                <div style={{
+                  height: "6px",
+                  background: "#E4F0E0",
+                  borderRadius: "3px"
+                }}>
+                  <div style={{
+                    height: "100%",
+                    background: "#7A9E7E",
+                    borderRadius: "3px",
+                    width: `${((v || 0) / 5) * 100}%`
+                  }}/>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {p.pets && <span style={{
+              background: "#E4F0E0",
+              color: "#7A9E7E",
+              padding: "6px 12px",
+              borderRadius: "100px",
+              fontSize: "11px",
+              fontWeight: 500
+            }}>🐾 Питомец</span>}
+            {p.remote && <span style={{
+              background: "#E4F0E0",
+              color: "#7A9E7E",
+              padding: "6px 12px",
+              borderRadius: "100px",
+              fontSize: "11px",
+              fontWeight: 500
+            }}>💻 Удалёнка</span>}
+            {!p.smoking && <span style={{
+              background: "#E4F0E0",
+              color: "#7A9E7E",
+              padding: "6px 12px",
+              borderRadius: "100px",
+              fontSize: "11px",
+              fontWeight: 500
+            }}>🚭 Не курит</span>}
+          </div>
+        </div>
+
+        {/* Interests Section */}
+        {p.tags && p.tags.length > 0 && (
+          <div style={{ marginBottom: "16px" }}>
+            <h3 style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              color: "#1C2B1E",
+              margin: "0 0 8px 0"
+            }}>Интересы</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {p.tags.map(t => (
+                <span key={t} style={{
+                  background: "#F2F8F1",
+                  color: "#7A9E7E",
+                  padding: "6px 12px",
+                  borderRadius: "100px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  border: "1px solid #C8DEC4"
+                }}>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Message Section */}
+        <div style={{ borderTop: "1px solid #E4F0E0", paddingTop: "16px" }}>
+          <h3 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "1.1rem",
+            fontWeight: 600,
+            color: "#1C2B1E",
+            margin: "0 0 8px 0"
+          }}>Написать сообщение</h3>
+
+          {/* Match Status */}
+          {!hasMatch && (
+            <div style={{
+              background: likedYou ? "#E0F2FE" : "#FEF3C7",
+              borderRadius: "10px",
+              padding: "12px",
+              marginBottom: "12px",
+              fontSize: "13px",
+              color: likedYou ? "#075985" : "#92400E",
+              border: `1.5px solid ${likedYou ? "#0EA5E9" : "#FBBF24"}`
+            }}>
+              {likedYou ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>❤️</span>
+                  <div>
+                    <strong>{p.name} лайкнул(а) вас!</strong>
+                    <div style={{ fontSize: "12px", marginTop: "2px", opacity: 0.8 }}>Лайкните в ответ, чтобы начать чат</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>🔒</span>
+                  <div>
+                    <strong>Ожидание ответа</strong>
+                    <div style={{ fontSize: "12px", marginTop: "2px", opacity: 0.8}}>Сообщение появится, если вас лайкнут в ответ</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <textarea
+            value={msgText}
+            onChange={e => setMsgText(e.target.value)}
+            maxLength={300}
+            placeholder={hasMatch ? "Напишите сообщение..." : "Доступно после взаимного лайка"}
+            disabled={!hasMatch}
+            style={{
+              width: "100%",
+              border: `1.5px solid ${hasMatch ? "#C8DEC4" : "#E8E8E8"}`,
+              borderRadius: "10px",
+              padding: "10px 12px",
+              fontFamily: "'Geologica', sans-serif",
+              fontSize: "13px",
+              resize: "vertical",
+              minHeight: "80px",
+              maxHeight: "120px",
+              outline: "none",
+              boxSizing: "border-box",
+              background: hasMatch ? "#FFFFFF" : "#F9F9F9",
+              color: hasMatch ? "#1C2B1E" : "#999",
+              opacity: hasMatch ? 1 : 0.7
+            }}
+            onFocus={e => hasMatch && (e.target.style.borderColor = "#7A9E7E")}
+            onBlur={e => e.target.style.borderColor = "#C8DEC4"}
+          />
+          <div style={{
+            fontSize: "11px",
+            color: "rgba(28,43,30,0.6)",
+            textAlign: "right",
+            marginTop: "4px",
+            marginBottom: "8px"
+          }}>{msgText.length}/300</div>
+          <button
+            onClick={handleSend}
+            disabled={msgText.trim().length < 10 || isSending || !hasMatch}
+            style={{
+              width: "100%",
+              background: hasMatch ? "#1C2B1E" : "#CCCCCC",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "10px",
+              padding: "10px",
+              fontFamily: "'Geologica', sans-serif",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: (msgText.trim().length < 10 || isSending || !hasMatch) ? "not-allowed" : "pointer",
+              transition: "background 0.2s",
+              opacity: (msgText.trim().length < 10 || isSending || !hasMatch) ? 0.6 : 1
+            }}
+            onMouseEnter={e => !isSending && msgText.trim().length >= 10 && hasMatch && (e.target.style.background = "#7A9E7E")}
+            onMouseLeave={e => e.target.style.background = hasMatch ? "#1C2B1E" : "#CCCCCC"}
+          >
+            {isSending ? "✓ Отправлено" : "📨 Отправить"}
+          </button>
+        </div>
+
+        <div style={{ height: "40px" }}/>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 const MapScreenAdvanced = ({
@@ -298,12 +737,15 @@ const MapScreenAdvanced = ({
   const [searchText, setSearchText]           = useState('');
   const [msgText, setMsgText]                 = useState('');
   const [isSending, setIsSending]             = useState(false);
+  const [sent, setSent]                       = useState(new Set());
 
   const [zoomLevel, setZoomLevel]             = useState(12);
   const [housingFilter, setHousingFilter]     = useState(null);
   const [genderFilter, setGenderFilter]       = useState(null);
   const [drawMode, setDrawMode]               = useState(null);
   const [drawnShapes, setDrawnShapes]         = useState([]);
+  // 'map' = default map+sidebar, 'seekers' = full list view for people without housing
+  const [viewMode, setViewMode]               = useState('map');
 
   const colors = {
     matcha:      '#7A9E7E',
@@ -337,17 +779,28 @@ const MapScreenAdvanced = ({
 
     const result = allProfiles
       .filter(p => {
-        if (!p.latitude || !p.longitude) return false;
         if (auth && p.id === auth.id) return false;
-        if (selectedRegion && p.region !== selectedRegion) return false;
-        if (housingFilter !== null) {
-          const has = (p.tags || []).some(t =>
-            typeof t === 'string' && /жилье|housing|apartment|room|квартир/i.test(t)
-          );
-          if (has !== housingFilter) return false;
+        
+        // In 'seekers' view, only show people looking for housing
+        if (viewMode === 'seekers') {
+          if (p.renterType !== 'looking') return false;
+        } else {
+          // In 'map' view, apply housing filter
+          if (!p.latitude || !p.longitude) return false;
+          if (housingFilter !== null) {
+            if (housingFilter === true) {
+              // Show people WITH housing
+              if (p.renterType !== 'has_place') return false;
+            } else {
+              // Show people WITHOUT housing
+              if (p.renterType !== 'looking') return false;
+            }
+          }
+          if (!isWithinShapes(p.latitude, p.longitude, drawnShapes)) return false;
         }
+        
+        if (selectedRegion && p.region !== selectedRegion) return false;
         if (genderFilter !== null && p.gender !== genderFilter) return false;
-        if (!isWithinShapes(p.latitude, p.longitude, drawnShapes)) return false;
         if (searchText.trim()) {
           const q = searchText.toLowerCase();
           const haystack = [p.name, p.occupation, getRegionName(p.region), ...(p.tags || [])].join(' ').toLowerCase();
@@ -358,7 +811,7 @@ const MapScreenAdvanced = ({
       .slice(0, 500);
 
     setFilteredPeople(result);
-  }, [allProfiles, selectedRegion, searchText, auth, housingFilter, genderFilter, drawnShapes]);
+  }, [allProfiles, selectedRegion, searchText, auth, housingFilter, genderFilter, drawnShapes, viewMode]);
 
   // ── Messaging ────────────────────────────────────────────────────────────────
 
@@ -367,6 +820,7 @@ const MapScreenAdvanced = ({
     setIsSending(true);
     try {
       onSendMessage(selectedPerson.id, msgText);
+      setSent(s => { const n = new Set(s); n.add(selectedPerson.id); return n; });
       setMsgText('');
       setTimeout(() => setIsSending(false), 800);
     } catch { setIsSending(false); }
@@ -552,12 +1006,24 @@ const MapScreenAdvanced = ({
     .leaflet-dragging .leaflet-grab .leaflet-interactive,
     .leaflet-dragging .leaflet-marker-draggable { cursor: grabbing; }
     .map-adv-detail-panel {
-      position: absolute; bottom: 20px; right: 20px; width: 360px;
+      position: absolute;top: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  width: 380px;
+  border-radius: 0; /* Remove rounded corners for a clean "sidebar" look */
+  border-left: 1px solid ${colors.matchaLight};
       background: ${colors.white}; border: 1.5px solid ${colors.matchaLight};
       border-radius: 22px; padding: 18px;
       box-shadow: 0 16px 48px rgba(28,43,30,0.12); z-index: 400;
       max-height: 85vh; overflow-y: auto;
     }
+      animation: slideIn 0.3s ease-out;
+
+@keyframes slideIn {
+  from { transform: translateX(100%); } /* Start completely off-screen to the right */
+  to { transform: translateX(0); }     /* End at its natural position */
+}
     .map-adv-panel-header {
       display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;
     }
@@ -619,6 +1085,28 @@ const MapScreenAdvanced = ({
       .map-adv-sidebar { display: none; }
       .map-adv-detail-panel { width: calc(100% - 40px); left: 20px; }
     }
+    .map-adv-uniarea {display:flex; flex-direction:row; width: fit-content;
+     border-radius: 20px; padding: 5px;  
+     background: ${colors.matcha}; 
+     border: 1px solid rgba(122,158,126,0.3); 
+     transition: all 0.18s; 
+     aligne-items: center; gap: 6px;
+      padding:9px; font-family:'Geologica',sans-serif; font-size:0.63rem; font-weight:500;
+    margin-bottom: 4px;
+
+     }
+
+    .uni-divider {
+      opacity: 0.5;
+      font-size: 0.5rem;
+    }
+      .map-adv-tag-row {
+  display: flex;       /* Arrange children in a row */
+  flex-direction: row; 
+  gap: 6px;            /* The physical gap between the two circles */
+  flex-wrap: wrap;     /* If the screen is too small, the second circle jumps down safely */
+  margin-bottom: 8px;
+}
   `;
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -641,17 +1129,17 @@ const MapScreenAdvanced = ({
 
           <div className="map-adv-divider" />
 
-          {/* Housing filter */}
-          <span className="map-adv-filter-label">{TRANSLATIONS[uiLang]?.map?.housing || "Housing"}</span>
+          {/* Housing filter — also switches view mode */}
+          <span className="map-adv-filter-label">{TRANSLATIONS[uiLang]?.map?.housing || "Жильё"}</span>
           {[
-            { label: TRANSLATIONS[uiLang]?.all || "All", val: null },
-            { label: TRANSLATIONS[uiLang]?.yes || "Yes", val: true },
-            { label: 'No', val: false }
-          ].map(({ label, val }) => (
+            { label: TRANSLATIONS[uiLang]?.all || "Все", val: null, mode: 'map' },
+            { label: TRANSLATIONS[uiLang]?.yes || "🏠 Есть жильё", val: true, mode: 'map' },
+            { label: TRANSLATIONS[uiLang]?.no || "🔍 Ищет жильё", val: false, mode: 'seekers' }
+          ].map(({ label, val, mode }) => (
             <button
               key={String(val)}
               className={`tb-btn ${housingFilter === val ? 'tb-btn-active' : 'tb-btn-idle'}`}
-              onClick={() => setHousingFilter(val)}
+              onClick={() => { setHousingFilter(val); setViewMode(mode); setSelectedPerson(null); }}
             >
               {label}
             </button>
@@ -677,7 +1165,8 @@ const MapScreenAdvanced = ({
 
           <div className="map-adv-divider" />
 
-          {/* Draw tools */}
+          {/* Draw tools — only relevant in map mode */}
+          {viewMode === 'map' && <>
           <span className="map-adv-filter-label">{TRANSLATIONS[uiLang]?.map?.drawArea || "Draw area"}</span>
           <button
             className={`tb-btn ${drawMode === 'freehand' ? 'tb-btn-active' : 'tb-btn-idle'}`}
@@ -718,226 +1207,417 @@ const MapScreenAdvanced = ({
               🖐 Drag map to pan · scroll to zoom
             </div>
           )}
+          </>}
 
           <div className="map-adv-topbar-right">
             <div className="map-adv-avi">{auth?.initials || 'U'}</div>
           </div>
         </div>
 
-        {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
-        <div className="map-adv-sidebar">
-          <div className="map-adv-sidebar-header">
-            <div className="map-adv-sidebar-title">{TRANSLATIONS[uiLang]?.region || "Регионы"}</div>
-            <div className="map-adv-regions">
-              {popularRegions.map(region => (
-                <div
-                  key={region.id}
-                  className={`map-adv-region-chip ${selectedRegion === region.id ? 'active' : ''}`}
-                  onClick={() => {
-                    if (selectedRegion === region.id) {
-                      setSelectedRegion('');
-                      setZoomLevel(10);
-                    } else {
-                      setSelectedRegion(region.id);
-                      setSelectedCenter([region.lat, region.lng]);
-                      setZoomLevel(13);
-                    }
-                  }}
-                >
-                  {region.name.substring(0, 15)}
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* ══════════════════════════════════════════════════════════════
+             VIEW A — MAP MODE  (All / Has housing)
+             Grid: sidebar (400px) + map canvas
+        ══════════════════════════════════════════════════════════════ */}
+        {viewMode === 'map' && <>
 
-          <div className="map-adv-sidebar-content">
-            <div className="map-adv-results">
-              {drawnShapes.length > 0 && (
-                <div className="map-adv-results-count">
-                  {filteredPeople.length} profile{filteredPeople.length !== 1 ? 's' : ''} in drawn area
-                </div>
-              )}
-              {filteredPeople.length > 0 ? filteredPeople.map(person => (
-                <div
-                  key={person.id}
-                  className={`map-adv-card ${selectedPerson?.id === person.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedPerson(person)}
-                >
-                  <div className="map-adv-card-avatar">{getInitials(person.name)}</div>
-                  <div className="map-adv-card-body">
-                    <div className="map-adv-card-name">{person.name}, {person.age}</div>
-                    <div className="map-adv-card-region">📍 {getRegionName(person.region)}</div>
-                    <div className="map-adv-card-tags">
-                      {(person.tags || []).slice(0, 2).map((tag, i) => (
-                        <span key={i} className="map-adv-card-tag">{tag}</span>
-                      ))}
+          {/* ── SIDEBAR ─────────────────────────────────────────────── */}
+          <div className="map-adv-sidebar">
+            <div className="map-adv-sidebar-header">
+              <div className="map-adv-sidebar-title">{TRANSLATIONS[uiLang]?.region || "Регионы"}</div>
+              <div className="map-adv-regions">
+                {popularRegions.map(region => (
+                  <div
+                    key={region.id}
+                    className={`map-adv-region-chip ${selectedRegion === region.id ? 'active' : ''}`}
+                    onClick={() => {
+                      if (selectedRegion === region.id) {
+                        setSelectedRegion('');
+                        setZoomLevel(10);
+                      } else {
+                        setSelectedRegion(region.id);
+                        setSelectedCenter([region.lat, region.lng]);
+                        setZoomLevel(13);
+                      }
+                    }}
+                  >
+                    {region.name.substring(0, 15)}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="map-adv-sidebar-content">
+              <div className="map-adv-results">
+                {drawnShapes.length > 0 && (
+                  <div className="map-adv-results-count">
+                    {filteredPeople.length} profile{filteredPeople.length !== 1 ? 's' : ''} in drawn area
+                  </div>
+                )}
+                {filteredPeople.length > 0 ? filteredPeople.map(person => (
+                  <div
+                    key={person.id}
+                    className={`map-adv-card ${selectedPerson?.id === person.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedPerson(person)}
+                  >
+                    <div className="map-adv-card-avatar">{getInitials(person.name)}</div>
+                    <div className="map-adv-card-body">
+                      <div className="map-adv-card-name">{person.name}, {person.age}</div>
+                      <div className="map-adv-card-region">📍 {getRegionName(person.region)}</div>
+                      <div className="map-adv-card-tags">
+                        {(person.tags || []).slice(0, 2).map((tag, i) => (
+                          <span key={i} className="map-adv-card-tag">{tag}</span>
+                        ))}
+                      </div>
+                      <div className="map-adv-tag-row">
+                        <div className="map-adv-uniarea">{person.occupation?.substring(0, 20) || '—'}</div>
+                        {person.occupation === "student" && (
+                          <div className="map-adv-uniarea">{person.university?.substring(0, 20)}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
+                )) : (
+                  <div className="map-adv-empty">
+                    {drawnShapes.length > 0
+                      ? 'No profiles found in drawn area'
+                      : 'No profiles match your filters'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── MAP CANVAS ──────────────────────────────────────────── */}
+          <div className="map-adv-canvas">
+            <MapContainer
+              center={DEFAULT_CENTER}
+              zoom={12}
+              style={{ width: '100%', height: '100%' }}
+              dragging={true}
+              touchZoom
+              scrollWheelZoom
+              keyboard={false}
+              doubleClickZoom={false}
+              zoomControl
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maxZoom={19}
+                crossOrigin
+              />
+              {selectedRegion && (
+                <AutoZoomHandler
+                  selectedCenter={selectedCenter}
+                  zoomLevel={zoomLevel}
+                  selectedRegion={selectedRegion}
+                />
+              )}
+              <DrawHandler
+                drawMode={drawMode}
+                drawnShapes={drawnShapes}
+                setDrawnShapes={setDrawnShapes}
+                onDrawModeChange={handleDrawModeChange}
+              />
+              {drawnShapes.map((shape, i) => {
+                if ((shape.type === 'polygon' || shape.type === 'freehand') && shape.coordinates?.length >= 3) {
+                  return <Polygon key={i} positions={shape.coordinates} pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }} />;
+                }
+                if (shape.type === 'circle' && shape.center) {
+                  return <Circle key={i} center={shape.center} radius={shape.radius * 1000} pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }} />;
+                }
+                return null;
+              })}
+              {filteredPeople.map(person => (
+                <CircleMarker
+                  key={person.id}
+                  center={[person.latitude, person.longitude]}
+                  radius={selectedPerson?.id === person.id ? 14 : 10}
+                  weight={2}
+                  opacity={0.9}
+                  fillOpacity={selectedPerson?.id === person.id ? 0.95 : 0.75}
+                  color={liked.has(person.id) ? '#2c4d1cff' : colors.matcha}
+                  fillColor={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
+                  eventHandlers={{ click: () => setSelectedPerson(person) }}
+                >
+                  <Popup>
+                    <div style={{ fontFamily: "'Geologica', sans-serif", fontSize: 12, fontWeight: 600, color: '#1C2B1E' }}>
+                      {person.name}{person.age ? `, ${person.age}` : ''}<br />
+                      <span style={{ fontWeight: 400, color: '#7A9E7E', fontSize: 11 }}>
+                        📍 {KZ_REGIONS.find(r => r.id === person.region)?.name || person.region || ''}
+                      </span>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              ))}
+            </MapContainer>
+
+            {selectedPerson && (() => {
+              const hasMatch = !!conversations[selectedPerson.id];
+              const likedYou = hasMatch || false;
+              return (
+                <MapProfilePanel
+                  p={selectedPerson}
+                  liked={liked.has(selectedPerson.id)}
+                  sent={sent.has(selectedPerson.id)}
+                  msgText={msgText}
+                  setMsgText={setMsgText}
+                  KZ_REGIONS={KZ_REGIONS}
+                  onLike={() => onLike(selectedPerson)}
+                  onSend={() => handleSendMessage()}
+                  onClose={() => setSelectedPerson(null)}
+                  hasMatch={hasMatch}
+                  likedYou={likedYou}
+                />
+              );
+            })()}
+          </div>
+        </>}
+
+        {/* ══════════════════════════════════════════════════════════════
+             VIEW B — SEEKERS MODE  (🔍 Ищет жильё)
+             Full-width card grid, no map, profile panel on click
+        ══════════════════════════════════════════════════════════════ */}
+        {viewMode === 'seekers' && (
+          <div className="seekers-view" style={{ gridColumn: '1 / -1', display: 'flex', overflow: 'hidden', background: colors.cream }}>
+
+            {/* ── Left: scrollable card grid ─────────────────────────── */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '28px 32px',
+            }}>
+
+              {/* Header */}
+              <div style={{ marginBottom: '20px' }}>
+                <h2 style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: '1.6rem', fontWeight: 600, color: colors.ink, margin: '0 0 6px'
+                }}>
+                  🔍 Ищут жильё и соседа
+                </h2>
+                <p style={{ fontSize: '0.78rem', color: colors.ink60, margin: 0 }}>
+                  {filteredPeople.length} анкет{filteredPeople.length === 1 ? 'а' : filteredPeople.length < 5 ? 'ы' : ''} · без своего жилья, ищут квартиру и соседа
+                </p>
+              </div>
+
+              {/* Search bar */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                background: colors.white,
+                border: `1.5px solid ${colors.matchaLight}`,
+                borderRadius: '12px',
+                padding: '0 16px',
+                marginBottom: '24px',
+                maxWidth: '480px',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="9" cy="9" r="6" stroke={colors.ink30} strokeWidth="1.8"/>
+                  <path d="M13.5 13.5L17 17" stroke={colors.ink30} strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+                <input
+                  value={searchText}
+                  onChange={e => setSearchText(e.target.value)}
+                  placeholder="Поиск по имени, профессии, тегам…"
+                  style={{
+                    flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                    fontFamily: "'Geologica', sans-serif",
+                    fontSize: '0.82rem', color: colors.ink, padding: '11px 0',
+                  }}
+                />
+                {searchText && (
+                  <button onClick={() => setSearchText('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.ink30, fontSize: '1rem', padding: 0 }}>✕</button>
+                )}
+              </div>
+
+              {/* Cards grid */}
+              {filteredPeople.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: colors.ink60 }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🔍</div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', fontWeight: 600, color: colors.ink, marginBottom: '6px' }}>Нет анкет</div>
+                  <div style={{ fontSize: '0.78rem' }}>Попробуйте изменить фильтры</div>
                 </div>
-              )) : (
-                <div className="map-adv-empty">
-                  {drawnShapes.length > 0
-                    ? 'No profiles found in drawn area'
-                    : 'No profiles match your filters'}
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '16px',
+                }}>
+                  {filteredPeople.map(person => {
+                    const isSelected = selectedPerson?.id === person.id;
+                    const isLiked = liked.has(person.id);
+                    return (
+                      <div
+                        key={person.id}
+                        onClick={() => setSelectedPerson(isSelected ? null : person)}
+                        style={{
+                          background: colors.white,
+                          border: `2px solid ${isSelected ? colors.matcha : colors.matchaLight}`,
+                          borderRadius: '18px',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          boxShadow: isSelected ? `0 8px 24px rgba(122,158,126,0.2)` : '0 2px 8px rgba(28,43,30,0.06)',
+                          transform: isSelected ? 'translateY(-2px)' : 'none',
+                        }}
+                        onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.borderColor = colors.matchaMid; e.currentTarget.style.boxShadow = '0 6px 20px rgba(122,158,126,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+                        onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.borderColor = colors.matchaLight; e.currentTarget.style.boxShadow = '0 2px 8px rgba(28,43,30,0.06)'; e.currentTarget.style.transform = 'none'; } }}
+                      >
+                        {/* Photo strip */}
+                        <div style={{
+                          height: '140px',
+                          background: person.photos?.[0]?.startsWith('http')
+                            ? `url(${person.photos[0]}) center/cover`
+                            : `linear-gradient(135deg, ${colors.matchaLight} 0%, ${colors.matcha} 100%)`,
+                          position: 'relative',
+                        }}>
+                          {/* Budget badge */}
+                          <div style={{
+                            position: 'absolute', bottom: '10px', left: '10px',
+                            background: 'rgba(28,43,30,0.72)', backdropFilter: 'blur(6px)',
+                            color: '#fff', borderRadius: '100px', padding: '4px 10px',
+                            fontSize: '11px', fontWeight: 600,
+                          }}>
+                            💰 ₸{(person.budget || 0).toLocaleString()}/мес
+                          </div>
+                          {/* Online dot */}
+                          {person.online && (
+                            <div style={{
+                              position: 'absolute', top: '10px', right: '10px',
+                              width: '10px', height: '10px', borderRadius: '50%',
+                              background: '#22C55E', border: '2px solid white',
+                            }}/>
+                          )}
+                          {/* Initials fallback overlay */}
+                          {!person.photos?.[0]?.startsWith('http') && (
+                            <div style={{
+                              position: 'absolute', inset: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontFamily: "'Cormorant Garamond', serif",
+                              fontSize: '2.2rem', fontWeight: 600, color: colors.white,
+                            }}>{getInitials(person.name)}</div>
+                          )}
+                        </div>
+
+                        {/* Card body */}
+                        <div style={{ padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <div>
+                              <div style={{
+                                fontFamily: "'Cormorant Garamond', serif",
+                                fontSize: '1.05rem', fontWeight: 600, color: colors.ink,
+                              }}>{person.name}, {person.age}</div>
+                              <div style={{ fontSize: '11px', color: colors.matcha, fontWeight: 500, marginTop: '2px' }}>
+                                📍 {getRegionName(person.region)}
+                              </div>
+                            </div>
+                            <button
+                              onClick={e => { e.stopPropagation(); onLike(person); }}
+                              style={{
+                                background: isLiked ? '#FFE8E8' : colors.matchaMist,
+                                border: `1.5px solid ${isLiked ? '#E8A0A0' : colors.matchaLight}`,
+                                borderRadius: '10px',
+                                width: '34px', height: '34px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '1rem', flexShrink: 0,
+                                transition: 'all 0.2s',
+                              }}
+                            >{isLiked ? '❤️' : '🤍'}</button>
+                          </div>
+
+                          {/* Occupation / university tags */}
+                          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                            {person.occupation && (
+                              <span style={{
+                                background: colors.matcha, color: '#fff',
+                                borderRadius: '100px', padding: '3px 9px', fontSize: '10px', fontWeight: 500,
+                              }}>{person.occupation.substring(0, 22)}</span>
+                            )}
+                            {person.occupation === 'student' && person.university && (
+                              <span style={{
+                                background: colors.matchaPale, color: colors.matcha,
+                                border: `1px solid ${colors.matchaLight}`,
+                                borderRadius: '100px', padding: '3px 9px', fontSize: '10px', fontWeight: 500,
+                              }}>{person.university.substring(0, 22)}</span>
+                            )}
+                          </div>
+
+                          {/* Bio preview */}
+                          {person.bio && (
+                            <p style={{
+                              fontSize: '11px', color: colors.ink60, lineHeight: 1.5,
+                              margin: '0 0 8px',
+                              display: '-webkit-box', WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                            }}>{person.bio}</p>
+                          )}
+
+                          {/* Interest tags */}
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            {(person.tags || []).slice(0, 3).map((tag, i) => (
+                              <span key={i} style={{
+                                background: colors.matchaMist,
+                                color: colors.matcha,
+                                border: `1px solid ${colors.matchaLight}`,
+                                borderRadius: '100px', padding: '2px 8px', fontSize: '10px',
+                              }}>{tag}</span>
+                            ))}
+                          </div>
+
+                          {/* Lifestyle pills */}
+                          <div style={{ display: 'flex', gap: '5px', marginTop: '10px', flexWrap: 'wrap' }}>
+                            {!person.smoking && <span style={{ fontSize: '10px', background: '#F0FDF4', color: '#166534', borderRadius: '100px', padding: '3px 8px' }}>🚭 Не курит</span>}
+                            {person.pets && <span style={{ fontSize: '10px', background: '#FFF7ED', color: '#9A3412', borderRadius: '100px', padding: '3px 8px' }}>🐾 Питомец</span>}
+                            {person.remote && <span style={{ fontSize: '10px', background: '#EFF6FF', color: '#1D4ED8', borderRadius: '100px', padding: '3px 8px' }}>💻 Удалёнка</span>}
+                            {person.verification_status === 'approved' && <span style={{ fontSize: '10px', background: colors.matchaPale, color: colors.matcha, borderRadius: '100px', padding: '3px 8px' }}>✓ Верифицирован</span>}
+                          </div>
+
+                          {/* Move-in date */}
+                          {person.move_in && person.move_in !== '—' && (
+                            <div style={{ marginTop: '10px', fontSize: '11px', color: colors.ink60 }}>
+                              🗓 Въезд: <strong style={{ color: colors.ink }}>{person.move_in}</strong>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
+
+            {/* ── Right: profile detail panel (shown when card selected) ── */}
+            {selectedPerson && (() => {
+              const hasMatch = !!conversations[selectedPerson.id];
+              const likedYou = hasMatch || false;
+              return (
+                <div style={{
+                  width: '420px',
+                  flexShrink: 0,
+                  borderLeft: `1px solid ${colors.matchaLight}`,
+                  overflowY: 'auto',
+                  background: colors.white,
+                  position: 'relative',
+                }}>
+                  <MapProfilePanel
+                    p={selectedPerson}
+                    liked={liked.has(selectedPerson.id)}
+                    sent={sent.has(selectedPerson.id)}
+                    msgText={msgText}
+                    setMsgText={setMsgText}
+                    KZ_REGIONS={KZ_REGIONS}
+                    onLike={() => onLike(selectedPerson)}
+                    onSend={() => handleSendMessage()}
+                    onClose={() => setSelectedPerson(null)}
+                    hasMatch={hasMatch}
+                    likedYou={likedYou}
+                    inline={true}
+                  />
+                </div>
+              );
+            })()}
           </div>
-        </div>
-
-        {/* ── MAP CANVAS ────────────────────────────────────────────────── */}
-        <div className="map-adv-canvas">
-          <MapContainer
-            center={DEFAULT_CENTER}
-            zoom={12}
-            style={{ width: '100%', height: '100%' }}
-            dragging={true}
-            touchZoom
-            scrollWheelZoom
-            keyboard={false}
-            doubleClickZoom={false}
-            zoomControl
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maxZoom={19}
-              crossOrigin
-            />
-
-            {selectedRegion && (
-              <AutoZoomHandler
-                selectedCenter={selectedCenter}
-                zoomLevel={zoomLevel}
-                selectedRegion={selectedRegion}
-              />
-            )}
-
-            <DrawHandler
-              drawMode={drawMode}
-              drawnShapes={drawnShapes}
-              setDrawnShapes={setDrawnShapes}
-              onDrawModeChange={handleDrawModeChange}
-            />
-
-            {/* Drawn shapes */}
-            {drawnShapes.map((shape, i) => {
-              if ((shape.type === 'polygon' || shape.type === 'freehand') && shape.coordinates?.length >= 3) {
-                return (
-                  <Polygon
-                    key={i}
-                    positions={shape.coordinates}
-                    pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }}
-                  />
-                );
-              }
-              if (shape.type === 'circle' && shape.center) {
-                return (
-                  <Circle
-                    key={i}
-                    center={shape.center}
-                    radius={shape.radius * 1000}
-                    pathOptions={{ color: colors.matcha, weight: 2, opacity: 0.7, fillColor: colors.matchaPale, fillOpacity: 0.25 }}
-                  />
-                );
-              }
-              return null;
-            })}
-
-            {/* Profile markers — rendered directly so they always reflect latest filteredPeople */}
-            {filteredPeople.map(person => (
-              <CircleMarker
-                key={person.id}
-                center={[person.latitude, person.longitude]}
-                radius={selectedPerson?.id === person.id ? 14 : 10}
-                weight={2}
-                opacity={0.9}
-                fillOpacity={selectedPerson?.id === person.id ? 0.95 : 0.75}
-                color={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
-                fillColor={liked.has(person.id) ? '#ff6b9d' : colors.matcha}
-                eventHandlers={{ click: () => setSelectedPerson(person) }}
-              >
-                <Popup>
-                  <div style={{ fontFamily: "'Geologica', sans-serif", fontSize: 12, fontWeight: 600, color: '#1C2B1E' }}>
-                    {person.name}{person.age ? `, ${person.age}` : ''}<br />
-                    <span style={{ fontWeight: 400, color: '#7A9E7E', fontSize: 11 }}>
-                      📍 {KZ_REGIONS.find(r => r.id === person.region)?.name || person.region || ''}
-                    </span>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            ))}
-          </MapContainer>
-
-          {/* Detail panel */}
-          {selectedPerson && (
-            <div className="map-adv-detail-panel">
-              <div className="map-adv-panel-header">
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <div className="map-adv-panel-avatar">{getInitials(selectedPerson.name)}</div>
-                  <div>
-                    <div className="map-adv-panel-title">{selectedPerson.name}, {selectedPerson.age}</div>
-                    <div className="map-adv-panel-region">{getRegionName(selectedPerson.region)}</div>
-                  </div>
-                </div>
-                <div className="map-adv-panel-close" onClick={() => setSelectedPerson(null)}>✕</div>
-              </div>
-
-              <div className="map-adv-panel-info">
-                <div className="map-adv-panel-info-item">
-                  <div className="map-adv-panel-info-val">{selectedPerson.age}</div>
-                  <div className="map-adv-panel-info-label">age</div>
-                </div>
-                <div className="map-adv-panel-info-item">
-                  <div className="map-adv-panel-info-val">{selectedPerson.occupation?.substring(0, 10) || '—'}</div>
-                  <div className="map-adv-panel-info-label">job</div>
-                </div>
-              </div>
-
-              <div className="map-adv-panel-tags">
-                {(selectedPerson.tags || []).slice(0, 3).map((tag, i) => (
-                  <span key={i} className="map-adv-panel-tag">{tag}</span>
-                ))}
-                {selectedPerson.verification_status === 'approved' && (
-                  <span className="map-adv-panel-tag" style={{ background: colors.matchaPale, color: colors.matcha, border: `1px solid ${colors.matchaLight}` }}>✓ Верифицирован</span>
-                )}
-                {selectedPerson.verification_status === 'pending' && (
-                  <span className="map-adv-panel-tag" style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid rgba(146,64,14,0.2)' }}>⏳ На проверке</span>
-                )}
-              </div>
-
-              <div className="map-adv-panel-actions">
-                <button
-                  className={`map-adv-btn-like ${liked.has(selectedPerson.id) ? 'liked' : ''}`}
-                  onClick={() => onLike(selectedPerson)}
-                >
-                  {liked.has(selectedPerson.id) ? '❤️' : '🤍'}
-                </button>
-                <button className="map-adv-btn-view" onClick={() => onSelectProfile(selectedPerson)}>
-                  View profile →
-                </button>
-              </div>
-
-              <div className="map-adv-panel-message">
-                <textarea
-                  className="map-adv-panel-textarea"
-                  placeholder="Write a message (min 10 chars)…"
-                  value={msgText}
-                  onChange={e => setMsgText(e.target.value)}
-                  maxLength={500}
-                />
-                <div className="map-adv-panel-char-count">{msgText.length}/500</div>
-                <button
-                  className="map-adv-panel-btn-send"
-                  onClick={handleSendMessage}
-                  disabled={msgText.trim().length < 10 || isSending}
-                >
-                  {isSending ? '✓ Sent' : '📨 Send'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
       </div>
     </div>

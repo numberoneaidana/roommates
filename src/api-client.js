@@ -106,11 +106,19 @@ export default class ApiClient {
   }
 
   /**
-   * Like a profile.
+   * Like a profile
    * Returns { liked: true, matched: boolean, match_id?: string }
    */
   async likeProfile(id) {
     return this._fetch(`/api/profiles/like/${id}`, { method: "POST" });
+  }
+
+  /**
+   * Unlike a profile (remove like)
+   * Returns { unliked: true }
+   */
+  async unlikeProfile(id) {
+    return this._fetch(`/api/profiles/like/${id}`, { method: "DELETE" });
   }
 
   async passProfile(id) {
